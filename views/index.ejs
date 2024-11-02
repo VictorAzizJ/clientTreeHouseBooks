@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/countup.js"></script>
+</head>
+<body>
+    <!--<h1>Nonprofit Dashboard</h1>
+
+    <div>
+        <h2>Donations</h2>
+        <canvas id="totalsChart"></canvas>
+    </div>
+    <div>
+        <h2>Volunteers</h2>
+        <canvas id="percentageChangeChart"></canvas>
+    </div> -->
+    <header>
+        <div class="container">
+        <div class="campfire-wrapper">
+            <div class="tree-container-back">
+                <div class="tree-8"></div>
+                <div class="tree-9"></div>
+                <div class="tree-10"></div>
+            </div>
+            <div class="rock-container">
+                <div class="rock-big"></div>
+                <div class="rock-small">
+                    <div class="rock-1"></div>
+                    <div class="rock-2"></div>
+                    <div class="rock-3"></div>
+                    <div class="rock-4"></div>
+                </div>
+            </div>
+            <div class="smoke-container">
+                <svg>
+                <path d="M 150 0 Q 200 100 100 250 C 0 450 120 400 50 600  " />
+            </svg>
+                <div class="fire-container">
+    
+                    <div class="flame-1"></div>
+                    <div class="flame-2"></div>
+                    <div class="flame-3"></div>
+                </div>
+            </div>
+            <div class="tree-container-front">
+                <div class="tree-1"></div>
+                <div class="tree-2"></div>
+                <div class="tree-3"></div>
+                <div class="tree-4"></div>
+                <div class="tree-5"></div>
+                <div class="tree-6"></div>
+                <div class="tree-7"></div>
+            </div>
+        </div>
+    </div>
+    </header>
+    <button id="sidebarToggle" class="toggle-btn">☰ Roots Menu</button>
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar">
+    <a href="#section1">Section 1</a>
+    <a href="#section2">Section 2</a>
+    <a href="#section3">Section 3</a>
+</div>
+
+<!-- Main Content Sections -->
+<div class="content">
+    <section id="section1">
+        <h2>Book Checkouts</h2>
+        <div>
+            <h3>Donations</h3>
+            <canvas id="totalsChart"></canvas>
+        </div>
+        <div> 
+            <canvas id="percentageChangeChart"></canvas>
+        </div>  
+    </section>
+    <section id="section2">
+        <h2>Section 2</h2>
+        <p>Content for section 2...</p>
+    </section>
+    <section id="section3">
+        <h2>Section 3</h2>
+        <p>Content for section 3...</p>
+    </section>
+</div>
+
+
+
+    <script>
+        const data = <%- JSON.stringify(data) %>;
+    </script>
+    <script type="text/javascript" src="/js/chartHandler.js"></script>
+    
+</body>
+</html>
