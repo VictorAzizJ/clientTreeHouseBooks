@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard</title>
-    <link rel="stylesheet" type="text/css" href="/css/style.css">
+    <link rel="stylesheet" type="text/css" href="/css/style.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/countup.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <!--<h1>Nonprofit Dashboard</h1>
 
     <div>
@@ -20,82 +20,255 @@
         <canvas id="percentageChangeChart"></canvas>
     </div> -->
     <header>
-        <div class="container">
+      <div class="container">
         <div class="campfire-wrapper">
-            <div class="tree-container-back">
-                <div class="tree-8"></div>
-                <div class="tree-9"></div>
-                <div class="tree-10"></div>
+          <div class="tree-container-back">
+            <div class="tree-8"></div>
+            <div class="tree-9"></div>
+            <div class="tree-10"></div>
+          </div>
+          <div class="rock-container">
+            <div class="rock-big"></div>
+            <div class="rock-small">
+              <div class="rock-1"></div>
+              <div class="rock-2"></div>
+              <div class="rock-3"></div>
+              <div class="rock-4"></div>
             </div>
-            <div class="rock-container">
-                <div class="rock-big"></div>
-                <div class="rock-small">
-                    <div class="rock-1"></div>
-                    <div class="rock-2"></div>
-                    <div class="rock-3"></div>
-                    <div class="rock-4"></div>
-                </div>
-            </div>
-            <div class="smoke-container">
-                <svg>
-                <path d="M 150 0 Q 200 100 100 250 C 0 450 120 400 50 600  " />
+          </div>
+          <div class="smoke-container">
+            <svg>
+              <path d="M 150 0 Q 200 100 100 250 C 0 450 120 400 50 600  " />
             </svg>
-                <div class="fire-container">
-    
-                    <div class="flame-1"></div>
-                    <div class="flame-2"></div>
-                    <div class="flame-3"></div>
-                </div>
+            <div class="fire-container">
+              <div class="flame-1"></div>
+              <div class="flame-2"></div>
+              <div class="flame-3"></div>
             </div>
-            <div class="tree-container-front">
-                <div class="tree-1"></div>
-                <div class="tree-2"></div>
-                <div class="tree-3"></div>
-                <div class="tree-4"></div>
-                <div class="tree-5"></div>
-                <div class="tree-6"></div>
-                <div class="tree-7"></div>
-            </div>
+          </div>
+          <div class="tree-container-front">
+            <div class="tree-1"></div>
+            <div class="tree-2"></div>
+            <div class="tree-3"></div>
+            <div class="tree-4"></div>
+            <div class="tree-5"></div>
+            <div class="tree-6"></div>
+            <div class="tree-7"></div>
+          </div>
         </div>
-    </div>
+      </div>
     </header>
-    <button id="sidebarToggle" class="toggle-btn">☰ Roots Menu</button>
+    <section class="intro">
+      <h1>Camp Fire DashBoard</h1>
+      <span>
+        This dashboard serves as the Admin Dashboard for live and dynamic data
+        for TreeHouse Books Executives and Board Members.
+      </span>
+      <span
+        >Will be updated weekly until December then will be updated hourly
+        through automation following January 02, 2024</span
+      >
+    </section>
+    <button id="sidebarToggle" class="toggle-btn">☰ CampFire Menu</button>
 
-<!-- Sidebar -->
-<div id="sidebar" class="sidebar">
-    <a href="#section1">Section 1</a>
-    <a href="#section2">Section 2</a>
-    <a href="#section3">Section 3</a>
-</div>
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar">
+      <a href="#section1">Book Checkouts</a>
+      <a href="#section2">Side Walk Reports</a>
+      <a href="#section3">Programming Reports</a>
+      <a href="#section4">Volunteer Stats</a>
+      <a href="#section5">Social Media</a>
+      <a href="#section6">Mobile TreeHouse</a>
+    </div>
 
-<!-- Main Content Sections -->
-<div class="content">
-    <section id="section1">
+    <!-- Main Content Sections -->
+    <div class="content">
+      <section id="section1">
         <h2>Book Checkouts</h2>
         <div>
-            <h3>Donations</h3>
-            <canvas id="totalsChart"></canvas>
+          <h3>Book Checkout Totals</h3>
+          <canvas id="totalsChart"></canvas>
         </div>
-        <div> 
-            <canvas id="percentageChangeChart"></canvas>
-        </div>  
-    </section>
-    <section id="section2">
-        <h2>Section 2</h2>
-        <p>Content for section 2...</p>
-    </section>
-    <section id="section3">
-        <h2>Section 3</h2>
-        <p>Content for section 3...</p>
-    </section>
-</div>
+        <p>Black Children's Titles: 3011</p>
+        <p>Children's Titles: 102598</p>
+        <p>Black Adult Titles: 1645</p>
+        <p>Adult Titles: 6968</p>
+        <p>Board Books: 2225</p>
+      </section>
+      <section id="section2">
+        <h2>Side Walk Disturbtuion</h2>
+        <div>
+          <canvas id="percentageChangeChart"></canvas>
+        </div>
+      </section>
+      <section id="section3">
+        <h2>Programing Stats Coming November 11th (Data not Accurate)</h2>
+        <div
+          class="chart-container"
+          style="width: 60%; max-width: 400px; margin: auto"
+        >
+          <canvas id="donutChart"></canvas>
+        </div>
+      </section>
+      <section id="section4">
+        <h2>Volunteer Stats Coming November 7th (Data not Accurate)</h2>
+        <section
+          class="dashboard"
+          style="width: 80%; margin: auto; text-align: center"
+        >
+          <h2>Volunteer Attendance and Hours Dashboard</h2>
+          <div
+            class="chart-container"
+            style="width: 90%; max-width: 600px; margin: auto"
+          >
+            <canvas id="attendanceChart"></canvas>
+          </div>
+          <div
+            class="chart-container"
+            style="width: 90%; max-width: 600px; margin: auto; margin-top: 40px"
+          >
+            <canvas id="hoursChart"></canvas>
+          </div>
+        </section>
+      </section>
+      <section id="section5">
+        <h2>Social Media Stats Coming November 7th (Data not Accurate)</h2>
+      </section>
+      <section id="section6">
+        <h2>Mobile Treehouse Stats Coming November 7th (Data not Accurate)</h2>
+      </section>
+    </div>
+    <section id="roadmap">
+      <h2>Phase 1: Foundational Development</h2>
+      <h3>Objective</h3>
+      <p>
+        Create a base that consolidates current data and enables basic analysis,
+        setting the groundwork for more advanced functionality.
+      </p>
+      <h3>Tasks</h3>
+      <ul>
+        <li>
+          <strong>Database Setup:</strong> Set up a secure and structured
+          database to store existing organizational data.
+        </li>
+        <li>
+          <strong>Basic Analytics Integration:</strong> Implement essential
+          analytics functions using tools like Chart.js for visual data
+          representation.
+        </li>
+        <li>
+          <strong>User Interface Development:</strong> Develop a simple,
+          intuitive front end for staff to view data trends, ensuring a
+          user-friendly experience.
+        </li>
+        <li>
+          <strong>Basic Authentication:</strong> Implement access control to
+          ensure data security and appropriate access levels.
+        </li>
+      </ul>
 
+      <h2>Phase 2: Dynamic Data and Real-Time Updates</h2>
+      <h3>Objective</h3>
+      <p>
+        Enable real-time data analysis, allowing decisions to be based on
+        up-to-the-minute data.
+      </p>
+      <h3>Tasks</h3>
+      <ul>
+        <li>
+          <strong>Dynamic Data Inputs:</strong> Enable data to be updated in
+          real-time, with live analytics that reflect the most current data.
+        </li>
+        <li>
+          <strong>In-House Forms:</strong> Develop custom data intake forms to
+          streamline data collection directly into your system, avoiding
+          third-party services like Knack.
+        </li>
+        <li>
+          <strong>Real-Time Synchronization:</strong> Implement WebSocket or
+          other real-time data updating tools for immediate updates on the
+          dashboard.
+        </li>
+      </ul>
 
+      <h2>Phase 3: Advanced Data Processing and Role-Specific Access</h2>
+      <h3>Objective</h3>
+      <p>
+        Implement sophisticated data intake and auditing functionalities
+        tailored to different organizational roles.
+      </p>
+      <h3>Tasks</h3>
+      <ul>
+        <li>
+          <strong>Role-Based Dashboards:</strong> Develop specific dashboards
+          for executives, board members, and stakeholders, providing each group
+          with relevant data views and decision-making tools.
+        </li>
+        <li>
+          <strong>Data Auditing:</strong> Integrate logging and auditing
+          capabilities, enabling comprehensive data history for transparent and
+          traceable decision-making.
+        </li>
+        <li>
+          <strong>Enhanced Data Analysis:</strong> Use more advanced analytics
+          tools, allowing complex data comparisons and historical trend
+          analysis.
+        </li>
+      </ul>
+
+      <h2>Phase 4: Customization and Vendor Elimination</h2>
+      <h3>Objective</h3>
+      <p>
+        Tailor the platform fully to the organization's needs, ensuring it
+        replaces existing vendors and saves on subscription costs.
+      </p>
+      <h3>Tasks</h3>
+      <ul>
+        <li>
+          <strong>Customizable Modules:</strong> Allow departments to customize
+          sections of the dashboard based on their requirements, making it
+          highly adaptable to diverse needs within the organization.
+        </li>
+        <li>
+          <strong>Performance Optimization:</strong> Focus on optimizing speed
+          and accessibility to ensure faster data processing than third-party
+          solutions.
+        </li>
+        <li>
+          <strong>Cost-Benefit Analysis:</strong> Compare ongoing costs saved by
+          dropping vendor services, supporting long-term financial
+          sustainability.
+        </li>
+      </ul>
+
+      <h2>Phase 5: Full Rollout and Support</h2>
+      <h3>Objective</h3>
+      <p>
+        Deploy the solution fully and provide continuous support and updates as
+        needed.
+      </p>
+      <h3>Tasks</h3>
+      <ul>
+        <li>
+          <strong>Staff Training:</strong> Educate team members on the new
+          system, emphasizing features for real-time updates, form submissions,
+          and data auditing.
+        </li>
+        <li>
+          <strong>Maintenance Plan:</strong> Establish an ongoing maintenance
+          schedule to handle bugs, updates, and potential expansions of the
+          dashboard.
+        </li>
+        <li>
+          <strong>Feedback Loop:</strong> Gather user feedback to refine and
+          adjust the system for maximum effectiveness and user satisfaction.
+        </li>
+      </ul>
+    </section>
 
     <script>
-        const data = <%- JSON.stringify(data) %>;
+      const data = <%- JSON.stringify(data) %>;
     </script>
     <script type="text/javascript" src="/js/chartHandler.js"></script>
-    
-</body>
+  </body>
 </html>
