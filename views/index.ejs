@@ -81,7 +81,86 @@
       <a href="#section6">Mobile TreeHouse</a>
     </div>
 
+    <!--Overall Budget Section  Section Should have Bar Chart With Projected Monthly Spending and Actual Monthly Spending-->
+    <!--Should see if I can include a budget for 2022 and 2023-->
+    <!-- After Should be link to break down with radar chart showing project specific area each month should have a different radar chart -->
+
     <!-- Main Content Sections -->
+
+    <!--Void Daily Stats like cost per book-->
+    <section>
+      <h2>TreeTop Daily Stats</h2>
+      <div class="void" id="void">
+        <div class="crop">
+        <ul id="card-list" style="--count: 6;">
+          <li class="voidList"><div class="card"><a href=""><span class="model-name">Gretel-ACTGAN</span><span>Model for generating highly dimensional, mostly numeric, tabular data</span></a></div></li>
+          <li class="voidList"><div class="card"><a href=""><span class="model-name">Gretel-ACTGAN</span><span>Model for generating highly dimensional, mostly numeric, tabular data</span></a></div></li>
+          <li class="voidList"><div class="card"><a href=""><span class="model-name">Gretel-ACTGAN</span><span>Model for generating highly dimensional, mostly numeric, tabular data</span></a></div></li>
+          <li class="voidList"><div class="card"><a href=""><span class="model-name">Gretel-ACTGAN</span><span>Model for generating highly dimensional, mostly numeric, tabular data</span></a></div></li>
+          <li class="voidList"><div class="card"><a href=""><span class="model-name">Gretel-ACTGAN</span><span>Model for generating highly dimensional, mostly numeric, tabular data</span></a></div></li>
+         <li class="voidList"><div class="card"><a href=""><span class="model-name">Gretel-ACTGAN</span><span>Model for generating highly dimensional, mostly numeric, tabular data</span></a></div></li>
+        </ul>
+        <div class="last-circle"></div>
+        <div class="second-circle"></div>
+        </div>
+        <div class="mask"></div>
+        <div class="center-circle"></div>
+      <div>
+    </section>
+
+
+    <!---->
+    <section
+      class="dashboard"
+      style="width: 80%; margin: auto; text-align: center"
+    >
+      <h2>Yearly Budget Breakdown</h2>
+      <div
+        class="chart-container"
+        style="width: 60%; max-width: 500px; margin: auto"
+      >
+        <canvas id="budgetPieChart"></canvas>
+      </div>
+    </section>
+
+    <section
+      class="dashboard"
+      style="width: 80%; margin: auto; text-align: center"
+    >
+      <h2>Revenue Dashboard</h2>
+      <div
+        class="chart-container"
+        style="width: 90%; max-width: 800px; margin: auto"
+      >
+        <canvas id="barChart"></canvas>
+      </div>
+      <div
+        class="chart-container"
+        style="width: 90%; max-width: 800px; margin: auto; margin-top: 40px"
+      >
+        <canvas id="lineChart"></canvas>
+      </div>
+
+      <h3>Monthly Radar Charts</h3>
+      <div class="carousel-container">
+        <!-- Carousel items for radar charts -->
+        <div class="carousel-item"><canvas id="radarChart1"></canvas></div>
+        <div class="carousel-item"><canvas id="radarChart2"></canvas></div>
+        <div class="carousel-item"><canvas id="radarChart3"></canvas></div>
+        <div class="carousel-item"><canvas id="radarChart4"></canvas></div>
+        <div class="carousel-item"><canvas id="radarChart5"></canvas></div>
+        <div class="carousel-item"><canvas id="radarChart6"></canvas></div>
+        <div class="carousel-item"><canvas id="radarChart7"></canvas></div>
+        <div class="carousel-item"><canvas id="radarChart8"></canvas></div>
+        <div class="carousel-item"><canvas id="radarChart9"></canvas></div>
+        <div class="carousel-item"><canvas id="radarChart10"></canvas></div>
+        <div class="carousel-item"><canvas id="radarChart11"></canvas></div>
+
+        <!-- Repeat for all 12 months -->
+        <div class="carousel-item"><canvas id="radarChart12"></canvas></div>
+      </div>
+    </section>
+
     <div class="content">
       <section id="section1">
         <h2>Book Checkouts</h2>
@@ -138,7 +217,7 @@
         <h2>Mobile Treehouse Stats Coming November 7th (Data not Accurate)</h2>
       </section>
     </div>
-    <section id="roadmap">
+    <!--<section id="roadmap">
       <h2>Phase 1: Foundational Development</h2>
       <h3>Objective</h3>
       <p>
@@ -264,7 +343,7 @@
           adjust the system for maximum effectiveness and user satisfaction.
         </li>
       </ul>
-    </section>
+    </section> -->
 
     <script>
       const data = <%- JSON.stringify(data) %>;

@@ -481,4 +481,132 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+document.addEventListener('DOMContentLoaded', () => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+  // Chart 1: Main Bar Chart
+  const barCtx = document.getElementById('barChart').getContext('2d');
+  const barChart = new Chart(barCtx, {
+      type: 'bar',
+      data: {
+          labels: months,
+          datasets: [{
+              label: 'Main Data - Bar',
+              data: [45, 56, 75, 52, 68, 70, 90, 85, 60, 75, 80, 95], // Sample data
+              backgroundColor: '#f7951d'
+          }]
+      },
+      options: {
+          responsive: true,
+          scales: {
+              y: { beginAtZero: true }
+          }
+      }
+  });
+
+  // Chart 2: Main Line Chart
+  const lineCtx = document.getElementById('lineChart').getContext('2d');
+  const lineChart = new Chart(lineCtx, {
+      type: 'line',
+      data: {
+          labels: months,
+          datasets: [{
+              label: 'Main Data - Line',
+              data: [30, 45, 55, 60, 75, 70, 65, 80, 85, 78, 90, 95], // Sample data
+              borderColor: '#00703c',
+              fill: false,
+              tension: 0.3
+          }]
+      },
+      options: {
+          responsive: true,
+          scales: {
+              y: { beginAtZero: true }
+          }
+      }
+  });
+
+  // Radar Charts Initialization
+  for (let i = 1; i <= 12; i++) {
+      const radarCtx = document.getElementById(`radarChart${i}`).getContext('2d');
+      new Chart(radarCtx, {
+          type: 'radar',
+          data: {
+              labels: ['Metric A', 'Metric B', 'Metric C', 'Metric D', 'Metric E'],
+              datasets: [{
+                  label: `Month ${months[i - 1]}`,
+                  data: Array.from({ length: 5 }, () => Math.floor(Math.random() * 100)), // Random sample data
+                  backgroundColor: 'rgba(0, 112, 60, 0.2)',
+                  borderColor: '#00703c',
+                  borderWidth: 1
+              },{
+                label: `Dataset 2 - ${months[i - 1]}`,
+                data: Array.from({ length: 5 }, () => Math.floor(Math.random() * 100)),
+                backgroundColor: 'rgba(247, 149, 29, 0.2)', // Light orange
+                borderColor: '#f7951d', // Dark orange
+                borderWidth: 1
+            }]
+          },
+          options: {
+              responsive: true,
+              scales: {
+                  r: {
+                      beginAtZero: true
+                  }
+              },
+              plugins: {
+                  legend: {
+                      display: true,
+                      position: 'top'
+                  }
+              }
+          }
+      });
+  }
+});
+
+
+
+
+//pie chart data for main page chart budget of 2024
+document.addEventListener('DOMContentLoaded', () => {
+  // Sample budget data for the year
+  const budgetData = {
+      labels: ['Operations', 'Marketing', 'Salaries', 'Programs', 'Miscellaneous'],
+      datasets: [{
+          label: 'Yearly Budget',
+          data: [30000, 15000, 40000, 25000, 5000], // Sample values in dollars
+          backgroundColor: [
+              '#f7951d', // Orange for Operations
+              '#00703c', // Green for Marketing
+              '#1d78f7', // Blue for Salaries
+              '#c13584', // Pink for Programs
+              '#9e9e9e'  // Gray for Miscellaneous
+          ],
+          hoverOffset: 4
+      }]
+  };
+
+  const pieCtx = document.getElementById('budgetPieChart').getContext('2d');
+  const budgetPieChart = new Chart(pieCtx, {
+      type: 'pie',
+      data: budgetData,
+      options: {
+          responsive: true,
+          plugins: {
+              legend: {
+                  position: 'top'
+              },
+              tooltip: {
+                  callbacks: {
+                      label: function(context) {
+                          const label = context.label || '';
+                          const value = context.raw || 0;
+                          return `${label}: $${value.toLocaleString()}`; // Formats as currency
+                      }
+                  }
+              }
+          }
+      }
+  });
+});
