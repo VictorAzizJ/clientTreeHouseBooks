@@ -1,6 +1,0 @@
-node_modules/
-logs/
-scripts/
-.github/
-**/dist/**
-**/*.config.js
