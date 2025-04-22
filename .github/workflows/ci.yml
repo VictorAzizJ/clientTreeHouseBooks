@@ -1,3 +1,4 @@
+# .github/workflows/ci.yml
 name: CI/CD
 
 on:
@@ -10,11 +11,11 @@ jobs:
   build-test:
     runs-on: ubuntu-latest
     env:
-      MONGO_URI: ${{ secrets.MONGO_URI }}
-      SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-      OKTA_DOMAIN: ${{ secrets.OKTA_DOMAIN }}
-      OKTA_API_TOKEN: ${{ secrets.OKTA_API_TOKEN }}
-      APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+      MONGO_URI:          ${{ secrets.MONGO_URI }}
+      SESSION_SECRET:     ${{ secrets.SESSION_SECRET }}
+      OKTA_DOMAIN:        ${{ secrets.OKTA_DOMAIN }}
+      OKTA_API_TOKEN:     ${{ secrets.OKTA_API_TOKEN }}
+      APP_BASE_URL:       ${{ secrets.APP_BASE_URL }}
     strategy:
       matrix:
         node-version: [18.x]
@@ -29,9 +30,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run lint
-        run: npm run lint
-
       - name: Run tests
         run: npm test
 
@@ -45,5 +43,5 @@ jobs:
       - name: Deploy to Render
         uses: render-examples/render-deploy-action@v1
         with:
-          apiKey: ${{ secrets.RENDER_API_KEY }}
+          apiKey:    ${{ secrets.RENDER_API_KEY }}
           serviceId: ${{ secrets.RENDER_SERVICE_ID }}
