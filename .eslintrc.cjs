@@ -1,17 +1,17 @@
 // .eslintrc.cjs
 module.exports = {
-    // Files and folders to skip
     ignorePatterns: [
       "node_modules/",
       "logs/",
       "scripts/",
-      ".github/"
+      ".github/",
+      ".eslintrc.cjs"
     ],
     env: {
-      node: true,        // enable Node.js globals (require, module, process, __dirname…)
-      commonjs: true,    // CommonJS (require/module)
-      es2021: true,      // modern ECMAScript features
-      jest: true         // Jest globals (describe, it, expect…)
+      node: true,
+      commonjs: true,
+      es2021: true,
+      jest: true
     },
     globals: {
       require: "readonly",
@@ -23,9 +23,6 @@ module.exports = {
     parserOptions: {
       ecmaVersion: 12,
       sourceType: "script"
-    },
-    rules: {
-      // e.g., "no-console": "warn"
     }
   };
   
