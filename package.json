@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "lint": "eslint .",
+    "lint": "eslint .     --env node,commonjs,es2021,jest     --ignore-pattern \"node_modules/**\"     --ignore-pattern \"logs/**\"     --ignore-pattern \"scripts/**\"     --ignore-pattern \".github/**\"",
     "test": "jest --runInBand"
   },
   "dependencies": {
