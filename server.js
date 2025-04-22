@@ -4,12 +4,12 @@ const helmet     = require('helmet');
 const cors       = require('cors');
 const rateLimit  = require('express-rate-limit');
 const session    = require('express-session');
+const MongoStore = require('connect-mongo');
 const path       = require('path');
 const dotenv     = require('dotenv');
 const mongoose   = require('mongoose');
 const morgan     = require('morgan');
 const winston    = require('winston');
-// const Sentry  = require('@sentry/node'); // ← we'll re‑enable this later
 
 dotenv.config();
 
@@ -35,7 +35,6 @@ app.use(rateLimit({
 }));
 
 /** 4. HTTP request logging */
-// Winston logger setup
 const logger = winston.createLogger({
   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   format: winston.format.combine(
@@ -44,31 +43,36 @@ const logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console(),
-    // Local files (optional in production)
     new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
     new winston.transports.File({ filename: 'logs/combined.log' })
   ]
 });
-logger.stream = { write: (msg) => logger.info(msg.trim()) };
-
-// Morgan → Winston
+logger.stream = { write: msg => logger.info(msg.trim()) };
 app.use(morgan('combined', { stream: logger.stream }));
 
 /** 5. Body parsing */
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-/** 6. Session management (persistent) */
-const MongoStore = require('connect-mongo');
+/** 6. Session management */
+// Use an in‑memory store during tests to avoid lingering Mongo handles
+let sessionStore;
+if (process.env.NODE_ENV === 'test') {
+  sessionStore = new session.MemoryStore();
+} else {
+  // In dev/prod, persist sessions in MongoDB
+  sessionStore = MongoStore.create({
+    mongoUrl: process.env.MONGO_URI,
+    collectionName: 'sessions',
+    ttl: 14 * 24 * 60 * 60
+  });
+}
+
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGO_URI,
-    collectionName: 'sessions',
-    ttl: 14 * 24 * 60 * 60
-  }),
+  store: sessionStore,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
@@ -92,56 +96,42 @@ mongoose.connect(process.env.MONGO_URI, {
   process.exit(1);
 });
 
+/** 9. Health‑check endpoint */
 app.get('/healthz', async (req, res) => {
-  const mongoState = mongoose.connection.readyState;
-  // readyState 1 = connected
-  if (mongoState === 1) {
+  const state = mongoose.connection.readyState;
+  if (state === 1) {
     return res.status(200).json({ status: 'OK', db: 'up' });
   }
   res.status(500).json({ status: 'ERROR', db: 'down' });
 });
 
+/** 10. Mount routes */
+// Registration
+app.use('/', require('./routes/register'));
+// Index / landing
+app.use('/', require('./routes/index'));
+// Login
+app.use('/', require('./routes/login'));
+// Dashboard
+app.use('/', require('./routes/dashboard'));
+// Admin management
+app.use('/', require('./routes/admin'));
 
-// Mount custom registration routes (if any)
-const registerRoutes = require('./routes/register');
-app.use('/', registerRoutes);
-
-// Mount index routes
-const indexRoutes = require('./routes/index');
-app.use('/', indexRoutes);
-
-// Mount login routes
-const loginRoutes = require('./routes/login');
-app.use('/', loginRoutes);
-
-// Mount dashboard routes
-const dashboardRoutes = require('./routes/dashboard');
-app.use('/', dashboardRoutes);
-
-// Mount admin management routes
-const adminRoutes = require('./routes/admin');
-app.use('/', adminRoutes);
-
-// Implement a logout route
+/** 11. Logout */
 app.get('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/');
-  });
+  req.session.destroy(() => res.redirect('/'));
 });
 
-if (process.env.SENTRY_DSN) {
-  app.use(Sentry.Handlers.errorHandler());
-}
-
+/** 12. Error handler */
 app.use((err, req, res, next) => {
   logger.error(err.stack);
   res.status(500).send('Something went wrong!');
 });
 
-
-// Start the server
+// Export the app for testing
 module.exports = app;
 
+// If run directly, start the HTTP server
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
