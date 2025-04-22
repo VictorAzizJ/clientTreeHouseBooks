@@ -1,30 +1,39 @@
 // eslint.config.cjs
+const { FlatCompat } = require("@eslint/eslintrc");
+
+// This helper lets us “extend” eslint:recommended under flat config
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+  recommendedDefault: true
+});
 
 module.exports = [
-    // 1. Which files/folders to ignore
-    {
-      ignores: [
-        "node_modules/**",
-        "logs/**",
-        "scripts/**",
-        ".github/**"
-      ]
-    },
-    // 2. Language options (globals & parser settings)
-    {
-      languageOptions: {
-        env: {
-          node:     true,  // require, module, process, __dirname
-          commonjs: true,
-          es2021:   true,
-          jest:     true   // describe, it, expect
-        }
+  // 1) import all the rules from eslint:recommended
+  ...compat.config({ extends: ["eslint:recommended"] }),
+
+  // 2) our own config
+  {
+    // files/folders to ignore
+    ignores: [
+      "node_modules/**",
+      "logs/**",
+      "scripts/**",
+      ".github/**"
+    ],
+
+    // enable Node/CommonJS and Jest globals
+    languageOptions: {
+      env: {
+        node:     true,  // require, module, process, __dirname
+        commonjs: true,
+        es2021:   true,
+        jest:     true   // describe, it, expect
       }
     },
-    // 3. Extend the recommended ruleset
-    {
-      rules: {},
-      extends: ["eslint:recommended"]
+
+    // any additional rule overrides go here
+    rules: {
+      // e.g. "no-console": "warn"
     }
-  ];
-  
+  }
+];
