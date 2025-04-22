@@ -1,19 +1,41 @@
 {
-  "name": "treehousedash",
-  "version": "1.0.0",
-  "description": "",
-  "main": "server.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "chart.js": "^4.4.5",
-    "countup.js": "^2.8.0",
-    "ejs": "^3.1.10",
-    "express": "^4.21.1"
-  }
+    "name": "treehousebooks-dashboard",
+    "version": "1.0.0",
+    "description": "Dashboard for TreeHouseBooks nonprofit",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "nodemon server.js",
+        "lint": "eslint .",
+        "test": "jest --runInBand"
+    },
+    "dependencies": {
+        "@okta/oidc-middleware": "^5.5.0",
+        "@sentry/node": "^9.13.0",
+        "axios": "^1.8.4",
+        "bootstrap": "^5.3.0",
+        "connect-mongo": "^4.6.0",
+        "cors": "^2.8.5",
+        "dotenv": "^16.0.0",
+        "ejs": "^3.1.8",
+        "express": "^4.21.2",
+        "express-openid-connect": "^2.17.1",
+        "express-rate-limit": "^7.5.0",
+        "express-session": "^1.17.3",
+        "helmet": "^8.1.0",
+        "mongodb": "^4.17.2",
+        "mongoose": "^6.7.0",
+        "morgan": "^1.10.0",
+        "passport": "^0.6.0",
+        "passport-google-oauth20": "^2.0.0",
+        "winston": "^3.17.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.25.1",
+        "eslint": "^9.25.1",
+        "globals": "^16.0.0",
+        "jest": "^29.7.0",
+        "nodemon": "^3.1.9",
+        "supertest": "^7.1.0"
+    }
 }
