@@ -23,18 +23,22 @@ app.set('trust proxy', 1);
 app.use(
   helmet({
     contentSecurityPolicy: {
+      useDefaults: true,
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+        scriptSrcElem: ["'self'", "https://cdn.jsdelivr.net"],
         styleSrc: ["'self'", "https://cdn.jsdelivr.net", "'unsafe-inline'"],
         fontSrc: ["'self'", "https://cdn.jsdelivr.net"],
         connectSrc: ["'self'"],
         imgSrc: ["'self'", "data:"],
         formAction: ["'self'", "https://clienttreehousebooks.onrender.com"],
+        objectSrc: ["'none'"]
       }
     }
   })
 );
+
 
 /** 2. CORS: only allow your production domain */
 app.use(cors({
