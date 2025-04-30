@@ -30,14 +30,23 @@ app.use(
         scriptSrcElem: ["'self'", "https://cdn.jsdelivr.net"],
         styleSrc: ["'self'", "https://cdn.jsdelivr.net", "'unsafe-inline'"],
         fontSrc: ["'self'", "https://cdn.jsdelivr.net"],
-        connectSrc: ["'self'"],
+        connectSrc: ["'self'", "https://dev-05500438.okta.com"],
         imgSrc: ["'self'", "data:"],
-        formAction: ["'self'", "https://clienttreehousebooks.onrender.com"],
-        objectSrc: ["'none'"]
+        formAction: [
+          "'self'",
+          "https://clienttreehousebooks.onrender.com",
+          "https://dev-05500438.okta.com"
+        ],
+        frameAncestors: ["'self'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        scriptSrcAttr: ["'none'"],
+        upgradeInsecureRequests: [],
       }
     }
   })
 );
+
 
 
 /** 2. CORS: only allow your production domain */
