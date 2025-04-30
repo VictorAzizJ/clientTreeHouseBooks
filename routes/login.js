@@ -4,16 +4,17 @@ const axios = require('axios');
 const User = require('../models/User');
 const router = express.Router();
 
-// GET /custom-login: Render the custom login form
+// GET /custom-login: Render the login form
 router.get('/custom-login', (req, res) => {
-  res.render('customLogin'); // See views/customLogin.ejs below
+  const { error, email } = req.query;
+  res.render('customLogin', { error, email });
 });
 
-// POST /login: Process login form
+// POST /login: Handle login with Okta
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   try {
-    // Call Okta's Authentication API to verify credentials
+    // Authenticate with Okta
     const response = await axios.post(`https://${process.env.OKTA_DOMAIN}/api/v1/authn`, {
       username: email,
       password: password
@@ -21,17 +22,15 @@ router.post('/login', async (req, res) => {
       headers: { 'Content-Type': 'application/json' }
     });
 
-    // Extract the session token and user details from Okta's response
     const sessionToken = response.data.sessionToken;
     const oktaId = response.data._embedded.user.id;
     const firstName = response.data._embedded.user.profile.firstName;
     const lastName = response.data._embedded.user.profile.lastName;
     const oktaEmail = response.data._embedded.user.profile.login;
 
-    // Look up the user in your local database using their Okta ID
+    // Lookup or create local user
     let user = await User.findOne({ oktaId });
     if (!user) {
-      // If not found, create a new local user with default role "volunteer"
       user = await User.create({
         oktaId,
         firstName,
@@ -40,16 +39,21 @@ router.post('/login', async (req, res) => {
         role: 'volunteer'
       });
     }
-    // Store the user in session for later access (for dashboard routing)
+
+    // Set session
     req.session.user = user;
 
-    // Build the redirect URL to your dashboard
+    // ✅ Add flash success message
+    req.session.success = `Welcome back, ${firstName}!`;
+
+    // Redirect with session cookie
     const redirectUrl = `${process.env.APP_BASE_URL}/dashboard`;
-    // Redirect to Okta's session cookie redirect endpoint
     res.redirect(`https://${process.env.OKTA_DOMAIN}/login/sessionCookieRedirect?token=${sessionToken}&redirectUrl=${encodeURIComponent(redirectUrl)}`);
   } catch (err) {
     console.error("Login error:", err.response ? err.response.data : err.message);
-    res.status(400).send("Login failed: " + (err.response ? JSON.stringify(err.response.data) : err.message));
+    const errorMsg = encodeURIComponent('Invalid email or password.');
+    const enteredEmail = encodeURIComponent(req.body.email);
+    res.redirect(`/custom-login?error=${errorMsg}&email=${enteredEmail}`);
   }
 });
 

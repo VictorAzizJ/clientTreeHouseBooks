@@ -2,17 +2,20 @@
 const express = require('express');
 const router = express.Router();
 
-// Middleware to ensure user is authenticated (i.e. present in session)
+// Middleware to ensure user is logged in
 function ensureAuthenticated(req, res, next) {
-  if (req.session && req.session.user) {
-    return next();
-  }
+  if (req.session && req.session.user) return next();
   res.redirect('/custom-login');
 }
 
-// GET /dashboard: Render the appropriate dashboard view based on user role
+// GET /dashboard
 router.get('/dashboard', ensureAuthenticated, (req, res) => {
   const user = req.session.user;
+
+  // ✅ Read and clear flash message
+  const success = req.session.success;
+  delete req.session.success;
+
   let view;
   if (user.role === 'admin') {
     view = 'dashboard-admin';
@@ -21,7 +24,8 @@ router.get('/dashboard', ensureAuthenticated, (req, res) => {
   } else {
     view = 'dashboard-volunteer';
   }
-  res.render(view, { user });
+
+  res.render(view, { user, success });
 });
 
 module.exports = router;
