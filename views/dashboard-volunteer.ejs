@@ -24,13 +24,18 @@
         <div class="card shadow-sm h-100">
           <div class="card-body">
             <h5 class="card-title">Check-In Form</h5>
-            <!-- LGL Form Embed -->
-            <!-- Replace with your actual script or iframe below -->
-            <div id="lgl-form">
-              <script src="https://secure.lglforms.com/form_engine/s/ALIpQGGP1QJxOuaY5sx7Lw.js"></script>
-              <noscript>
-                <iframe src="https://secure.lglforms.com/form_engine/s/ALIpQGGP1QJxOuaY5sx7Lw" width="100%" height="500" frameborder="0"></iframe>
-              </noscript>
+            <iframe
+            onload="window.parent.scrollTo(0,0)"
+            height="1080"
+            allowTransparency="true"
+            allow="payment"
+            frameborder="0"
+            scrolling="no"
+            style="width:100%;border:none"
+            src="https://secure.lglforms.com/form_engine/s/ALIpQGGP1QJxOuaY5sx7Lw">
+            <a href="https://secure.lglforms.com/form_engine/s/ALIpQGGP1QJxOuaY5sx7Lw">Fill out my LGL Form!</a>
+          </iframe>
+            
             </div>
           </div>
         </div>

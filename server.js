@@ -26,26 +26,53 @@ app.use(
       useDefaults: true,
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
-        scriptSrcElem: ["'self'", "https://cdn.jsdelivr.net"],
-        styleSrc: ["'self'", "https://cdn.jsdelivr.net", "'unsafe-inline'"],
-        fontSrc: ["'self'", "https://cdn.jsdelivr.net"],
-        connectSrc: ["'self'", "https://dev-05500438.okta.com"],
+        scriptSrc: [
+          "'self'",
+          "https://cdn.jsdelivr.net",
+          "https://secure.lglforms.com"
+        ],
+        scriptSrcElem: [
+          "'self'",
+          "https://cdn.jsdelivr.net",
+          "https://secure.lglforms.com"
+        ],
+        styleSrc: [
+          "'self'",
+          "https://cdn.jsdelivr.net",
+          "https://fonts.googleapis.com",
+          "'unsafe-inline'"
+        ],
+        styleSrcElem: [
+          "'self'",
+          "https://fonts.googleapis.com",
+          "'unsafe-inline'"
+        ],
+        fontSrc: [
+          "'self'",
+          "https://fonts.gstatic.com"
+        ],
+        frameSrc: [
+          "'self'",
+          "https://secure.lglforms.com"
+        ],
+        connectSrc: [
+          "'self'",
+          "https://secure.lglforms.com"
+        ],
         imgSrc: ["'self'", "data:"],
         formAction: [
           "'self'",
           "https://clienttreehousebooks.onrender.com",
-          "https://dev-05500438.okta.com"
+          "https://secure.lglforms.com"
         ],
-        frameAncestors: ["'self'"],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
-        scriptSrcAttr: ["'none'"],
-        upgradeInsecureRequests: [],
+        frameAncestors: ["'self'"]
       }
     }
   })
 );
+
 
 
 
