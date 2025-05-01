@@ -29,12 +29,18 @@ app.use(
       scriptSrc: [
         "'self'",
         "https://cdn.jsdelivr.net",
-        "https://secure.lglforms.com"
+        "https://secure.lglforms.com",
+        "'unsafe-inline'" // For inline Bootstrap behavior if needed
       ],
       scriptSrcElem: [
         "'self'",
         "https://cdn.jsdelivr.net",
-        "https://secure.lglforms.com"
+        "https://secure.lglforms.com",
+        "'unsafe-inline'"
+      ],
+      scriptSrcAttr: [
+        "'self'",
+        "'unsafe-inline'", // Enables inline event handlers like onload=""
       ],
       styleSrc: [
         "'self'",
@@ -44,6 +50,7 @@ app.use(
       ],
       styleSrcElem: [
         "'self'",
+        "https://cdn.jsdelivr.net",
         "https://fonts.googleapis.com",
         "'unsafe-inline'"
       ],
@@ -71,7 +78,6 @@ app.use(
     }
   })
 );
-
 
 
 
