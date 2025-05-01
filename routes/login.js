@@ -48,7 +48,7 @@ router.post('/login', async (req, res) => {
 
     // Redirect with session cookie
     const redirectUrl = `${process.env.APP_BASE_URL}/dashboard`;
-    res.redirect(`https://${process.env.OKTA_DOMAIN}/login/sessionCookieRedirect?token=${sessionToken}&redirectUrl=${encodeURIComponent(redirectUrl)}`);
+    res.redirect(`/dashboard`);
   } catch (err) {
     console.error("Login error:", err.response ? err.response.data : err.message);
     const errorMsg = encodeURIComponent('Invalid email or password.');
