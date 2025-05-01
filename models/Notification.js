@@ -1,0 +1,13 @@
+const mongoose = require('mongoose');
+const { Schema } = mongoose;
+
+const notificationSchema = new Schema({
+  title: String,
+  body: String,
+  senderRole: { type: String, enum: ['admin', 'staff'], required: true },
+  senderId: { type: Schema.Types.ObjectId, ref: 'User', required: true }, // new
+  acknowledgedBy: [{ type: Schema.Types.ObjectId, ref: 'User' }], // new
+  createdAt: { type: Date, default: Date.now }
+});
+
+module.exports = mongoose.model('Notification', notificationSchema);

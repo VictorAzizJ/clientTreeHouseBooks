@@ -1,6 +1,7 @@
 // routes/dashboard.js
 const express = require('express');
 const router = express.Router();
+const Notification = require('../models/Notification');
 
 // Middleware to ensure user is logged in
 function ensureAuthenticated(req, res, next) {
@@ -9,23 +10,32 @@ function ensureAuthenticated(req, res, next) {
 }
 
 // GET /dashboard
-router.get('/dashboard', ensureAuthenticated, (req, res) => {
+router.get('/dashboard', ensureAuthenticated, async (req, res) => {
   const user = req.session.user;
-
-  // ✅ Read and clear flash message
   const success = req.session.success;
   delete req.session.success;
 
   let view;
+  let extraData = {};
+
   if (user.role === 'admin') {
     view = 'dashboard-admin';
   } else if (user.role === 'staff') {
     view = 'dashboard-staff';
   } else {
     view = 'dashboard-volunteer';
+
+    // Load unacknowledged notifications
+    const notifications = await Notification.find({
+      acknowledgedBy: { $ne: user._id }
+    })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate('senderId', 'firstName lastName')
+      .lean();
+
+    extraData.notifications = notifications;
   }
 
-  res.render(view, { user, success });
+  res.render(view, { user, success, ...extraData });
 });
-
-module.exports = router;

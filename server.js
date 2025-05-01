@@ -173,6 +173,9 @@ app.use('/', require('./routes/login'));
 app.use('/', require('./routes/dashboard'));
 // Admin management
 app.use('/', require('./routes/admin'));
+//Notification route
+app.use('/', require('./routes/notifications'));
+
 
 /** 11. Logout */
 app.get('/logout', (req, res) => {
