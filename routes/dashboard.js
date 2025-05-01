@@ -15,24 +15,28 @@ router.get('/dashboard', ensureAuthenticated, async (req, res) => {
   let view;
   let extraData = {};
 
+  // Load unacknowledged notifications for this role
+  const notifications = await Notification.find({
+    acknowledgedBy: { $ne: user._id },
+    targetRoles: user.role
+  })
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .populate('senderId', 'firstName lastName')
+    .lean();
+
+  extraData.notifications = notifications;
+
+  // Set view
   if (user.role === 'admin') {
     view = 'dashboard-admin';
   } else if (user.role === 'staff') {
     view = 'dashboard-staff';
   } else {
     view = 'dashboard-volunteer';
-
-    const notifications = await Notification.find({
-      acknowledgedBy: { $ne: user._id }
-    })
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .populate('senderId', 'firstName lastName')
-      .lean();
-
-    extraData.notifications = notifications;
   }
 
+  // Send it all to EJS
   res.render(view, { user, success, ...extraData });
 });
 
