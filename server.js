@@ -18,57 +18,56 @@ const app = express();
 
 app.set('trust proxy', 1);
 
+//Helmet without contentSecurityPolicy first
+app.use(helmet());
 
 /** 1. Secure headers */
 app.use(
-  helmet({
-    contentSecurityPolicy: {
-      useDefaults: true,
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: [
-          "'self'",
-          "https://cdn.jsdelivr.net",
-          "https://secure.lglforms.com"
-        ],
-        scriptSrcElem: [
-          "'self'",
-          "https://cdn.jsdelivr.net",
-          "https://secure.lglforms.com"
-        ],
-        styleSrc: [
-          "'self'",
-          "https://cdn.jsdelivr.net",
-          "https://fonts.googleapis.com",
-          "'unsafe-inline'"
-        ],
-        styleSrcElem: [
-          "'self'",
-          "https://fonts.googleapis.com",
-          "'unsafe-inline'"
-        ],
-        fontSrc: [
-          "'self'",
-          "https://fonts.gstatic.com"
-        ],
-        frameSrc: [
-          "'self'",
-          "https://secure.lglforms.com"
-        ],
-        connectSrc: [
-          "'self'",
-          "https://secure.lglforms.com"
-        ],
-        imgSrc: ["'self'", "data:"],
-        formAction: [
-          "'self'",
-          "https://clienttreehousebooks.onrender.com",
-          "https://secure.lglforms.com"
-        ],
-        objectSrc: ["'none'"],
-        baseUri: ["'self'"],
-        frameAncestors: ["'self'"]
-      }
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "https://cdn.jsdelivr.net",
+        "https://secure.lglforms.com"
+      ],
+      scriptSrcElem: [
+        "'self'",
+        "https://cdn.jsdelivr.net",
+        "https://secure.lglforms.com"
+      ],
+      styleSrc: [
+        "'self'",
+        "https://cdn.jsdelivr.net",
+        "https://fonts.googleapis.com",
+        "'unsafe-inline'"
+      ],
+      styleSrcElem: [
+        "'self'",
+        "https://fonts.googleapis.com",
+        "'unsafe-inline'"
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com"
+      ],
+      frameSrc: [
+        "'self'",
+        "https://secure.lglforms.com"
+      ],
+      connectSrc: [
+        "'self'",
+        "https://secure.lglforms.com"
+      ],
+      imgSrc: ["'self'", "data:"],
+      formAction: [
+        "'self'",
+        "https://clienttreehousebooks.onrender.com",
+        "https://secure.lglforms.com"
+      ],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      frameAncestors: ["'self'"]
     }
   })
 );
