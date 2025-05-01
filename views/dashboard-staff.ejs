@@ -80,7 +80,38 @@
 
       <div class="widget">
         <h5>Direct Messages</h5>
-        <p>Private messages with other staff/admin.</p>
+
+<% if (messages && messages.length > 0) { %>
+  <ul class="list-group mb-3">
+    <% messages.forEach(msg => { %>
+      <li class="list-group-item">
+        <strong><%= msg.senderId.firstName %> → <%= msg.recipientId.firstName %>:</strong>
+        <br><%= msg.body %>
+        <br><small class="text-muted"><%= new Date(msg.createdAt).toLocaleString() %></small>
+      </li>
+    <% }) %>
+  </ul>
+<% } else { %>
+  <p class="text-muted">No messages yet.</p>
+<% } %>
+
+<form action="/messages" method="POST">
+  <div class="mb-2">
+    <label for="recipientId">Send To:</label>
+    <select name="recipientId" class="form-select" required>
+      <% if (userList && userList.length > 0) { %>
+        <% userList.forEach(u => { if (u._id !== user._id) { %>
+          <option value="<%= u._id %>"><%= u.firstName %> <%= u.lastName %> (<%= u.role %>)</option>
+        <% }}); %>
+      <% } %>
+    </select>
+  </div>
+  <div class="mb-2">
+    <textarea name="body" class="form-control" rows="2" placeholder="Your message" required></textarea>
+  </div>
+  <button type="submit" class="btn btn-sm btn-primary">Send Message</button>
+</form>
+
       </div>
 
       <div class="widget">

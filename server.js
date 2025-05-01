@@ -152,6 +152,8 @@ app.use('/', require('./routes/login'));
 app.use('/', require('./routes/dashboard'));
 app.use('/', require('./routes/admin'));
 app.use('/', require('./routes/notifications'));
+app.use('/', require('./routes/messages'));
+
 
 
 // Logout route

@@ -1,6 +1,8 @@
-const express = require('express');
+const express = require('express'); 
 const router = express.Router();
 const Notification = require('../models/Notification');
+const Message = require('../models/Message');
+const User = require('../models/User');
 
 function ensureAuthenticated(req, res, next) {
   if (req.session && req.session.user) return next();
@@ -15,7 +17,7 @@ router.get('/dashboard', ensureAuthenticated, async (req, res) => {
   let view;
   let extraData = {};
 
-  // Load unacknowledged notifications for this role
+  // 🔔 Load unacknowledged notifications for this role
   const notifications = await Notification.find({
     acknowledgedBy: { $ne: user._id },
     targetRoles: user.role
@@ -24,10 +26,31 @@ router.get('/dashboard', ensureAuthenticated, async (req, res) => {
     .limit(5)
     .populate('senderId', 'firstName lastName')
     .lean();
-
   extraData.notifications = notifications;
 
-  // Set view
+  // 💬 Load messages and user list for staff/admin
+  if (['admin', 'staff'].includes(user.role)) {
+    const messages = await Message.find({
+      $or: [
+        { senderId: user._id },
+        { recipientId: user._id }
+      ]
+    })
+      .sort({ createdAt: -1 })
+      .populate('senderId', 'firstName lastName')
+      .populate('recipientId', 'firstName lastName')
+      .lean();
+
+    const userList = await User.find(
+      { role: { $in: ['admin', 'staff'] } },
+      'firstName lastName role'
+    ).lean();
+
+    extraData.messages = messages;
+    extraData.userList = userList;
+  }
+
+  // 👤 Set view based on role
   if (user.role === 'admin') {
     view = 'dashboard-admin';
   } else if (user.role === 'staff') {
@@ -36,9 +59,8 @@ router.get('/dashboard', ensureAuthenticated, async (req, res) => {
     view = 'dashboard-volunteer';
   }
 
-  // Send it all to EJS
+  // 📦 Render view with data
   res.render(view, { user, success, ...extraData });
 });
-
 
 module.exports = router;
