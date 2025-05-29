@@ -1,8 +1,9 @@
-const express = require('express'); 
-const router = express.Router();
+// routes/dashboard.js
+const express      = require('express');
+const router       = express.Router();
 const Notification = require('../models/Notification');
-const Message = require('../models/Message');
-const User = require('../models/User');
+const Message      = require('../models/Message');
+const Announcement = require('../models/Announcement');
 
 function ensureAuthenticated(req, res, next) {
   if (req.session && req.session.user) return next();
@@ -10,47 +11,52 @@ function ensureAuthenticated(req, res, next) {
 }
 
 router.get('/dashboard', ensureAuthenticated, async (req, res) => {
-  const user = req.session.user;
+  const user    = req.session.user;
   const success = req.session.success;
   delete req.session.success;
 
   let view;
-  let extraData = {};
+  const data = {};
 
-  // 🔔 Load unacknowledged notifications for this role
+  // 🔔 1. Load unacknowledged notifications for this role
   const notifications = await Notification.find({
     acknowledgedBy: { $ne: user._id },
-    targetRoles: user.role
+    targetRoles:    user.role
   })
     .sort({ createdAt: -1 })
     .limit(5)
     .populate('senderId', 'firstName lastName')
     .lean();
-  extraData.notifications = notifications;
+  data.notifications = notifications;
 
-  // 💬 Load messages and user list for staff/admin
+  // Only for staff/admin: load recent messages & announcements
   if (['admin', 'staff'].includes(user.role)) {
-    const messages = await Message.find({
-      $or: [
-        { senderId: user._id },
-        { recipientId: user._id }
-      ]
+    // 💬 2. Recent messages *to* me
+    const recentMessages = await Message.find({ recipientId: user._id })
+      .sort({ createdAt: -1 })
+      .limit(3)
+      .populate('senderId', 'firstName lastName')
+      .lean();
+    data.recentMessages = recentMessages;
+
+    // 📢 3. Recent announcements for my role
+    const recentAnns = await Announcement.find({
+      recipients: user.role
     })
       .sort({ createdAt: -1 })
-      .populate('senderId', 'firstName lastName')
-      .populate('recipientId', 'firstName lastName')
+      .limit(3)
+      .populate('sender', 'firstName lastName')
       .lean();
+    data.recentAnns = recentAnns;
 
-    const userList = await User.find(
-      { role: { $in: ['admin', 'staff'] } },
-      'firstName lastName role'
-    ).lean();
-
-    extraData.messages = messages;
-    extraData.userList = userList;
+    // 🔢 4. Aggregate notifications count
+    data.notificationsCount = 
+      notifications.length + 
+      recentMessages.length + 
+      recentAnns.length;
   }
 
-  // 👤 Set view based on role
+  // 👤 Choose template by role
   if (user.role === 'admin') {
     view = 'dashboard-admin';
   } else if (user.role === 'staff') {
@@ -59,8 +65,12 @@ router.get('/dashboard', ensureAuthenticated, async (req, res) => {
     view = 'dashboard-volunteer';
   }
 
-  // 📦 Render view with data
-  res.render(view, { user, success, ...extraData });
+  // 🚀 Render with all data
+  res.render(view, {
+    user,
+    success,
+    ...data
+  });
 });
 
 module.exports = router;

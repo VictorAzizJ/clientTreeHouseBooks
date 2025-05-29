@@ -1,226 +1,206 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Admin Dashboard</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <style>
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 1rem;
-      }
-      .widget {
-        padding: 1rem;
-        border: 1px solid #dee2e6;
-        border-radius: 0.5rem;
-        background-color: #fff;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container mt-5">
-      <% if (success) { %>
-      <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <%= success %>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-        ></button>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Staff Dashboard</title>
+  <link 
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+    rel="stylesheet" />
+  <style>
+    #search-results { max-height: 50vh; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <div class="container mt-5">
+    <h1>Staff Dashboard</h1>
+
+    <!-- ─── QUICK LINKS ROW ────────────────────────── -->
+    <div class="btn-toolbar mt-4 mb-3" role="toolbar">
+      <div class="btn-group me-2" role="group">
+        <a href="/members/new" class="btn btn-success">+ New Member</a>
+        <a href="/members"     class="btn btn-primary">All Members</a>
       </div>
-      <% } %>
-
-      <h1 class="mb-4">Staff Dashboard</h1>
-      <p>Welcome, <%= user.claims ? user.claims.firstName : 'Staff' %>!</p>
-      <!-- dashboard-staff.ejs -->
-      <div class="container mt-4">
-        <h2>Lookup a Member:</h2>
-        <div class="input-group mb-3" style="max-width: 500px">
-          <input
-            id="member-search"
-            type="text"
-            class="form-control"
-            placeholder="Type name or email…"
-            aria-label="Member Search"
-          />
-          <button id="member-go" class="btn btn-primary">Go</button>
-        </div>
+      <div class="btn-group" role="group">
+        <button 
+          id="member-details-btn" 
+          class="btn btn-info" 
+          disabled
+        >
+          View Member Details
+        </button>
       </div>
-
-      <script>
-        // Simple fetch-based autocomplete + redirect
-        const input = document.getElementById("member-search");
-        const goBtn = document.getElementById("member-go");
-        let selectedId = null;
-
-        input.addEventListener("input", async () => {
-          const q = input.value.trim();
-          if (q.length < 2) return;
-          const res = await fetch(`/members/search?q=${encodeURIComponent(q)}`);
-          const items = await res.json();
-          // For simplicity, pick the first hit
-          if (items.length) {
-            selectedId = items[0].id;
-          } else {
-            selectedId = null;
-          }
-          // (You could render a dropdown here instead of just taking the first)
-        });
-
-        goBtn.addEventListener("click", () => {
-          if (selectedId) {
-            window.location.href = `/members/${selectedId}`;
-          } else {
-            alert("No matching member found");
-          }
-        });
-      </script>
-
-      <div class="grid">
-        <div class="widget">
-          <h5>Notifications</h5>
-          <p>Latest updates for your role will appear here.</p>
-          <% if (notifications && notifications.length > 0) { %>
-          <ul class="list-group">
-            <% notifications.forEach(n => { %>
-            <li class="list-group-item">
-              <strong><%= n.title %></strong><br />
-              <%= n.body %><br />
-              <small class="text-muted">
-                From: <%= n.senderId ? n.senderId.firstName + ' ' +
-                n.senderId.lastName : 'Unknown' %>
-              </small>
-              <form
-                action="/notifications/<%= n._id %>/acknowledge"
-                method="POST"
-                class="mt-1"
-              >
-                <button type="submit" class="btn btn-sm btn-outline-success">
-                  Acknowledge
-                </button>
-              </form>
-            </li>
-            <% }) %>
-          </ul>
-          <% } else { %>
-          <p class="text-muted">No new notifications.</p>
-          <% } %>
-        </div>
-
-        <div class="widget">
-          <h5>Post Announcement</h5>
-          <form action="/notifications" method="POST">
-            <input
-              type="text"
-              name="title"
-              class="form-control mb-2"
-              placeholder="Title"
-              required
-            />
-            <textarea
-              name="body"
-              class="form-control mb-2"
-              placeholder="Message"
-              rows="3"
-              required
-            ></textarea>
-            <label>Target Roles:</label><br />
-            <div class="form-check form-check-inline">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                name="targetRoles"
-                value="volunteer"
-                checked
-              />
-              <label class="form-check-label">Volunteers</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                name="targetRoles"
-                value="staff"
-              />
-              <label class="form-check-label">Staff</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                name="targetRoles"
-                value="admin"
-              />
-              <label class="form-check-label">Admin</label>
-            </div>
-            <button type="submit" class="btn btn-primary mt-2">Send</button>
-          </form>
-        </div>
-
-        <div class="widget">
-          <h5>Direct Messages</h5>
-
-          <% if (messages && messages.length > 0) { %>
-          <ul class="list-group mb-3">
-            <% messages.forEach(msg => { %>
-            <li class="list-group-item">
-              <strong
-                ><%= msg.senderId.firstName %> → <%= msg.recipientId.firstName
-                %>:</strong
-              >
-              <br /><%= msg.body %> <br /><small class="text-muted"
-                ><%= new Date(msg.createdAt).toLocaleString() %></small
-              >
-            </li>
-            <% }) %>
-          </ul>
-          <% } else { %>
-          <p class="text-muted">No messages yet.</p>
-          <% } %>
-
-          <form action="/messages" method="POST">
-            <div class="mb-2">
-              <label for="recipientId">Send To:</label>
-              <select name="recipientId" class="form-select" required>
-                <% if (userList && userList.length > 0) { %> <%
-                userList.forEach(u => { if (u._id !== user._id) { %>
-                <option value="<%= u._id %>">
-                  <%= u.firstName %> <%= u.lastName %> (<%= u.role %>)
-                </option>
-                <% }}); %> <% } %>
-              </select>
-            </div>
-            <div class="mb-2">
-              <textarea
-                name="body"
-                class="form-control"
-                rows="2"
-                placeholder="Your message"
-                required
-              ></textarea>
-            </div>
-            <button type="submit" class="btn btn-sm btn-primary">
-              Send Message
-            </button>
-          </form>
-        </div>
-
-        <div class="widget">
-          <h5>Placeholder Widget</h5>
-          <p>Future feature placeholder.</p>
-        </div>
-      </div>
-
-      <a href="/logout" class="btn btn-danger mt-4">Logout</a>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  </body>
+    <!-- ─── TOP WIDGETS ───────────────────────────── -->
+    <div class="row g-3">
+      <!-- Notifications -->
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-header bg-warning text-dark">
+            Notifications
+          </div>
+          <div class="card-body">
+            <h2 class="card-title">
+              <%= notificationsCount %>
+            </h2>
+            <p class="card-text">new items</p>
+          </div>
+        </div>
+      </div>
+      <!-- Messages -->
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-header bg-primary text-white">Messages</div>
+          <ul class="list-group list-group-flush">
+            <% recentMessages.forEach(msg => { %>
+              <li class="list-group-item text-start">
+                <strong><%= msg.sender.firstName %>:</strong>
+                <%= msg.content.length > 30 
+                      ? msg.content.slice(0,30) + '…'
+                      : msg.content %>
+              </li>
+            <% }) %>
+            <% if (recentMessages.length === 0) { %>
+              <li class="list-group-item">No recent messages</li>
+            <% } %>
+          </ul>
+          <div class="card-footer">
+            <a href="/messages" class="btn btn-sm btn-outline-primary">
+              View All
+            </a>
+          </div>
+        </div>
+      </div>
+      <!-- Announcements -->
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-header bg-success text-white">Announcements</div>
+          <ul class="list-group list-group-flush">
+            <% recentAnns.forEach(a => { %>
+              <li class="list-group-item text-start">
+                <strong><%= a.sender.firstName %>:</strong>
+                <%= a.content.length > 30 
+                      ? a.content.slice(0,30) + '…'
+                      : a.content %>
+              </li>
+            <% }) %>
+            <% if (recentAnns.length === 0) { %>
+              <li class="list-group-item">No recent announcements</li>
+            <% } %>
+          </ul>
+          <div class="card-footer">
+            <a href="/announcements" class="btn btn-sm btn-outline-success">
+              View All
+            </a>
+          </div>
+        </div>
+      </div>
+      <!-- Placeholder -->
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-header bg-secondary text-white">Placeholder</div>
+          <div class="card-body">
+            <p class="card-text">Coming soon…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── MEMBER MANAGEMENT WIDGETS ─────────────── -->
+    <div class="row g-4 mt-4">
+      <!-- Lookup Member -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header bg-info text-white">Lookup Member</div>
+          <div class="card-body">
+            <div class="input-group mb-3">
+              <input
+                id="member-search"
+                type="text"
+                class="form-control"
+                placeholder="Name or email…"
+              />
+              <button id="member-search-btn" class="btn btn-primary">
+                Search
+              </button>
+            </div>
+            <div id="search-results" class="list-group"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Add New Member -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header bg-success text-white">Add New Member</div>
+          <div class="card-body">
+            <form id="add-member-form" action="/members" method="POST">
+              <div class="mb-2">
+                <input name="firstName" class="form-control" placeholder="First Name" required>
+              </div>
+              <div class="mb-2">
+                <input name="lastName"    class="form-control" placeholder="Last Name" required>
+              </div>
+              <div class="mb-2">
+                <input name="email"       type="email" class="form-control" placeholder="Email" required>
+              </div>
+              <div class="mb-2">
+                <input name="phone"       class="form-control" placeholder="Phone">
+              </div>
+              <div class="mb-2">
+                <textarea name="address" class="form-control" placeholder="Address"></textarea>
+              </div>
+              <button class="btn btn-success w-100">Add Member</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const searchInput = document.getElementById('member-search');
+    const searchBtn   = document.getElementById('member-search-btn');
+    const resultsDiv  = document.getElementById('search-results');
+    const detailsBtn  = document.getElementById('member-details-btn');
+    let selectedId = null;
+
+    async function doSearch() {
+      const q = searchInput.value.trim();
+      if (q.length < 2) {
+        resultsDiv.innerHTML = '';
+        selectedId = null;
+        detailsBtn.disabled = true;
+        return;
+      }
+      const res = await fetch(`/members/search?q=${encodeURIComponent(q)}`);
+      const items = await res.json();
+      resultsDiv.innerHTML = items.length
+        ? items.map(i => {
+            if (!selectedId) selectedId = i.id;
+            return `<a href="/members/${i.id}"
+                       class="list-group-item list-group-item-action">
+                      ${i.text}
+                    </a>`;
+          }).join('')
+        : `<div class="list-group-item">No members found</div>`;
+      detailsBtn.disabled = !selectedId;
+    }
+
+    searchBtn.addEventListener('click', doSearch);
+    searchInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        doSearch();
+      }
+    });
+
+    detailsBtn.addEventListener('click', () => {
+      if (selectedId) {
+        window.location.href = `/members/${selectedId}`;
+      }
+    });
+  </script>
+</body>
 </html>

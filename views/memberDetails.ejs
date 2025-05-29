@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>…</head>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Member Details</title>
+  <link 
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+    rel="stylesheet" />
+</head>
 <body>
   <div class="container mt-5">
     <h1>Member: <%= member.firstName %> <%= member.lastName %></h1>
@@ -15,18 +22,25 @@
     <% } else { %>
       <table class="table">
         <thead>
-          <tr><th>Book</th><th>Out</th><th>Due</th><th>Returned</th></tr>
+          <tr>
+            <th>Book</th>
+            <th>Checked Out</th>
+            <th>Due On</th>
+            <th>Returned On</th>
+          </tr>
         </thead>
         <tbody>
           <% history.forEach(c => { %>
             <tr>
               <td><%= c.bookTitle %></td>
-              <td><%= c.checkoutOn.toLocaleDateString() %></td>
-              <td><%= c.dueOn.toLocaleDateString() %></td>
+              <td><%= new Date(c.checkoutOn).toLocaleDateString() %></td>
+              <td><%= new Date(c.dueOn).toLocaleDateString() %></td>
               <td>
-                <%= c.returnedOn 
-                    ? c.returnedOn.toLocaleDateString() 
-                    : '<em>Not returned</em>' %>
+                <% if (c.returnedOn) { %>
+                  <%= new Date(c.returnedOn).toLocaleDateString() %>
+                <% } else { %>
+                  <em>Not returned</em>
+                <% } %>
               </td>
             </tr>
           <% }) %>
@@ -34,7 +48,9 @@
       </table>
     <% } %>
 
-    <a href="/members" class="btn btn-secondary">Back to Members</a>
+    <a href="/members" class="btn btn-primary me-2">Back to Member List</a>
+    <a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
   </div>
 </body>
 </html>
+
