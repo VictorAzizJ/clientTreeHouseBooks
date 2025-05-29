@@ -1,12 +1,12 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Staff Dashboard</title>
   <link 
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
-    rel="stylesheet">
+    rel="stylesheet" />
   <style>
     .grid {
       display: grid;
@@ -18,7 +18,7 @@
       border: 1px solid #dee2e6;
       border-radius: 0.5rem;
       background-color: #fff;
-      box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+      box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
     }
   </style>
 </head>
@@ -33,21 +33,21 @@
     <% } %>
 
     <h1 class="mb-4">Staff Dashboard</h1>
-    <p>Welcome, <%= user.claims ? user.claims.firstName : user.firstName %>!</p>
+    <p>Welcome, <%= user.firstName %>!</p>
 
     <div class="grid">
-      <!-- ─── Notifications ─────────────────────────────── -->
+      <!-- Notifications -->
       <div class="widget">
         <h5>Notifications</h5>
-        <% if (notifications && notifications.length > 0) { %>
+        <% if (notifications.length) { %>
           <ul class="list-group">
             <% notifications.forEach(n => { %>
               <li class="list-group-item">
                 <strong><%= n.title %></strong><br>
                 <%= n.body %><br>
                 <small class="text-muted">
-                  From: <%= n.senderId 
-                              ? n.senderId.firstName + ' ' + n.senderId.lastName 
+                  From: <%= n.senderId
+                              ? `${n.senderId.firstName} ${n.senderId.lastName}`
                               : 'Unknown' %>
                 </small>
                 <form 
@@ -67,7 +67,7 @@
         <% } %>
       </div>
 
-      <!-- ─── Post Announcement ─────────────────────────── -->
+      <!-- Post Announcement -->
       <div class="widget">
         <h5>Post Announcement</h5>
         <form action="/notifications" method="POST">
@@ -86,33 +86,35 @@
             required
           ></textarea>
           <label>Target Roles:</label><br>
-          <% ['volunteer','staff','admin'].forEach(role => { %>
+          <% ['volunteer','staff','admin'].forEach(r => { %>
             <div class="form-check form-check-inline">
               <input 
                 class="form-check-input" 
                 type="checkbox" 
                 name="targetRoles" 
-                value="<%= role %>"
-                <%= role==='volunteer' ? 'checked' : '' %>
+                value="<%= r %>"
+                <%= r==='volunteer' ? 'checked' : '' %>
               >
               <label class="form-check-label">
-                <%= role.charAt(0).toUpperCase() + role.slice(1) %>
+                <%= r.charAt(0).toUpperCase()+r.slice(1) %>
               </label>
             </div>
           <% }) %>
-          <button type="submit" class="btn btn-primary mt-2">Send</button>
+          <button type="submit" class="btn btn-primary mt-2">
+            Send
+          </button>
         </form>
       </div>
 
-      <!-- ─── Direct Messages ───────────────────────────── -->
+      <!-- Direct Messages -->
       <div class="widget">
         <h5>Direct Messages</h5>
-        <% if (messages && messages.length > 0) { %>
+        <% if (messages.length) { %>
           <ul class="list-group mb-3">
             <% messages.forEach(msg => { %>
               <li class="list-group-item">
                 <strong>
-                  <%= msg.senderId.firstName %> → 
+                  <%= msg.senderId.firstName %> →
                   <%= msg.recipientId.firstName %>:
                 </strong><br>
                 <%= msg.body %><br>
@@ -128,18 +130,12 @@
         <form action="/messages" method="POST">
           <div class="mb-2">
             <label for="recipientId">Send To:</label>
-            <select 
-              name="recipientId" 
-              class="form-select" 
-              required
-            >
-              <% userList.forEach(u => { 
-                   if (u._id.toString() !== user._id.toString()) { %>
+            <select name="recipientId" class="form-select" required>
+              <% userList.forEach(u => { %>
                 <option value="<%= u._id %>">
-                  <%= u.firstName %> <%= u.lastName %> 
-                  (<%= u.role %>)
+                  <%= u.firstName %> <%= u.lastName %> (<%= u.role %>)
                 </option>
-              <% }}); %>
+              <% }) %>
             </select>
           </div>
           <div class="mb-2">
@@ -157,47 +153,32 @@
         </form>
       </div>
 
-      <!-- ─── Members Management ───────────────────────── -->
+      <!-- Members Management -->
       <div class="widget">
         <h5>Members</h5>
         <p>Add or lookup members.</p>
         <div class="d-grid gap-2">
-          <a 
-            href="/members/new" 
-            class="btn btn-sm btn-success"
-          >
+          <a href="/members/new" class="btn btn-sm btn-success">
             Add Member
           </a>
-          <a 
-            href="/members" 
-            class="btn btn-sm btn-primary"
-          >
+          <a href="/members" class="btn btn-sm btn-primary">
             All Members
           </a>
         </div>
       </div>
 
-      <!-- ─── Book Checkouts ───────────────────────────── -->
+      <!-- Book Checkouts -->
       <div class="widget">
         <h5>Book Checkouts</h5>
-        <p>Record and view book checkouts.</p>
+        <p>View & record checkouts via the member profile page.</p>
         <div class="d-grid gap-2">
-          <a 
-            href="/checkouts/new" 
-            class="btn btn-sm btn-success"
-          >
-            New Checkout
-          </a>
-          <a 
-            href="/checkouts" 
-            class="btn btn-sm btn-primary"
-          >
-            All Checkouts
+          <a href="/members" class="btn btn-sm btn-success">
+            Go To Members
           </a>
         </div>
       </div>
 
-      <!-- ─── Future Placeholder ───────────────────────── -->
+      <!-- Placeholder -->
       <div class="widget">
         <h5>Placeholder Widget</h5>
         <p>Future feature placeholder.</p>
