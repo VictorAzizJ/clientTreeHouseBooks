@@ -10,46 +10,115 @@
 </head>
 <body>
   <div class="container mt-5">
-    <h1>Member: <%= member.firstName %> <%= member.lastName %></h1>
-    <p><strong>Email:</strong> <%= member.email %></p>
-    <p><strong>Phone:</strong> <%= member.phone || 'N/A' %></p>
-    <p><strong>Address:</strong> <%= member.address || 'N/A' %></p>
-    <p><strong>Joined:</strong> <%= member.joinedAt.toLocaleDateString() %></p>
 
-    <h2 class="mt-4">Checkout History</h2>
+    <!-- Greeting & navigation -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1>
+        Member: <%= member.firstName %> <%= member.lastName %>
+      </h1>
+      <div>
+        <a href="/members"   class="btn btn-primary me-2">← Member List</a>
+        <a href="/dashboard" class="btn btn-secondary">← Dashboard</a>
+      </div>
+    </div>
+
+    <!-- Member info -->
+    <div class="mb-4">
+      <p><strong>Email:</strong> <%= member.email %></p>
+      <p><strong>Phone:</strong> <%= member.phone || 'N/A' %></p>
+      <p><strong>Address:</strong> <%= member.address || 'N/A' %></p>
+      <p><strong>Joined:</strong> <%= member.joinedAt.toLocaleDateString() %></p>
+    </div>
+
+    <!-- Checkout history -->
+    <h2>Checkout History</h2>
     <% if (history.length === 0) { %>
-      <p>No checkouts yet.</p>
+      <p>No previous checkouts.</p>
     <% } else { %>
-      <table class="table">
+      <table class="table mb-5">
         <thead>
           <tr>
-            <th>Book</th>
-            <th>Checked Out</th>
-            <th>Due On</th>
-            <th>Returned On</th>
+            <th>#</th>
+            <th>Books</th>
+            <th>Genres</th>
+            <th>Weight (kg)</th>
+            <th>Date</th>
           </tr>
         </thead>
         <tbody>
-          <% history.forEach(c => { %>
+          <% history.forEach((c,i) => { %>
             <tr>
-              <td><%= c.bookTitle %></td>
-              <td><%= new Date(c.checkoutOn).toLocaleDateString() %></td>
-              <td><%= new Date(c.dueOn).toLocaleDateString() %></td>
-              <td>
-                <% if (c.returnedOn) { %>
-                  <%= new Date(c.returnedOn).toLocaleDateString() %>
-                <% } else { %>
-                  <em>Not returned</em>
-                <% } %>
-              </td>
+              <td><%= i+1 %></td>
+              <td><%= c.numberOfBooks %></td>
+              <td><%= c.genres.join(', ') %></td>
+              <td><%= c.weight ?? '—' %></td>
+              <td><%= new Date(c.checkoutDate).toLocaleString() %></td>
             </tr>
           <% }) %>
         </tbody>
       </table>
     <% } %>
 
-    <a href="/members" class="btn btn-primary me-2">Back to Member List</a>
-    <a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+    <!-- New Checkout form -->
+    <div class="card mb-5">
+      <div class="card-header bg-success text-white">
+        Record a New Checkout
+      </div>
+      <div class="card-body">
+        <form action="/checkouts" method="POST">
+          <!-- hidden memberId -->
+          <input type="hidden" name="memberId" value="<%= member._id %>">
+          <!-- hidden redirect back here -->
+          <input type="hidden" name="redirectTo" value="/members/<%= member._id %>">
+
+          <div class="mb-3">
+            <label class="form-label">Number of Books</label>
+            <input
+              type="number"
+              name="numberOfBooks"
+              class="form-control"
+              min="1"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Genres</label><br>
+            <% const allGenres = ['Kids Board Books','Women Empowerment','Black Author','Young Adult']; %>
+            <% allGenres.forEach(g => { %>
+              <div class="form-check form-check-inline">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  name="genres"
+                  value="<%= g %>"
+                  id="genre-<%= g.replace(/\s+/g,'') %>"
+                  required
+                />
+                <label class="form-check-label" for="genre-<%= g.replace(/\s+/g,'') %>">
+                  <%= g %>
+                </label>
+              </div>
+            <% }) %>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Total Weight (kg, optional)</label>
+            <input
+              type="number"
+              name="weight"
+              step="0.01"
+              class="form-control"
+            />
+          </div>
+
+          <button type="submit" class="btn btn-success">
+            Record Checkout
+          </button>
+        </form>
+      </div>
+    </div>
+
   </div>
 </body>
 </html>

@@ -154,6 +154,7 @@ app.use('/', require('./routes/admin'));
 app.use('/', require('./routes/notifications'));
 app.use('/', require('./routes/messages'));
 app.use('/', require('./routes/members'));
+app.use('/', require('./routes/checkouts'));
 
 
 
