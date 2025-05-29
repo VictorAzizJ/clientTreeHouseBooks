@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>…</head>
+<body>
+  <div class="container mt-5">
+    <h1>New Member</h1>
+    <form action="/members" method="POST">
+      <div class="mb-3">
+        <label class="form-label">First Name</label>
+        <input name="firstName" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Last Name</label>
+        <input name="lastName" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input name="email" type="email" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Phone</label>
+        <input name="phone" class="form-control">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Address</label>
+        <textarea name="address" class="form-control"></textarea>
+      </div>
+      <button class="btn btn-success">Create Member</button>
+      <a href="/dashboard" class="btn btn-secondary">Cancel</a>
+    </form>
+  </div>
+</body>
+</html>

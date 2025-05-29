@@ -153,6 +153,7 @@ app.use('/', require('./routes/dashboard'));
 app.use('/', require('./routes/admin'));
 app.use('/', require('./routes/notifications'));
 app.use('/', require('./routes/messages'));
+app.use('/', require('./routes/members'));
 
 
 

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>…</head>
+<body>
+  <div class="container mt-5">
+    <h1>Member: <%= member.firstName %> <%= member.lastName %></h1>
+    <p><strong>Email:</strong> <%= member.email %></p>
+    <p><strong>Phone:</strong> <%= member.phone || 'N/A' %></p>
+    <p><strong>Address:</strong> <%= member.address || 'N/A' %></p>
+    <p><strong>Joined:</strong> <%= member.joinedAt.toLocaleDateString() %></p>
+
+    <h2 class="mt-4">Checkout History</h2>
+    <% if (history.length === 0) { %>
+      <p>No checkouts yet.</p>
+    <% } else { %>
+      <table class="table">
+        <thead>
+          <tr><th>Book</th><th>Out</th><th>Due</th><th>Returned</th></tr>
+        </thead>
+        <tbody>
+          <% history.forEach(c => { %>
+            <tr>
+              <td><%= c.bookTitle %></td>
+              <td><%= c.checkoutOn.toLocaleDateString() %></td>
+              <td><%= c.dueOn.toLocaleDateString() %></td>
+              <td>
+                <%= c.returnedOn 
+                    ? c.returnedOn.toLocaleDateString() 
+                    : '<em>Not returned</em>' %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+
+    <a href="/members" class="btn btn-secondary">Back to Members</a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>…</head>
+<body>
+  <div class="container mt-5">
+    <h1>All Members</h1>
+    <a href="/members/new" class="btn btn-primary mb-3">+ New Member</a>
+    <table class="table">
+      <thead>
+        <tr><th>Name</th><th>Email</th><th>Joined</th></tr>
+      </thead>
+      <tbody>
+        <% members.forEach(m => { %>
+          <tr>
+            <td>
+              <a href="/members/<%= m._id %>">
+                <%= m.firstName %> <%= m.lastName %>
+              </a>
+            </td>
+            <td><%= m.email %></td>
+            <td><%= m.joinedAt.toLocaleDateString() %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+  </div>
+</body>
+</html>
