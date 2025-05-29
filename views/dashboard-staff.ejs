@@ -14,47 +14,26 @@
 <body>
   <div class="container mt-5">
     <h1>Staff Dashboard</h1>
-    <div class="d-flex justify-content-between align-items-center mt-3">
+
+    <!-- Welcome + Logout -->
+    <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
       <h2>Welcome back, <%= user.firstName %>!</h2>
       <a href="/logout" class="btn btn-outline-danger">Logout</a>
     </div>
-    
-    <!-- Quick Links and Widgets… -->
-    
-    <!-- ─── QUICK LINKS ROW ────────────────────────── -->
-    <div class="btn-toolbar mt-4 mb-3" role="toolbar">
-      <div class="btn-group me-2" role="group">
-        <a href="/members/new" class="btn btn-success">+ New Member</a>
-        <a href="/members"     class="btn btn-primary">All Members</a>
-      </div>
-      <div class="btn-group" role="group">
-        <button 
-          id="member-details-btn" 
-          class="btn btn-info" 
-          disabled
-        >
-          View Member Details
-        </button>
-      </div>
-    </div>
 
-    <!-- ─── TOP WIDGETS ───────────────────────────── -->
+    <!-- Top widgets row -->
     <div class="row g-3">
       <!-- Notifications -->
       <div class="col-md-3">
         <div class="card text-center">
-          <div class="card-header bg-warning text-dark">
-            Notifications
-          </div>
+          <div class="card-header bg-warning text-dark">Notifications</div>
           <div class="card-body">
-            <h2 class="card-title">
-              <%= notificationsCount %>
-            </h2>
+            <h2 class="card-title"><%= notificationsCount %></h2>
             <p class="card-text">new items</p>
           </div>
         </div>
       </div>
-      <!-- Messages -->
+      <!-- Recent Messages -->
       <div class="col-md-3">
         <div class="card text-center">
           <div class="card-header bg-primary text-white">Messages</div>
@@ -72,13 +51,11 @@
             <% } %>
           </ul>
           <div class="card-footer">
-            <a href="/messages" class="btn btn-sm btn-outline-primary">
-              View All
-            </a>
+            <a href="/messages" class="btn btn-sm btn-outline-primary">View All</a>
           </div>
         </div>
       </div>
-      <!-- Announcements -->
+      <!-- Recent Announcements -->
       <div class="col-md-3">
         <div class="card text-center">
           <div class="card-header bg-success text-white">Announcements</div>
@@ -96,9 +73,7 @@
             <% } %>
           </ul>
           <div class="card-footer">
-            <a href="/announcements" class="btn btn-sm btn-outline-success">
-              View All
-            </a>
+            <a href="/announcements" class="btn btn-sm btn-outline-success">View All</a>
           </div>
         </div>
       </div>
@@ -113,7 +88,7 @@
       </div>
     </div>
 
-    <!-- ─── MEMBER MANAGEMENT WIDGETS ─────────────── -->
+    <!-- Member widgets row -->
     <div class="row g-4 mt-4">
       <!-- Lookup Member -->
       <div class="col-md-6">
@@ -127,9 +102,7 @@
                 class="form-control"
                 placeholder="Name or email…"
               />
-              <button id="member-search-btn" class="btn btn-primary">
-                Search
-              </button>
+              <button id="member-search-btn" class="btn btn-primary">Search</button>
             </div>
             <div id="search-results" class="list-group"></div>
           </div>
@@ -140,7 +113,7 @@
         <div class="card">
           <div class="card-header bg-success text-white">Add New Member</div>
           <div class="card-body">
-            <form id="add-member-form" action="/members" method="POST">
+            <form action="/members" method="POST">
               <div class="mb-2">
                 <input name="firstName" class="form-control" placeholder="First Name" required>
               </div>
@@ -166,45 +139,29 @@
   </div>
 
   <script>
-    const searchInput = document.getElementById('member-search');
-    const searchBtn   = document.getElementById('member-search-btn');
-    const resultsDiv  = document.getElementById('search-results');
-    const detailsBtn  = document.getElementById('member-details-btn');
-    let selectedId = null;
+    const input = document.getElementById('member-search');
+    const btn   = document.getElementById('member-search-btn');
+    const out   = document.getElementById('search-results');
 
     async function doSearch() {
-      const q = searchInput.value.trim();
-      if (q.length < 2) {
-        resultsDiv.innerHTML = '';
-        selectedId = null;
-        detailsBtn.disabled = true;
-        return;
-      }
+      const q = input.value.trim();
+      if (q.length < 2) { out.innerHTML = ''; return; }
       const res = await fetch(`/members/search?q=${encodeURIComponent(q)}`);
       const items = await res.json();
-      resultsDiv.innerHTML = items.length
-        ? items.map(i => {
-            if (!selectedId) selectedId = i.id;
-            return `<a href="/members/${i.id}"
-                       class="list-group-item list-group-item-action">
-                      ${i.text}
-                    </a>`;
-          }).join('')
+      out.innerHTML = items.length
+        ? items.map(i => `
+            <a href="/members/${i.id}" class="list-group-item list-group-item-action">
+              ${i.text}
+            </a>
+          `).join('')
         : `<div class="list-group-item">No members found</div>`;
-      detailsBtn.disabled = !selectedId;
     }
 
-    searchBtn.addEventListener('click', doSearch);
-    searchInput.addEventListener('keydown', e => {
+    btn.addEventListener('click', doSearch);
+    input.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         e.preventDefault();
         doSearch();
-      }
-    });
-
-    detailsBtn.addEventListener('click', () => {
-      if (selectedId) {
-        window.location.href = `/members/${selectedId}`;
       }
     });
   </script>
