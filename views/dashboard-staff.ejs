@@ -1,120 +1,216 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
-  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Staff Dashboard</title>
   <link 
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
-    rel="stylesheet" />
+    rel="stylesheet">
   <style>
-    .clickable-card { cursor: pointer; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+    .widget {
+      padding: 1rem;
+      border: 1px solid #dee2e6;
+      border-radius: 0.5rem;
+      background-color: #fff;
+      box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
   </style>
 </head>
 <body>
   <div class="container mt-5">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h1>Welcome back, <%= user.firstName %>!</h1>
-      <a href="/logout" class="btn btn-outline-danger">Logout</a>
+
+    <% if (success) { %>
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <%= success %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    <% } %>
+
+    <h1 class="mb-4">Staff Dashboard</h1>
+    <p>Welcome, <%= user.claims ? user.claims.firstName : user.firstName %>!</p>
+
+    <div class="grid">
+      <!-- ─── Notifications ─────────────────────────────── -->
+      <div class="widget">
+        <h5>Notifications</h5>
+        <% if (notifications && notifications.length > 0) { %>
+          <ul class="list-group">
+            <% notifications.forEach(n => { %>
+              <li class="list-group-item">
+                <strong><%= n.title %></strong><br>
+                <%= n.body %><br>
+                <small class="text-muted">
+                  From: <%= n.senderId 
+                              ? n.senderId.firstName + ' ' + n.senderId.lastName 
+                              : 'Unknown' %>
+                </small>
+                <form 
+                  action="/notifications/<%= n._id %>/acknowledge" 
+                  method="POST" 
+                  class="mt-1"
+                >
+                  <button type="submit" class="btn btn-sm btn-outline-success">
+                    Acknowledge
+                  </button>
+                </form>
+              </li>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <p class="text-muted">No new notifications.</p>
+        <% } %>
+      </div>
+
+      <!-- ─── Post Announcement ─────────────────────────── -->
+      <div class="widget">
+        <h5>Post Announcement</h5>
+        <form action="/notifications" method="POST">
+          <input 
+            type="text" 
+            name="title" 
+            class="form-control mb-2" 
+            placeholder="Title" 
+            required
+          >
+          <textarea 
+            name="body" 
+            class="form-control mb-2" 
+            placeholder="Message" 
+            rows="3" 
+            required
+          ></textarea>
+          <label>Target Roles:</label><br>
+          <% ['volunteer','staff','admin'].forEach(role => { %>
+            <div class="form-check form-check-inline">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                name="targetRoles" 
+                value="<%= role %>"
+                <%= role==='volunteer' ? 'checked' : '' %>
+              >
+              <label class="form-check-label">
+                <%= role.charAt(0).toUpperCase() + role.slice(1) %>
+              </label>
+            </div>
+          <% }) %>
+          <button type="submit" class="btn btn-primary mt-2">Send</button>
+        </form>
+      </div>
+
+      <!-- ─── Direct Messages ───────────────────────────── -->
+      <div class="widget">
+        <h5>Direct Messages</h5>
+        <% if (messages && messages.length > 0) { %>
+          <ul class="list-group mb-3">
+            <% messages.forEach(msg => { %>
+              <li class="list-group-item">
+                <strong>
+                  <%= msg.senderId.firstName %> → 
+                  <%= msg.recipientId.firstName %>:
+                </strong><br>
+                <%= msg.body %><br>
+                <small class="text-muted">
+                  <%= new Date(msg.createdAt).toLocaleString() %>
+                </small>
+              </li>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <p class="text-muted">No messages yet.</p>
+        <% } %>
+        <form action="/messages" method="POST">
+          <div class="mb-2">
+            <label for="recipientId">Send To:</label>
+            <select 
+              name="recipientId" 
+              class="form-select" 
+              required
+            >
+              <% userList.forEach(u => { 
+                   if (u._id.toString() !== user._id.toString()) { %>
+                <option value="<%= u._id %>">
+                  <%= u.firstName %> <%= u.lastName %> 
+                  (<%= u.role %>)
+                </option>
+              <% }}); %>
+            </select>
+          </div>
+          <div class="mb-2">
+            <textarea 
+              name="body" 
+              class="form-control" 
+              rows="2" 
+              placeholder="Your message" 
+              required
+            ></textarea>
+          </div>
+          <button type="submit" class="btn btn-sm btn-primary">
+            Send Message
+          </button>
+        </form>
+      </div>
+
+      <!-- ─── Members Management ───────────────────────── -->
+      <div class="widget">
+        <h5>Members</h5>
+        <p>Add or lookup members.</p>
+        <div class="d-grid gap-2">
+          <a 
+            href="/members/new" 
+            class="btn btn-sm btn-success"
+          >
+            Add Member
+          </a>
+          <a 
+            href="/members" 
+            class="btn btn-sm btn-primary"
+          >
+            All Members
+          </a>
+        </div>
+      </div>
+
+      <!-- ─── Book Checkouts ───────────────────────────── -->
+      <div class="widget">
+        <h5>Book Checkouts</h5>
+        <p>Record and view book checkouts.</p>
+        <div class="d-grid gap-2">
+          <a 
+            href="/checkouts/new" 
+            class="btn btn-sm btn-success"
+          >
+            New Checkout
+          </a>
+          <a 
+            href="/checkouts" 
+            class="btn btn-sm btn-primary"
+          >
+            All Checkouts
+          </a>
+        </div>
+      </div>
+
+      <!-- ─── Future Placeholder ───────────────────────── -->
+      <div class="widget">
+        <h5>Placeholder Widget</h5>
+        <p>Future feature placeholder.</p>
+      </div>
     </div>
 
-    <!-- Mosaic grid: 3 cols x 2 rows -->
-    <div class="row g-4">
-      <!-- Notifications -->
-      <div class="col-md-4">
-        <div class="card clickable-card h-100"
-             onclick="location.href='/notifications'">
-          <div class="card-header bg-warning text-dark">Notifications</div>
-          <div class="card-body text-center">
-            <h2 class="card-title"><%= notificationsCount %></h2>
-            <p class="card-text">new items</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Messages -->
-      <div class="col-md-4">
-        <div class="card clickable-card h-100"
-             onclick="location.href='/messages'">
-          <div class="card-header bg-primary text-white">Messages</div>
-          <div class="card-body">
-            <% if (recentMessages.length) { %>
-              <ul class="list-group list-group-flush">
-                <% recentMessages.forEach(msg => { %>
-                  <li class="list-group-item text-start">
-                    <strong><%= msg.sender.firstName %>:</strong>
-                    <%= msg.content.slice(0, 30) %>…
-                  </li>
-                <% }) %>
-              </ul>
-            <% } else { %>
-              <p class="text-center my-3">No recent messages</p>
-            <% } %>
-          </div>
-          <div class="card-footer text-center">
-            View All
-          </div>
-        </div>
-      </div>
-
-      <!-- Announcements -->
-      <div class="col-md-4">
-        <div class="card clickable-card h-100"
-             onclick="location.href='/announcements'">
-          <div class="card-header bg-success text-white">Announcements</div>
-          <div class="card-body">
-            <% if (recentAnns.length) { %>
-              <ul class="list-group list-group-flush">
-                <% recentAnns.forEach(a => { %>
-                  <li class="list-group-item text-start">
-                    <strong><%= a.sender.firstName %>:</strong>
-                    <%= a.content.slice(0, 30) %>…
-                  </li>
-                <% }) %>
-              </ul>
-            <% } else { %>
-              <p class="text-center my-3">No recent announcements</p>
-            <% } %>
-          </div>
-          <div class="card-footer text-center">
-            View All
-          </div>
-        </div>
-      </div>
-
-      <!-- New Member -->
-      <div class="col-md-4">
-        <div class="card clickable-card h-100"
-             onclick="location.href='/members/new'">
-          <div class="card-header bg-success text-white">New Member</div>
-          <div class="card-body text-center">
-            <p class="card-text">Add someone new</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- All Members -->
-      <div class="col-md-4">
-        <div class="card clickable-card h-100"
-             onclick="location.href='/members'">
-          <div class="card-header bg-primary text-white">All Members</div>
-          <div class="card-body text-center">
-            <p class="card-text">View member list</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Placeholder -->
-      <div class="col-md-4">
-        <div class="card h-100 text-center">
-          <div class="card-header bg-secondary text-white">Placeholder</div>
-          <div class="card-body">
-            <p class="card-text">Coming soon…</p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <a href="/logout" class="btn btn-danger mt-4">Logout</a>
   </div>
+
+  <script 
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+  </script>
 </body>
 </html>
+
 
