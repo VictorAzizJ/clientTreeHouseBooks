@@ -1,0 +1,71 @@
+<!DOCTYPE html><html lang="en"><head>
+  <!-- Include Bootstrap & Tabs JS -->
+</head><body>
+  <div class="container mt-5">
+    <h1><%= program.name %></h1>
+    <p><%= program.description || '' %></p>
+
+    <!-- Tab nav -->
+    <ul class="nav nav-tabs mb-4">
+      <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#attendees">Attendees</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#attendance">Attendance</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#metrics">Metrics</a>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+      <!-- Attendees Tab -->
+      <div id="attendees" class="tab-pane fade show active">
+        <a 
+          href="/programs/<%= program._id %>/attendees/new" 
+          class="btn btn-sm btn-success mb-3"
+        >
+          + Register Attendee
+        </a>
+        <a 
+          href="/programs/<%= program._id %>/attendees" 
+          class="btn btn-sm btn-primary mb-3 ms-2"
+        >
+          View All Attendees
+        </a>
+      </div>
+
+      <!-- Attendance Tab -->
+      <div id="attendance" class="tab-pane fade">
+        <a 
+          href="/programs/<%= program._id %>/attendance" 
+          class="btn btn-sm btn-success mb-3"
+        >
+          Record Attendance
+        </a>
+      </div>
+
+      <!-- Metrics Tab -->
+      <div id="metrics" class="tab-pane fade">
+        <a 
+          href="/programs/<%= program._id %>/metrics/data?date=<%= new Date().toISOString().slice(0,10) %>" 
+          class="btn btn-sm btn-success mb-3"
+        >
+          Enter Metrics
+        </a>
+        <a 
+          href="/programs/<%= program._id %>/metrics" 
+          class="btn btn-sm btn-primary mb-3 ms-2"
+        >
+          View Metric Definitions
+        </a>
+      </div>
+    </div>
+
+    <a href="/programs" class="btn btn-secondary mt-4">Back to Programs</a>
+  </div>
+
+  <script 
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+  </script>
+</body></html>

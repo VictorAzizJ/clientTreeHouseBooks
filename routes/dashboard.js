@@ -4,6 +4,7 @@ const express      = require('express');
 const router       = express.Router();
 const Notification = require('../models/Notification');
 const Message      = require('../models/Message');
+const Program      = require('../models/Program');
 const User         = require('../models/User');
 
 /**
@@ -73,13 +74,20 @@ router.get('/dashboard', ensureAuthenticated, async (req, res) => {
     view = 'dashboard-volunteer';
   }
 
+    // 3) Count total programs
+  let programCount = 0;
+  if (['admin','staff'].includes(user.role)) {
+    programCount = await Program.countDocuments();
+  }
+
   // Render with everything the EJS needs
   res.render(view, {
     user,
     success,
     notifications,
     messages,
-    userList
+    userList,
+    programCount
   });
 });
 
