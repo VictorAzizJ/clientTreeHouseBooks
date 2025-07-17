@@ -6,6 +6,7 @@ const Attendee  = require('../models/Attendee');
 const Attendance= require('../models/Attendance');
 const MetricDef = require('../models/MetricDefinition');
 const MetricVal = require('../models/MetricValue');
+const { ensureAuthenticated, ensureStaff } = require('./_middleware');
 
 function ensureAuthenticated(req, res, next) {
   if (req.session?.user && ['admin','staff'].includes(req.session.user.role)) {

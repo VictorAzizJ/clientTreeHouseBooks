@@ -156,7 +156,9 @@ app.use('/', require('./routes/messages'));
 app.use('/', require('./routes/members'));
 app.use('/', require('./routes/checkouts'));
 app.use('/', require('./routes/programs'));
-
+app.use('/', require('./routes/attendees'));
+app.use('/', require('./routes/attendance'));
+app.use('/', require('./routes/metrics'))
 
 
 
