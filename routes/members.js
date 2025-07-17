@@ -5,32 +5,32 @@ const Member   = require('../models/Member');
 const Checkout = require('../models/Checkout');
 
 // Middleware: Only staff or admin
-function ensureStaff(req, res, next) {
+function ensureAuthenticated(req, res, next) {
   const role = req.session.user?.role;
   if (role === 'staff' || role === 'admin') return next();
   res.status(403).send('Forbidden');
 }
 
 // 1. GET /members/new — form to add a new member
-router.get('/members/new', ensureStaff, (req, res) => {
+router.get('/members/new', ensureAuthenticated, (req, res) => {
   res.render('newMember', { user: req.session.user });
 });
 
 // 2. POST /members — create the member
-router.post('/members', ensureStaff, async (req, res) => {
+router.post('/members', ensureAuthenticated, async (req, res) => {
   const { firstName, lastName, email, phone, address } = req.body;
   await Member.create({ firstName, lastName, email, phone, address });
   res.redirect('/members');  
 });
 
 // 3. GET /members — list all members
-router.get('/members', ensureStaff, async (req, res) => {
+router.get('/members', ensureAuthenticated, async (req, res) => {
   const members = await Member.find().sort('lastName');
   res.render('membersList', { user: req.session.user, members });
 });
 
 // 4. GET /members/:id — show details + history
-router.get('/members/:id', ensureStaff, async (req, res) => {
+router.get('/members/:id', ensureAuthenticated, async (req, res) => {
   const member = await Member.findById(req.params.id);
   const history = await Checkout
     .find({ member: member._id })
@@ -39,7 +39,7 @@ router.get('/members/:id', ensureStaff, async (req, res) => {
 });
 
 // 5. GET /members/search — JSON endpoint for the widget
-router.get('/members/search', ensureStaff, async (req, res) => {
+router.get('/members/search', ensureAuthenticated, async (req, res) => {
   const q = req.query.q || '';
   const regex = new RegExp(q, 'i');
   const results = await Member

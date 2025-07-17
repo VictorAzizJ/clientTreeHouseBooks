@@ -2,10 +2,10 @@ const express    = require('express');
 const router     = express.Router();
 const Attendance = require('../models/Attendance');
 const Attendee   = require('../models/Attendee');
-const { ensureAuthenticated, ensureStaff } = require('./_middleware');
+const { ensureAuthenticated } = require('./_middleware');
 
 // Show attendance for a program on a given date
-router.get('/programs/:programId/attendance', ensureStaff, async (req, res) => {
+router.get('/programs/:programId/attendance', ensureAuthenticated, async (req, res) => {
   const attendees = await Attendee.find({ program: req.params.programId }).lean();
   // default date = today
   const date = req.query.date ? new Date(req.query.date) : new Date();
@@ -18,7 +18,7 @@ router.get('/programs/:programId/attendance', ensureStaff, async (req, res) => {
 });
 
 // Submit attendance (bulk)
-router.post('/programs/:programId/attendance', ensureStaff, async (req, res) => {
+router.post('/programs/:programId/attendance', ensureAuthenticated, async (req, res) => {
   const { date, attended } = req.body;
   // attended = array of attendee IDs present
   const dt = new Date(date);

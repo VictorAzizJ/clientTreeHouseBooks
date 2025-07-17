@@ -3,10 +3,10 @@ const router      = express.Router();
 const MetricDef   = require('../models/MetricDefinition');
 const MetricValue = require('../models/MetricValue');
 const Attendee    = require('../models/Attendee');
-const { ensureAuthenticated, ensureStaff } = require('./_middleware');
+const { ensureAuthenticated } = require('./_middleware');
 
 // Form to enter metrics for a program date
-router.get('/programs/:programId/metrics/data', ensureStaff, async (req, res) => {
+router.get('/programs/:programId/metrics/data', ensureAuthenticated, async (req, res) => {
   const metrics   = await MetricDef.find({ program: req.params.programId }).lean();
   const attendees = await Attendee.find({ program: req.params.programId }).lean();
   const date      = req.query.date ? new Date(req.query.date) : new Date();
@@ -18,7 +18,7 @@ router.get('/programs/:programId/metrics/data', ensureStaff, async (req, res) =>
 });
 
 // Submit metric values
-router.post('/programs/:programId/metrics/data', ensureStaff, async (req, res) => {
+router.post('/programs/:programId/metrics/data', ensureAuthenticated, async (req, res) => {
   const { date, entries } = req.body;
   const dt = new Date(date);
   // entries expected as { attendeeId: { metricId: value, … }, … }
