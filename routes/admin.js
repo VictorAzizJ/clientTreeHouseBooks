@@ -1,38 +1,69 @@
 // routes/admin.js
 const express = require('express');
-const router = express.Router();
-const User = require('../models/User');
+const router  = express.Router();
+const User    = require('../models/User');
 
 // Middleware to ensure admin privileges
 function ensureAdmin(req, res, next) {
-  if (req.session && req.session.user && req.session.user.role === 'admin') {
+  if (req.session?.user?.role === 'admin') {
     return next();
   }
-  res.status(403).send("Forbidden: You are not an admin");
+  return res.status(403).send("Forbidden: You are not an admin");
 }
 
-// GET /admin/users: List all users with a management interface
-router.get('/admin/users', ensureAdmin, async (req, res) => {
+/**
+ * GET /admin/users
+ * List all users and show any flash success.
+ */
+router.get('/admin/users', ensureAdmin, async (req, res, next) => {
   try {
-    const users = await User.find({});
-    res.render('adminUsers', { users, currentUser: req.session.user });
+    const users   = await User.find().lean();
+    const success = req.session.success;
+    delete req.session.success;          // clear flash
+
+    res.render('adminUsers', {
+      currentUser: req.session.user,
+      users,
+      success                           // pass in flash message
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Error retrieving users");
+    next(err);
   }
 });
 
-// POST /admin/users/:id: Update a user's role
-router.post('/admin/users/:id', ensureAdmin, async (req, res) => {
-  const { role } = req.body; // role should be "volunteer", "staff", or "admin"
-  const userId = req.params.id;
+/**
+ * POST /admin/users/:id
+ * Update a user's role. If you just updated your own role,
+ * update your session immediately so your dashboard view changes.
+ */
+router.post('/admin/users/:id', ensureAdmin, async (req, res, next) => {
   try {
-    await User.findByIdAndUpdate(userId, { role });
+    const userId  = req.params.id;
+    const newRole = req.body.role;      // "volunteer", "staff", or "admin"
+
+    // 1) Update in DB and get the updated document
+    const updated = await User.findByIdAndUpdate(
+      userId,
+      { role: newRole },
+      { new: true, lean: true }
+    );
+    if (!updated) {
+      req.session.success = `User not found`;
+      return res.redirect('/admin/users');
+    }
+
+    // 2) If *you* changed *your own* role, sync your session
+    if (req.session.user._id === updated._id.toString()) {
+      req.session.user.role = updated.role;
+    }
+
+    // 3) Set flash & redirect back to list
+    req.session.success = 'User role updated';
     res.redirect('/admin/users');
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Error updating user role");
+    next(err);
   }
 });
 
 module.exports = router;
+
