@@ -7,7 +7,7 @@ const Attendance= require('../models/Attendance');
 const MetricDef = require('../models/MetricDefinition');
 const MetricVal = require('../models/MetricValue');
 
-function ensureAuthenticated(req, res, next) {
+function ensureStaffOrAdmin(req, res, next) {
   if (req.session?.user && ['admin','staff'].includes(req.session.user.role)) {
     return next();
   }
@@ -15,7 +15,7 @@ function ensureAuthenticated(req, res, next) {
 }
 
 // ── 1. List Programs ───────────────────────────────────────
-router.get('/programs', ensureAuthenticated, async (req, res) => {
+router.get('/programs', ensureStaffOrAdmin, async (req, res) => {
   const programs = await Program.find().lean();
   res.render('programsList', {
     user: req.session.user,
@@ -24,12 +24,12 @@ router.get('/programs', ensureAuthenticated, async (req, res) => {
 });
 
 // ── 2. New Program Form ───────────────────────────────────
-router.get('/programs/new', ensureAuthenticated, (req, res) => {
+router.get('/programs/new', ensureStaffOrAdmin, (req, res) => {
   res.render('newProgram', { user: req.session.user });
 });
 
 // ── 3. Create Program ─────────────────────────────────────
-router.post('/programs', ensureAuthenticated, async (req, res) => {
+router.post('/programs', ensureStaffOrAdmin, async (req, res) => {
   const { name, description } = req.body;
   await Program.create({ name, description });
   req.session.success = 'Program created';
@@ -37,7 +37,7 @@ router.post('/programs', ensureAuthenticated, async (req, res) => {
 });
 
 // ── 4. Program Details (Attendees / Attendance / Metrics) ─
-router.get('/programs/:id', ensureAuthenticated, async (req, res) => {
+router.get('/programs/:id', ensureStaffOrAdmin, async (req, res) => {
   const program = await Program.findById(req.params.id).lean();
 
   // List attendees

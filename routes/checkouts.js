@@ -4,19 +4,19 @@ const router   = express.Router();
 const Member   = require('../models/Member');
 const Checkout = require('../models/Checkout');
 
-function ensureAuthenticated(req, res, next) {
+function ensureStaffOrAdmin(req, res, next) {
   const role = req.session.user?.role;
   if (role === 'staff' || role === 'admin') return next();
   res.status(403).send('Forbidden');
 }
 
 // GET all checkouts (optional, you can keep or remove)
-router.get('/checkouts', ensureAuthenticated, async (req, res) => {
+router.get('/checkouts', ensureStaffOrAdmin, async (req, res) => {
   // ...
 });
 
 // POST create a checkout
-router.post('/checkouts', ensureAuthenticated, async (req, res) => {
+router.post('/checkouts', ensureStaffOrAdmin, async (req, res) => {
   const { memberId, numberOfBooks, genres, weight, redirectTo } = req.body;
   const genreArray = Array.isArray(genres) ? genres : [genres];
 

@@ -8,7 +8,7 @@ const Donation = require('../models/Donation');
 /**
  * Middleware: only staff or admin may proceed.
  */
-function ensureAuthenticated(req, res, next) {
+function ensureStaffOrAdmin(req, res, next) {
   const role = req.session.user?.role;
   if (role === 'staff' || role === 'admin') {
     return next();
@@ -17,12 +17,12 @@ function ensureAuthenticated(req, res, next) {
 }
 
 // 1. GET /members/new — form to add a new member
-router.get('/members/new', ensureAuthenticated, (req, res) => {
+router.get('/members/new', ensureStaffOrAdmin, (req, res) => {
   res.render('newMember', { user: req.session.user });
 });
 
 // 2. POST /members — create the member
-router.post('/members', ensureAuthenticated, async (req, res) => {
+router.post('/members', ensureStaffOrAdmin, async (req, res) => {
   const { firstName, lastName, email, phone, address } = req.body;
   await Member.create({ firstName, lastName, email, phone, address });
   req.session.success = 'Member created';
@@ -30,13 +30,13 @@ router.post('/members', ensureAuthenticated, async (req, res) => {
 });
 
 // 3. GET /members — list all members
-router.get('/members', ensureAuthenticated, async (req, res) => {
+router.get('/members', ensureStaffOrAdmin, async (req, res) => {
   const members = await Member.find().sort('lastName').lean();
   res.render('membersList', { user: req.session.user, members });
 });
 
 // 4. GET /members/:id — show details + history
-router.get('/members/:id', ensureAuthenticated, async (req, res) => {
+router.get('/members/:id', ensureStaffOrAdmin, async (req, res) => {
   const member = await Member.findById(req.params.id).lean();
 
   const checkoutHistory = await Checkout.find({ member: member._id })
@@ -56,7 +56,7 @@ router.get('/members/:id', ensureAuthenticated, async (req, res) => {
 }); // <— this was missing
 
 // 5. GET /members/search — JSON endpoint for autocomplete widgets
-router.get('/members/search', ensureAuthenticated, async (req, res) => {
+router.get('/members/search', ensureStaffOrAdmin, async (req, res) => {
   const q     = req.query.q || '';
   const regex = new RegExp(q, 'i');
   const results = await Member

@@ -1,17 +1,22 @@
-// routes/_middleware.js
+/**
+ * Only staff or admin allowed.
+ */
+function ensureStaffOrAdmin(req, res, next) {
+  const role = req.session.user?.role;
+  if (role === 'staff' || role === 'admin') return next();
+  return res.status(403).send('Forbidden');
+}
 
 /**
- * Only allow access if someone is logged in AND is staff or admin.
+ * Only admin allowed.
  */
-function ensureAuthenticated(req, res, next) {
-  const user = req.session?.user;
-  if (user && ['staff','admin'].includes(user.role)) {
-    return next();
-  }
-  // redirect to your login page (or show 403)
-  return res.redirect('/custom-login');
+function ensureAdmin(req, res, next) {
+  const role = req.session.user?.role;
+  if (role === 'admin') return next();
+  return res.status(403).send('Forbidden');
 }
 
 module.exports = {
-  ensureAuthenticated
+  ensureStaffOrAdmin,
+  ensureAdmin
 };
