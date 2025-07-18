@@ -1,12 +1,16 @@
+// src/models/MetricValue.js
 const mongoose = require('mongoose');
 const Schema   = mongoose.Schema;
 
-// Holds the value of a metric for an attendee on a date
 const MetricValueSchema = new Schema({
-  attendee: { type: Schema.Types.ObjectId, ref: 'Attendee', required: true },
-  metric:   { type: Schema.Types.ObjectId, ref: 'MetricDefinition', required: true },
-  date:     { type: Date, default: Date.now },
-  value:    Schema.Types.Mixed
+  program:    { type: Schema.Types.ObjectId, ref: 'Program', required: true },
+  definition: { type: Schema.Types.ObjectId, ref: 'MetricDefinition', required: true },
+  member:     { type: Schema.Types.ObjectId, ref: 'Member', required: true },
+  date:       { type: String, required: true },          // YYYY-MM-DD
+  // store a value of any type
+  value:      { type: Schema.Types.Mixed, required: true }
+}, {
+  timestamps: true
 });
 
 module.exports = mongoose.model('MetricValue', MetricValueSchema);

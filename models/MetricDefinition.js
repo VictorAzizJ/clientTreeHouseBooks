@@ -1,3 +1,4 @@
+// src/models/MetricDefinition.js
 const mongoose = require('mongoose');
 const Schema   = mongoose.Schema;
 
@@ -5,8 +6,14 @@ const Schema   = mongoose.Schema;
 const MetricDefinitionSchema = new Schema({
   program: { type: Schema.Types.ObjectId, ref: 'Program', required: true },
   name:    { type: String, required: true },
-  // You can extend this to support different types
-  type:    { type: String, enum: ['number','boolean','text','date'], default: 'number' }
+  // Different data types you can record
+  type:    { 
+    type: String, 
+    enum: ['number','boolean','text','date'], 
+    default: 'number' 
+  }
+}, {
+  timestamps: true
 });
 
 module.exports = mongoose.model('MetricDefinition', MetricDefinitionSchema);

@@ -1,71 +1,137 @@
-<!DOCTYPE html><html lang="en"><head>
-  <!-- Include Bootstrap & Tabs JS -->
-</head><body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title><%= program.name %> Details</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); gap:1rem; }
+    .widget { padding:1rem; border:1px solid #dee2e6; border-radius:.5rem; background:#fff; box-shadow:0 .125rem .25rem rgba(0,0,0,.075); }
+  </style>
+</head>
+<body>
   <div class="container mt-5">
-    <h1><%= program.name %></h1>
+
+    <% if (success) { %>
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <%= success %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    <% } %>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1><%= program.name %></h1>
+      <a href="/programs" class="btn btn-secondary">← Back to Programs</a>
+    </div>
     <p><%= program.description || '' %></p>
 
-    <!-- Tab nav -->
-    <ul class="nav nav-tabs mb-4">
-      <li class="nav-item">
-        <a class="nav-link active" data-bs-toggle="tab" href="#attendees">Attendees</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="tab" href="#attendance">Attendance</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="tab" href="#metrics">Metrics</a>
-      </li>
-    </ul>
-
-    <div class="tab-content">
-      <!-- Attendees Tab -->
-      <div id="attendees" class="tab-pane fade show active">
-        <a 
-          href="/programs/<%= program._id %>/attendees/new" 
-          class="btn btn-sm btn-success mb-3"
-        >
-          + Register Attendee
-        </a>
-        <a 
-          href="/programs/<%= program._id %>/attendees" 
-          class="btn btn-sm btn-primary mb-3 ms-2"
-        >
-          View All Attendees
-        </a>
+    <div class="grid">
+      <!-- Attendees widget -->
+      <div class="widget">
+        <h5>Attendees</h5>
+        <p><%= attendees.length %> registered</p>
+        <div class="d-grid gap-2">
+          <a href="/programs/<%= program._id %>/attendees/new" class="btn btn-success btn-sm">+ Register</a>
+          <a href="/programs/<%= program._id %>/attendees" class="btn btn-primary btn-sm">View All</a>
+        </div>
       </div>
 
-      <!-- Attendance Tab -->
-      <div id="attendance" class="tab-pane fade">
-        <a 
-          href="/programs/<%= program._id %>/attendance" 
-          class="btn btn-sm btn-success mb-3"
-        >
-          Record Attendance
-        </a>
+      <!-- Attendance Records widget -->
+      <div class="widget">
+        <h5>Attendance Records</h5>
+        <p><%= attendance.length %> entries</p>
+        <form action="/programs/<%= program._id %>/attendance" method="POST">
+          <input type="hidden" name="date" value="<%= today %>"/>
+          <div class="mb-2">
+            <label for="attendanceMember">Member Present</label>
+            <select id="attendanceMember" name="memberId" class="form-select form-select-sm" required>
+              <% attendees.forEach(a => { %>
+                <option value="<%= a._id %>">
+                  <%= a.firstName %> <%= a.lastName %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-success btn-sm">Record Attendance</button>
+        </form>
       </div>
 
-      <!-- Metrics Tab -->
-      <div id="metrics" class="tab-pane fade">
-        <a 
-          href="/programs/<%= program._id %>/metrics/data?date=<%= new Date().toISOString().slice(0,10) %>" 
-          class="btn btn-sm btn-success mb-3"
-        >
-          Enter Metrics
-        </a>
-        <a 
-          href="/programs/<%= program._id %>/metrics" 
-          class="btn btn-sm btn-primary mb-3 ms-2"
-        >
-          View Metric Definitions
-        </a>
+      <!-- Metrics widget -->
+      <div class="widget">
+        <h5>Metrics</h5>
+        <p><%= definitions.length %> definitions</p>
+
+        <!-- Define new metric -->
+        <form action="/programs/<%= program._id %>/metrics" method="POST" class="mb-3">
+          <div class="input-group input-group-sm mb-2">
+            <input name="name"      class="form-control" placeholder="Metric name" required/>
+            <select name="type"     class="form-select">
+              <option value="number">Number</option>
+              <option value="boolean">Yes/No</option>
+              <option value="text">Text</option>
+              <option value="date">Date</option>
+            </select>
+          </div>
+          <button class="btn btn-success btn-sm">+ Define Metric</button>
+        </form>
+
+        <!-- Record metric values -->
+        <form action="/programs/<%= program._id %>/metrics/data" method="POST">
+          <input type="hidden" name="date" value="<%= today %>"/>
+          <div class="mb-2">
+            <label for="metricsMember" class="form-label">Member</label>
+            <select id="metricsMember" name="memberId" class="form-select form-select-sm" required>
+              <% attendees.forEach(a => { %>
+                <option value="<%= a._id %>">
+                  <%= a.firstName %> <%= a.lastName %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+
+          <% definitions.forEach(def => { %>
+            <div class="mb-2">
+              <label class="form-label">
+                <%= def.name %> (<%= def.type %>) on <%= today %>
+              </label>
+              <% if (def.type === 'boolean') { %>
+                <select name="values[<%= def._id %>]" class="form-select form-select-sm" required>
+                  <option value="">--</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              <% } else if (def.type === 'date') { %>
+                <input
+                  type="date"
+                  name="values[<%= def._id %>]"
+                  class="form-control form-control-sm"
+                  required
+                />
+              <% } else if (def.type === 'number') { %>
+                <input
+                  type="number"
+                  step="any"
+                  name="values[<%= def._id %>]"
+                  class="form-control form-control-sm"
+                  required
+                />
+              <% } else { %> <!-- text -->
+                <input
+                  type="text"
+                  name="values[<%= def._id %>]"
+                  class="form-control form-control-sm"
+                  required
+                />
+              <% } %>
+            </div>
+          <% }) %>
+
+          <button class="btn btn-primary btn-sm">Record Metrics</button>
+        </form>
       </div>
-    </div>
+    </div> <!-- /.grid -->
 
-    <a href="/programs" class="btn btn-secondary mt-4">Back to Programs</a>
-  </div>
-
-  <script 
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
-  </script>
-</body></html>
+  </div> <!-- /.container -->
+</body>
+</html>
