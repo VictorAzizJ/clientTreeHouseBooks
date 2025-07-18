@@ -119,6 +119,64 @@
       </div>
     </div>
 
+    <!-- Donation History -->
+  <h2 class="mt-5">Donation History</h2>
+  <% if (donationHistory.length === 0) { %>
+    <p>No donations recorded.</p>
+  <% } else { %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>#</th><th>Books</th><th>Genres</th><th>Weight</th><th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% donationHistory.forEach((d,i) => { %>
+          <tr>
+            <td><%= i+1 %></td>
+            <td><%= d.numberOfBooks %></td>
+            <td><%= d.genres.join(', ') %></td>
+            <td><%= d.weight ?? '—' %> kg</td>
+            <td><%= new Date(d.donatedAt).toLocaleString() %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+
+  <!-- New Donation Form -->
+  <div class="card mb-5">
+    <div class="card-header bg-info text-white">Record a New Donation</div>
+    <div class="card-body">
+      <form action="/members/<%= member._id %>/donations" method="POST">
+        <div class="mb-3">
+          <label class="form-label">Number of Books</label>
+          <input type="number" name="numberOfBooks" class="form-control" min="1" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Genres</label><br>
+          <% const genres = ['Kids Board Books','Women Empowerment','Black Author','Young Adult']; %>
+          <% genres.forEach(g => { %>
+            <div class="form-check form-check-inline">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                name="genres" 
+                value="<%= g %>" 
+                required
+              >
+              <label class="form-check-label"><%= g %></label>
+            </div>
+          <% }) %>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Total Weight (kg, optional)</label>
+          <input type="number" name="weight" step="0.01" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-info">Record Donation</button>
+      </form>
+    </div>
+  </div>
   </div>
 </body>
 </html>

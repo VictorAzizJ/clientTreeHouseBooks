@@ -159,6 +159,7 @@ app.use('/', require('./routes/programs'));
 app.use('/', require('./routes/attendees'));
 app.use('/', require('./routes/attendance'));
 app.use('/', require('./routes/metrics'))
+app.use('/', require('./routes/donations'));
 
 
 
