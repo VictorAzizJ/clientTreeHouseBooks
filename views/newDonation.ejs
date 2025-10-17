@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Record Book Donation - TreeHouseBooks</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/treehouse-brand.css">
+</head>
+<body>
+  <%- include('partials/nav') %>
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1><i class="bi bi-gift"></i> Record Book Donation</h1>
+        <% if (member) { %>
+          <p class="text-muted">Donor: <%= member.firstName %> <%= member.lastName %></p>
+        <% } else { %>
+          <p class="text-muted">Record a new book donation</p>
+        <% } %>
+      </div>
+      <a href="/donations" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Donations
+      </a>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <form method="POST" action="/donations/create">
+          <% if (member) { %>
+            <input type="hidden" name="memberId" value="<%= member._id %>">
+
+            <div class="alert alert-info mb-4">
+              <i class="bi bi-info-circle"></i>
+              Recording donation for <strong><%= member.firstName %> <%= member.lastName %></strong>
+            </div>
+          <% } %>
+
+          <div class="mb-3">
+            <label for="bookTitle" class="form-label">Book Title *</label>
+            <input type="text" class="form-control" id="bookTitle" name="bookTitle" required>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="author" class="form-label">Author</label>
+              <input type="text" class="form-control" id="author" name="author">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="isbn" class="form-label">ISBN</label>
+              <input type="text" class="form-control" id="isbn" name="isbn">
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="condition" class="form-label">Condition *</label>
+              <select class="form-select" id="condition" name="condition" required>
+                <option value="">Select condition...</option>
+                <option value="new">New</option>
+                <option value="like-new">Like New</option>
+                <option value="very-good">Very Good</option>
+                <option value="good">Good</option>
+                <option value="acceptable">Acceptable</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="quantity" class="form-label">Quantity *</label>
+              <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="category" class="form-label">Category</label>
+            <select class="form-select" id="category" name="category">
+              <option value="">Select category...</option>
+              <option value="picture-book">Picture Book</option>
+              <option value="chapter-book">Chapter Book</option>
+              <option value="young-adult">Young Adult</option>
+              <option value="non-fiction">Non-Fiction</option>
+              <option value="reference">Reference</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="ageRange" class="form-label">Age Range</label>
+            <input type="text" class="form-control" id="ageRange" name="ageRange" placeholder="e.g., 4-8 years">
+          </div>
+
+          <div class="mb-3">
+            <label for="notes" class="form-label">Notes</label>
+            <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any additional information about the donation"></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label for="donationDate" class="form-label">Donation Date *</label>
+            <input type="date" class="form-control" id="donationDate" name="donationDate" value="<%= new Date().toISOString().split('T')[0] %>" required>
+          </div>
+
+          <div class="text-end">
+            <a href="/donations" class="btn btn-secondary me-2">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-circle"></i> Record Donation
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

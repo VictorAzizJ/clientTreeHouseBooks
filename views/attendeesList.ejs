@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Attendees - TreeHouseBooks</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/treehouse-brand.css">
+</head>
+<body>
+  <%- include('partials/nav') %>
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1><i class="bi bi-people"></i> Attendees</h1>
+        <p class="text-muted">Manage program attendees</p>
+      </div>
+      <a href="/programs" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Programs
+      </a>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Program</th>
+                <th>Grade</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (attendees && attendees.length > 0) { %>
+                <% attendees.forEach(attendee => { %>
+                  <tr>
+                    <td>
+                      <strong><%= attendee.firstName %> <%= attendee.lastName %></strong>
+                    </td>
+                    <td><%= attendee.email || '-' %></td>
+                    <td><%= attendee.phone || '-' %></td>
+                    <td>
+                      <% if (attendee.program) { %>
+                        <%= attendee.program.name %>
+                      <% } else { %>
+                        -
+                      <% } %>
+                    </td>
+                    <td><%= attendee.grade || '-' %></td>
+                    <td>
+                      <a href="/attendees/<%= attendee._id %>" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i> View
+                      </a>
+                    </td>
+                  </tr>
+                <% }); %>
+              <% } else { %>
+                <tr>
+                  <td colspan="6" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                    <p class="mt-2">No attendees found</p>
+                  </td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

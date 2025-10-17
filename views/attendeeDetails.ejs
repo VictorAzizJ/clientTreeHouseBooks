@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= attendee.firstName %> <%= attendee.lastName %> - TreeHouseBooks</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/treehouse-brand.css">
+</head>
+<body>
+  <%- include('partials/nav') %>
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1><i class="bi bi-person"></i> <%= attendee.firstName %> <%= attendee.lastName %></h1>
+        <p class="text-muted">Attendee Details</p>
+      </div>
+      <a href="/attendees" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Attendees
+      </a>
+    </div>
+
+    <div class="row">
+      <div class="col-md-8">
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Personal Information</h5>
+          </div>
+          <div class="card-body">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="text-muted">First Name</label>
+                <p class="fw-bold"><%= attendee.firstName %></p>
+              </div>
+              <div class="col-md-6">
+                <label class="text-muted">Last Name</label>
+                <p class="fw-bold"><%= attendee.lastName %></p>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="text-muted">Email</label>
+                <p><%= attendee.email || 'Not provided' %></p>
+              </div>
+              <div class="col-md-6">
+                <label class="text-muted">Phone</label>
+                <p><%= attendee.phone || 'Not provided' %></p>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="text-muted">Date of Birth</label>
+                <p><%= attendee.dateOfBirth ? new Date(attendee.dateOfBirth).toLocaleDateString() : 'Not provided' %></p>
+              </div>
+              <div class="col-md-6">
+                <label class="text-muted">Grade</label>
+                <p><%= attendee.grade || 'Not provided' %></p>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-12">
+                <label class="text-muted">School</label>
+                <p><%= attendee.school || 'Not provided' %></p>
+              </div>
+            </div>
+
+            <% if (attendee.notes) { %>
+              <div class="row">
+                <div class="col-md-12">
+                  <label class="text-muted">Notes</label>
+                  <p><%= attendee.notes %></p>
+                </div>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card mb-4">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Program</h5>
+          </div>
+          <div class="card-body">
+            <% if (attendee.program) { %>
+              <p class="fw-bold"><%= attendee.program.name %></p>
+              <% if (attendee.program.description) { %>
+                <p class="text-muted small"><%= attendee.program.description %></p>
+              <% } %>
+              <a href="/programs/<%= attendee.program._id %>" class="btn btn-sm btn-outline-primary w-100 mt-2">
+                <i class="bi bi-box-arrow-up-right"></i> View Program
+              </a>
+            <% } else { %>
+              <p class="text-muted">No program assigned</p>
+            <% } %>
+          </div>
+        </div>
+
+        <% if (attendee.member) { %>
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Linked Member</h5>
+            </div>
+            <div class="card-body">
+              <p class="fw-bold"><%= attendee.member.firstName %> <%= attendee.member.lastName %></p>
+              <p class="text-muted small">Member ID: <%= attendee.member._id %></p>
+              <a href="/members/<%= attendee.member._id %>" class="btn btn-sm btn-outline-primary w-100 mt-2">
+                <i class="bi bi-box-arrow-up-right"></i> View Member
+              </a>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
