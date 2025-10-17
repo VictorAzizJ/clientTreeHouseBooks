@@ -25,7 +25,18 @@ const Member    = require('../models/Member');
 const { ensureStaffOrAdmin } = require('./_middleware');
 const { sendDonationThankYouEmail } = require('../services/mailer');
 
-// Show form to record a donation for a given member
+// Show form to record a donation (standalone - choose member)
+router.get('/donations/new', ensureStaffOrAdmin, async (req, res) => {
+  try {
+    const members = await Member.find().sort({ lastName: 1, firstName: 1 }).lean();
+    res.render('newDonationStandalone', { user: req.session.user, members });
+  } catch (err) {
+    console.error('Error loading donation form:', err);
+    res.status(500).send('Error loading form');
+  }
+});
+
+// Show form to record a donation for a specific member
 router.get('/members/:memberId/donations/new', ensureStaffOrAdmin, async (req, res) => {
   const member = await Member.findById(req.params.memberId).lean();
   if (!member) return res.status(404).send('Member not found');

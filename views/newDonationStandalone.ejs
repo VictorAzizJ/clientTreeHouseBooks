@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Record Book Donation - TreeHouseBooks</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/treehouse-brand.css">
+</head>
+<body>
+  <%- include('partials/nav') %>
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1><i class="bi bi-gift"></i> Record Book Donation</h1>
+        <p class="text-muted">Record a new book donation</p>
+      </div>
+      <a href="/members" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Members
+      </a>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <form id="donationForm">
+          <div class="mb-3">
+            <label for="memberId" class="form-label">Donor (Member) *</label>
+            <select class="form-select" id="memberId" name="memberId" required>
+              <option value="">Select a member...</option>
+              <% members.forEach(member => { %>
+                <option value="<%= member._id %>">
+                  <%= member.firstName %> <%= member.lastName %>
+                  <% if (member.email) { %> - <%= member.email %><% } %>
+                </option>
+              <% }); %>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="numberOfBooks" class="form-label">Number of Books *</label>
+            <input
+              type="number"
+              class="form-control"
+              id="numberOfBooks"
+              name="numberOfBooks"
+              value="1"
+              min="1"
+              max="1000"
+              required
+            >
+          </div>
+
+          <div class="mb-3">
+            <label for="genres" class="form-label">Genres</label>
+            <select class="form-select" id="genres" name="genres" multiple>
+              <option value="fiction">Fiction</option>
+              <option value="non-fiction">Non-Fiction</option>
+              <option value="picture-book">Picture Book</option>
+              <option value="chapter-book">Chapter Book</option>
+              <option value="young-adult">Young Adult</option>
+              <option value="educational">Educational</option>
+              <option value="reference">Reference</option>
+            </select>
+            <small class="text-muted">Hold Ctrl/Cmd to select multiple</small>
+          </div>
+
+          <div class="mb-3">
+            <label for="weight" class="form-label">Weight (lbs)</label>
+            <input
+              type="number"
+              class="form-control"
+              id="weight"
+              name="weight"
+              min="0"
+              max="10000"
+              step="0.1"
+              placeholder="Optional"
+            >
+          </div>
+
+          <div class="text-end">
+            <a href="/members" class="btn btn-secondary me-2">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-circle"></i> Record Donation
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Submit to the correct member-specific endpoint
+    document.getElementById('donationForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const memberId = document.getElementById('memberId').value;
+      if (memberId) {
+        this.action = `/members/${memberId}/donations`;
+        this.method = 'POST';
+        this.submit();
+      }
+    });
+  </script>
+</body>
+</html>

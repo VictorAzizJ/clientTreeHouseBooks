@@ -2,7 +2,19 @@ const express    = require('express');
 const router     = express.Router();
 const Attendance = require('../models/Attendance');
 const Attendee   = require('../models/Attendee');
+const Program    = require('../models/Program');
 const { ensureStaffOrAdmin } = require('./_middleware');
+
+// Show attendance form - select program first
+router.get('/attendance/new', ensureStaffOrAdmin, async (req, res) => {
+  try {
+    const programs = await Program.find().sort({ name: 1 }).lean();
+    res.render('selectProgramForAttendance', { user: req.session.user, programs });
+  } catch (err) {
+    console.error('Error loading attendance form:', err);
+    res.status(500).send('Error loading form');
+  }
+});
 
 // Show attendance for a program on a given date
 router.get('/programs/:programId/attendance', ensureStaffOrAdmin, async (req, res) => {

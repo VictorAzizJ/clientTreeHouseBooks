@@ -30,6 +30,17 @@ function ensureStaffOrAdmin(req, res, next) {
   res.status(403).send('Forbidden');
 }
 
+// GET form to create new checkout
+router.get('/checkouts/new', ensureStaffOrAdmin, async (req, res) => {
+  try {
+    const members = await Member.find().sort({ lastName: 1, firstName: 1 }).lean();
+    res.render('newCheckout', { user: req.session.user, members });
+  } catch (err) {
+    console.error('Error loading checkout form:', err);
+    res.status(500).send('Error loading form');
+  }
+});
+
 // GET all checkouts list
 router.get('/checkouts', ensureStaffOrAdmin, async (req, res) => {
   try {
