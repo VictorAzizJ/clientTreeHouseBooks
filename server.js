@@ -13,17 +13,36 @@ const winston    = require('winston');
 
 dotenv.config();
 
+// ─── Sentry Error Monitoring ────────────────────────────────────────────────
+const {
+  initSentry,
+  getRequestHandler,
+  getTracingHandler,
+  getErrorHandler
+} = require('./config/sentry');
+
 // ─── Mongoose Models ────────────────────────────────────────────────────────
 // Ensure these schemas get registered before you mount any routes that use them:
-require('./models/Attendance');       // ← added
-require('./models/MetricValue');      // ← added
-require('./models/MetricDefinition'); // ← added
+require('./models/Attendance');           // ← added
+require('./models/MetricValue');          // ← added
+require('./models/MetricDefinition');     // ← added
+require('./models/DashboardPreference');  // ← added
+require('./models/ImportHistory');        // ← added for data import
 // (Program, Member, Checkout, Donation, etc. are pulled in by their routes)
 
 
 // Create Express app
 const app = express();
 app.set('trust proxy', 1);
+
+// ─── Initialize Sentry (must be first) ─────────────────────────────────────
+initSentry(app);
+
+// Sentry request handler - must be BEFORE all other middleware/routes
+app.use(getRequestHandler());
+
+// Sentry tracing handler - must be AFTER request handler, BEFORE routes
+app.use(getTracingHandler());
 
 // ─── 1. Security ────────────────────────────────────────────────────────────
 app.use(helmet());
@@ -88,6 +107,10 @@ const logger = winston.createLogger({
 });
 logger.stream = { write: msg => logger.info(msg.trim()) };
 app.use(morgan('combined', { stream: logger.stream }));
+
+// Enhanced request logging with 404 tracking
+const { requestLogger } = require('./routes/_debugRoutes');
+app.use(requestLogger);
 
 // ─── 5. Body Parsing ─────────────────────────────────────────────────────────
 app.use(express.urlencoded({ extended: true }));
@@ -156,6 +179,7 @@ app.get('/healthz', (req, res) => {
 app.use('/', require('./routes/register'));
 app.use('/', require('./routes/index'));
 app.use('/', require('./routes/login'));
+app.use('/', require('./routes/passwordReset'));  // Forgot & reset password
 app.use('/', require('./routes/dashboard'));
 app.use('/', require('./routes/admin'));         // your adminUsers logic
 app.use('/', require('./routes/notifications'));
@@ -165,10 +189,13 @@ app.use('/', require('./routes/checkouts'));
 app.use('/', require('./routes/donations'));
 
 // Programs & Metrics (new):
-app.use('/', require('./routes/programs'));      // ← verify you’ve created this file
+app.use('/', require('./routes/programs'));      // ← verify you've created this file
 app.use('/', require('./routes/attendees'));
 app.use('/', require('./routes/attendance'));
 app.use('/', require('./routes/metrics'));       // ← verify mounting ends with semicolon
+app.use('/', require('./routes/dashboardPreferences'));
+app.use('/', require('./routes/classroom'));     // Classroom program routes
+app.use('/', require('./routes/dataImport'));    // Data import routes
 
 // ─── 11. Logout ─────────────────────────────────────────────────────────────
 app.get('/logout', (req, res) => {
@@ -176,15 +203,54 @@ app.get('/logout', (req, res) => {
 });
 
 // ─── 12. Error Handling ─────────────────────────────────────────────────────
+// Sentry error handler - must be BEFORE custom error handlers
+app.use(getErrorHandler());
+
+// Custom error handler (runs after Sentry captures the error)
 app.use((err, req, res, next) => {
   logger.error(err.stack);
-  res.status(500).send('Something went wrong!');
+
+  // In production, don't leak error details to client
+  const isDev = process.env.NODE_ENV !== 'production';
+  res.status(err.status || 500);
+
+  if (isDev) {
+    res.send(`<pre>${err.stack}</pre>`);
+  } else {
+    res.send('Something went wrong! Our team has been notified.');
+  }
 });
 
-// ─── 13. Export & Start ─────────────────────────────────────────────────────
+// ─── 13. Process-level Error Handling ───────────────────────────────────────
+// Capture unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Promise Rejection:', reason);
+  // Sentry will automatically capture this via its integrations
+});
+
+// Capture uncaught exceptions
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  // Sentry will automatically capture this via its integrations
+
+  // In production, exit gracefully after logging
+  if (process.env.NODE_ENV === 'production') {
+    setTimeout(() => {
+      process.exit(1);
+    }, 1000); // Give Sentry time to send the error
+  }
+});
+
+// ─── 14. Export & Start ─────────────────────────────────────────────────────
 module.exports = app;
 
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+  app.listen(PORT, () => {
+    console.log(`Server started on port ${PORT}`);
+
+    // Log all registered routes for debugging
+    const { logRoutes } = require('./routes/_debugRoutes');
+    logRoutes(app);
+  });
 }
