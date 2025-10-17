@@ -19,4 +19,10 @@ const CheckoutSchema = new Schema({
   checkoutDate:  { type: Date, default: Date.now }
 });
 
+// ─── Indexes ─────────────────────────────────────────────────────────────────
+// Index for finding checkouts by member (used in member detail page)
+CheckoutSchema.index({ member: 1, checkoutDate: -1 });
+// Index for date-based queries (used in admin analytics/charts)
+CheckoutSchema.index({ checkoutDate: -1 });
+
 module.exports = mongoose.model('Checkout', CheckoutSchema);

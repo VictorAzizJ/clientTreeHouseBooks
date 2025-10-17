@@ -15,4 +15,11 @@ const notificationSchema = new Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// ─── Indexes ─────────────────────────────────────────────────────────────────
+// Compound index for dashboard notification queries
+// Supports: targetRoles + acknowledgedBy + sorted by createdAt
+notificationSchema.index({ targetRoles: 1, createdAt: -1 });
+// Index for acknowledgement checks (used in dashboard query: acknowledgedBy: { $ne: userId })
+notificationSchema.index({ acknowledgedBy: 1 });
+
 module.exports = mongoose.model('Notification', notificationSchema);

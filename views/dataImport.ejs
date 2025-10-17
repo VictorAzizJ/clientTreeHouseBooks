@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Data Import</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <style>
+    .import-card {
+      border: 2px dashed #dee2e6;
+      border-radius: 0.5rem;
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .import-card:hover {
+      border-color: #0969da;
+      background-color: #f8f9fa;
+    }
+    .import-card.dragover {
+      border-color: #0969da;
+      background-color: #e7f3ff;
+    }
+    .template-badge {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: #e7f3ff;
+      border-radius: 0.5rem;
+      margin: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1><i class="bi bi-cloud-upload"></i> Data Import</h1>
+        <p class="text-muted">Import data from CSV files or migrate from Knack platform</p>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="/import/history" class="btn btn-outline-secondary">
+          <i class="bi bi-clock-history"></i> Import History
+        </a>
+        <a href="/dashboard" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+      </div>
+    </div>
+
+    <% if (success) { %>
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <%= success %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    <% } %>
+
+    <% if (error) { %>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <%= error %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    <% } %>
+
+    <!-- Import Type Selection -->
+    <div class="row mb-4">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">Step 1: Select Import Type</h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <% importTypes.forEach(type => { %>
+                <div class="col-md-4 mb-3">
+                  <div class="template-badge" style="width: 100%;">
+                    <input
+                      type="radio"
+                      name="importType"
+                      value="<%= type %>"
+                      id="type-<%= type %>"
+                      class="form-check-input me-2"
+                      onchange="selectImportType('<%= type %>')"
+                    >
+                    <label for="type-<%= type %>" style="cursor: pointer;">
+                      <strong><%= type.charAt(0).toUpperCase() + type.slice(1) %></strong>
+                    </label>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+
+            <div id="templateInfo" class="mt-3" style="display: none;">
+              <div class="alert alert-info">
+                <h6><i class="bi bi-info-circle"></i> Template Information</h6>
+                <p class="mb-2"><strong>Required Fields:</strong> <span id="requiredFields"></span></p>
+                <p class="mb-0"><strong>Optional Fields:</strong> <span id="optionalFields"></span></p>
+                <a href="#" id="downloadTemplate" class="btn btn-sm btn-primary mt-2">
+                  <i class="bi bi-download"></i> Download CSV Template
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- File Upload -->
+    <div class="row mb-4">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">Step 2: Upload CSV File</h5>
+          </div>
+          <div class="card-body">
+            <form id="uploadForm" enctype="multipart/form-data">
+              <input type="hidden" name="importType" id="importTypeInput">
+
+              <div class="import-card" id="dropZone">
+                <i class="bi bi-cloud-arrow-up" style="font-size: 3rem; color: #6c757d;"></i>
+                <h5 class="mt-3">Drag and drop CSV file here</h5>
+                <p class="text-muted">or</p>
+                <label for="csvFile" class="btn btn-primary">
+                  <i class="bi bi-folder2-open"></i> Browse Files
+                </label>
+                <input
+                  type="file"
+                  id="csvFile"
+                  name="csvFile"
+                  accept=".csv"
+                  style="display: none;"
+                  onchange="handleFileSelect(this.files[0])"
+                >
+                <p class="text-muted mt-3 mb-0">Maximum file size: 10MB</p>
+              </div>
+
+              <div id="fileInfo" class="mt-3" style="display: none;">
+                <div class="alert alert-success">
+                  <i class="bi bi-file-earmark-text"></i>
+                  <strong>File selected:</strong> <span id="fileName"></span>
+                  <br>
+                  <small><strong>Size:</strong> <span id="fileSize"></span></small>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview and Execute -->
+    <div class="row mb-4">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">Step 3: Preview & Import</h5>
+          </div>
+          <div class="card-body">
+            <div id="previewSection" style="display: none;">
+              <div id="previewResults"></div>
+              <div class="d-flex justify-content-between mt-3">
+                <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
+                  <i class="bi bi-x-circle"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="executeBtn" onclick="executeImport()">
+                  <i class="bi bi-upload"></i> Execute Import
+                </button>
+              </div>
+            </div>
+
+            <div id="noPreview" class="text-center text-muted py-4">
+              <i class="bi bi-eye-slash" style="font-size: 2rem;"></i>
+              <p class="mt-2">Select import type and upload file to preview</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Imports -->
+    <% if (recentImports && recentImports.length > 0) { %>
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Recent Imports</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>File</th>
+                  <th>Date</th>
+                  <th>Imported By</th>
+                  <th>Results</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% recentImports.forEach(imp => { %>
+                  <tr>
+                    <td><span class="badge bg-primary"><%= imp.importType %></span></td>
+                    <td><%= imp.fileName %></td>
+                    <td><%= new Date(imp.startedAt).toLocaleString() %></td>
+                    <td><%= imp.importedBy ? `${imp.importedBy.firstName} ${imp.importedBy.lastName}` : 'Unknown' %></td>
+                    <td>
+                      <small>
+                        <span class="text-success"><%= imp.stats.successful %> success</span> /
+                        <span class="text-danger"><%= imp.stats.failed %> failed</span>
+                      </small>
+                    </td>
+                    <td>
+                      <% if (imp.status === 'completed') { %>
+                        <span class="badge bg-success">Completed</span>
+                      <% } else if (imp.status === 'failed') { %>
+                        <span class="badge bg-danger">Failed</span>
+                      <% } else if (imp.status === 'rolled_back') { %>
+                        <span class="badge bg-warning">Rolled Back</span>
+                      <% } else { %>
+                        <span class="badge bg-secondary"><%= imp.status %></span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <a href="/import/history/<%= imp._id %>" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i> View
+                      </a>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    <% } %>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let selectedType = null;
+    let selectedFile = null;
+    let previewData = null;
+
+    const templates = {
+      <%- JSON.stringify(importTypes.reduce((acc, type) => {
+        acc[type] = {};
+        return acc;
+      }, {})) %>
+    };
+
+    function selectImportType(type) {
+      selectedType = type;
+      document.getElementById('importTypeInput').value = type;
+      document.getElementById('templateInfo').style.display = 'block';
+      document.getElementById('downloadTemplate').href = `/import/template/${type}`;
+
+      // Show template info (you can fetch this from server if needed)
+      document.getElementById('requiredFields').textContent = 'See downloaded template';
+      document.getElementById('optionalFields').textContent = 'See downloaded template';
+
+      // Re-preview if file already selected
+      if (selectedFile) {
+        previewFile();
+      }
+    }
+
+    // Drag and drop
+    const dropZone = document.getElementById('dropZone');
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFileSelect(files[0]);
+      }
+    });
+
+    function handleFileSelect(file) {
+      if (!file) return;
+
+      if (!file.name.endsWith('.csv')) {
+        alert('Please select a CSV file');
+        return;
+      }
+
+      selectedFile = file;
+      document.getElementById('fileInfo').style.display = 'block';
+      document.getElementById('fileName').textContent = file.name;
+      document.getElementById('fileSize').textContent = formatFileSize(file.size);
+
+      // Auto-preview if type selected
+      if (selectedType) {
+        previewFile();
+      }
+    }
+
+    async function previewFile() {
+      if (!selectedType) {
+        alert('Please select an import type first');
+        return;
+      }
+
+      if (!selectedFile) {
+        alert('Please select a file first');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('csvFile', selectedFile);
+      formData.append('importType', selectedType);
+
+      try {
+        const response = await fetch('/import/preview', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Preview failed');
+        }
+
+        previewData = data;
+        displayPreview(data);
+      } catch (err) {
+        alert('Preview failed: ' + err.message);
+      }
+    }
+
+    function displayPreview(data) {
+      const html = `
+        <div class="alert ${data.invalidRows > 0 ? 'alert-warning' : 'alert-success'}">
+          <h6><i class="bi bi-eye"></i> Preview Results</h6>
+          <div class="row mt-3">
+            <div class="col-md-3">
+              <strong>Total Rows:</strong> ${data.totalRows}
+            </div>
+            <div class="col-md-3">
+              <strong class="text-success">Valid:</strong> ${data.validRows}
+            </div>
+            <div class="col-md-3">
+              <strong class="text-danger">Invalid:</strong> ${data.invalidRows}
+            </div>
+            <div class="col-md-3">
+              <strong>Columns:</strong> ${data.columns.length}
+            </div>
+          </div>
+        </div>
+
+        ${data.invalidRows > 0 ? `
+          <div class="alert alert-danger">
+            <h6><i class="bi bi-exclamation-triangle"></i> Errors Found</h6>
+            <p>The following rows have errors and will be skipped:</p>
+            <ul>
+              ${data.errors.slice(0, 10).map(err => `
+                <li>
+                  <strong>Row ${err.row}:</strong> ${err.errors.join(', ')}
+                  <br><small class="text-muted">${JSON.stringify(err.data)}</small>
+                </li>
+              `).join('')}
+              ${data.errors.length > 10 ? `<li><em>... and ${data.errors.length - 10} more errors</em></li>` : ''}
+            </ul>
+          </div>
+        ` : ''}
+
+        <div class="alert alert-info">
+          <h6><i class="bi bi-table"></i> Sample Data (First 5 Rows)</h6>
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered">
+              <thead>
+                <tr>
+                  ${data.columns.map(col => `<th>${col}</th>`).join('')}
+                </tr>
+              </thead>
+              <tbody>
+                ${data.sample.map(row => `
+                  <tr>
+                    ${data.columns.map(col => `<td>${row[col] || ''}</td>`).join('')}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('previewResults').innerHTML = html;
+      document.getElementById('previewSection').style.display = 'block';
+      document.getElementById('noPreview').style.display = 'none';
+
+      // Enable/disable execute button
+      document.getElementById('executeBtn').disabled = data.validRows === 0;
+    }
+
+    async function executeImport() {
+      if (!confirm(`Import ${previewData.validRows} valid rows? This cannot be easily undone.`)) {
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('csvFile', selectedFile);
+      formData.append('importType', selectedType);
+
+      // Show loading
+      document.getElementById('executeBtn').disabled = true;
+      document.getElementById('executeBtn').innerHTML = '<span class="spinner-border spinner-border-sm"></span> Importing...';
+
+      // Submit form
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/import/execute';
+      form.enctype = 'multipart/form-data';
+
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.name = 'csvFile';
+      fileInput.files = document.getElementById('csvFile').files;
+
+      const typeInput = document.createElement('input');
+      typeInput.type = 'hidden';
+      typeInput.name = 'importType';
+      typeInput.value = selectedType;
+
+      form.appendChild(fileInput);
+      form.appendChild(typeInput);
+      document.body.appendChild(form);
+      form.submit();
+    }
+
+    function resetForm() {
+      selectedFile = null;
+      selectedType = null;
+      previewData = null;
+
+      document.getElementById('uploadForm').reset();
+      document.getElementById('fileInfo').style.display = 'none';
+      document.getElementById('templateInfo').style.display = 'none';
+      document.getElementById('previewSection').style.display = 'none';
+      document.getElementById('noPreview').style.display = 'block';
+
+      document.querySelectorAll('input[name="importType"]').forEach(radio => {
+        radio.checked = false;
+      });
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+  </script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 // src/routes/programs.js
 const express         = require('express');
+const { body, validationResult } = require('express-validator');
 const router          = express.Router();
 const Program         = require('../models/Program');
 const Attendee        = require('../models/Attendee');
@@ -38,15 +39,49 @@ router.get('/programs/new', ensureStaffOrAdmin, (req, res) => {
  * POST /programs
  * Create a new program and redirect back to list
  */
-router.post('/programs', ensureStaffOrAdmin, async (req, res, next) => {
-  try {
-    await Program.create(req.body);
-    req.session.success = 'Program created';
-    res.redirect('/programs');
-  } catch (err) {
-    next(err);
+router.post(
+  '/programs',
+  ensureStaffOrAdmin,
+  [
+    // Validation rules
+    body('name')
+      .trim()
+      .notEmpty().withMessage('Program name is required')
+      .isLength({ min: 1, max: 100 }).withMessage('Program name must be 1-100 characters'),
+
+    body('description')
+      .optional({ checkFalsy: true })
+      .trim()
+      .isLength({ max: 500 }).withMessage('Description must be less than 500 characters'),
+
+    body('startDate')
+      .optional({ checkFalsy: true })
+      .isISO8601().withMessage('Start date must be a valid date'),
+
+    body('endDate')
+      .optional({ checkFalsy: true })
+      .isISO8601().withMessage('End date must be a valid date')
+  ],
+  async (req, res, next) => {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const firstError = errors.array()[0].msg;
+      req.session.error = firstError;
+      return res.redirect('/programs/new');
+    }
+
+    try {
+      await Program.create(req.body);
+      req.session.success = 'Program created';
+      res.redirect('/programs');
+    } catch (err) {
+      console.error('Error creating program:', err);
+      req.session.error = 'Failed to create program';
+      res.redirect('/programs/new');
+    }
   }
-});
+);
 
 /**
  * GET /programs/:id

@@ -10,4 +10,12 @@ const AttendanceSchema = new Schema({
   timestamps: true
 });
 
+// ─── Indexes ─────────────────────────────────────────────────────────────────
+// Compound index for program attendance queries
+AttendanceSchema.index({ program: 1, date: -1 });
+// Index for finding attendance by member
+AttendanceSchema.index({ member: 1, date: -1 });
+// Unique constraint: one attendance record per program+member+date
+AttendanceSchema.index({ program: 1, member: 1, date: 1 }, { unique: true });
+
 module.exports = mongoose.model('Attendance', AttendanceSchema);

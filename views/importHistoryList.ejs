@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Import History</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <style>
+    .filter-chips {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .filter-chip {
+      padding: 0.5rem 1rem;
+      border-radius: 2rem;
+      border: 1px solid #dee2e6;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-chip:hover {
+      background: #f8f9fa;
+    }
+    .filter-chip.active {
+      background: #0969da;
+      color: #fff;
+      border-color: #0969da;
+    }
+    .summary-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .summary-stat {
+      text-align: center;
+    }
+    .summary-stat h2 {
+      margin: 0;
+      font-size: 2.5rem;
+      font-weight: bold;
+    }
+    .summary-stat p {
+      margin: 0;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-4 mb-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1><i class="bi bi-clock-history"></i> Import History</h1>
+        <p class="text-muted">View and manage all data imports</p>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="/import" class="btn btn-primary">
+          <i class="bi bi-cloud-upload"></i> New Import
+        </a>
+        <a href="/dashboard" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left"></i> Dashboard
+        </a>
+      </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <% if (imports && imports.length > 0) { %>
+      <%
+        const totalImports = imports.length;
+        const totalSuccess = imports.reduce((sum, imp) => sum + imp.stats.successful, 0);
+        const totalFailed = imports.reduce((sum, imp) => sum + imp.stats.failed, 0);
+        const completed = imports.filter(imp => imp.status === 'completed').length;
+      %>
+      <div class="summary-card">
+        <div class="row">
+          <div class="col-md-3 summary-stat">
+            <h2><%= totalImports %></h2>
+            <p>Total Imports</p>
+          </div>
+          <div class="col-md-3 summary-stat">
+            <h2><%= completed %></h2>
+            <p>Completed</p>
+          </div>
+          <div class="col-md-3 summary-stat">
+            <h2><%= totalSuccess.toLocaleString() %></h2>
+            <p>Records Imported</p>
+          </div>
+          <div class="col-md-3 summary-stat">
+            <h2><%= totalFailed %></h2>
+            <p>Failed Records</p>
+          </div>
+        </div>
+      </div>
+    <% } %>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h6 class="card-title">Filter by Type</h6>
+        <div class="filter-chips" id="typeFilters">
+          <div class="filter-chip active" data-filter="all" onclick="filterByType('all')">
+            All Types
+          </div>
+          <div class="filter-chip" data-filter="members" onclick="filterByType('members')">
+            <i class="bi bi-people"></i> Members
+          </div>
+          <div class="filter-chip" data-filter="checkouts" onclick="filterByType('checkouts')">
+            <i class="bi bi-box-arrow-right"></i> Checkouts
+          </div>
+          <div class="filter-chip" data-filter="donations" onclick="filterByType('donations')">
+            <i class="bi bi-gift"></i> Donations
+          </div>
+          <div class="filter-chip" data-filter="programs" onclick="filterByType('programs')">
+            <i class="bi bi-calendar-event"></i> Programs
+          </div>
+          <div class="filter-chip" data-filter="attendees" onclick="filterByType('attendees')">
+            <i class="bi bi-person-check"></i> Attendees
+          </div>
+        </div>
+
+        <h6 class="card-title mt-3">Filter by Status</h6>
+        <div class="filter-chips" id="statusFilters">
+          <div class="filter-chip active" data-filter="all" onclick="filterByStatus('all')">
+            All Statuses
+          </div>
+          <div class="filter-chip" data-filter="completed" onclick="filterByStatus('completed')">
+            <i class="bi bi-check-circle"></i> Completed
+          </div>
+          <div class="filter-chip" data-filter="failed" onclick="filterByStatus('failed')">
+            <i class="bi bi-x-circle"></i> Failed
+          </div>
+          <div class="filter-chip" data-filter="rolled_back" onclick="filterByStatus('rolled_back')">
+            <i class="bi bi-arrow-counterclockwise"></i> Rolled Back
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import List -->
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">All Imports</h5>
+      </div>
+      <div class="card-body">
+        <% if (!imports || imports.length === 0) { %>
+          <div class="text-center text-muted py-5">
+            <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+            <p class="mt-3">No imports found</p>
+            <a href="/import" class="btn btn-primary">
+              <i class="bi bi-cloud-upload"></i> Create First Import
+            </a>
+          </div>
+        <% } else { %>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>File</th>
+                  <th>Date</th>
+                  <th>Imported By</th>
+                  <th>Results</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="importTableBody">
+                <% imports.forEach(imp => { %>
+                  <tr data-type="<%= imp.importType %>" data-status="<%= imp.status %>">
+                    <td>
+                      <span class="badge bg-primary"><%= imp.importType %></span>
+                    </td>
+                    <td>
+                      <i class="bi bi-file-earmark-text"></i>
+                      <%= imp.fileName %>
+                    </td>
+                    <td>
+                      <%= new Date(imp.startedAt).toLocaleDateString() %>
+                      <br>
+                      <small class="text-muted">
+                        <%= new Date(imp.startedAt).toLocaleTimeString() %>
+                      </small>
+                    </td>
+                    <td>
+                      <%= imp.importedBy ? `${imp.importedBy.firstName} ${imp.importedBy.lastName}` : 'Unknown' %>
+                    </td>
+                    <td>
+                      <div class="d-flex gap-2 align-items-center">
+                        <span class="text-success">
+                          <i class="bi bi-check-circle"></i> <%= imp.stats.successful %>
+                        </span>
+                        <% if (imp.stats.failed > 0) { %>
+                          <span class="text-danger">
+                            <i class="bi bi-x-circle"></i> <%= imp.stats.failed %>
+                          </span>
+                        <% } %>
+                      </div>
+                      <% if (imp.stats.totalRows > 0) { %>
+                        <small class="text-muted">
+                          <%= Math.round((imp.stats.successful / imp.stats.totalRows) * 100) %>% success rate
+                        </small>
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (imp.status === 'completed') { %>
+                        <span class="badge bg-success">
+                          <i class="bi bi-check-circle"></i> Completed
+                        </span>
+                      <% } else if (imp.status === 'failed') { %>
+                        <span class="badge bg-danger">
+                          <i class="bi bi-x-circle"></i> Failed
+                        </span>
+                      <% } else if (imp.status === 'rolled_back') { %>
+                        <span class="badge bg-warning">
+                          <i class="bi bi-arrow-counterclockwise"></i> Rolled Back
+                        </span>
+                      <% } else if (imp.status === 'processing') { %>
+                        <span class="badge bg-info">
+                          <i class="bi bi-hourglass-split"></i> Processing
+                        </span>
+                      <% } else { %>
+                        <span class="badge bg-secondary"><%= imp.status %></span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <a href="/import/history/<%= imp._id %>" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i> View
+                      </a>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <% if (pagination && pagination.totalPages > 1) { %>
+            <nav aria-label="Import history pagination" class="mt-4">
+              <ul class="pagination justify-content-center">
+                <li class="page-item <%= !pagination.hasPrevPage ? 'disabled' : '' %>">
+                  <a class="page-link" href="?page=<%= pagination.currentPage - 1 %>">
+                    <i class="bi bi-chevron-left"></i> Previous
+                  </a>
+                </li>
+
+                <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+                  <% if (
+                    i === 1 ||
+                    i === pagination.totalPages ||
+                    (i >= pagination.currentPage - 2 && i <= pagination.currentPage + 2)
+                  ) { %>
+                    <li class="page-item <%= i === pagination.currentPage ? 'active' : '' %>">
+                      <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+                    </li>
+                  <% } else if (
+                    i === pagination.currentPage - 3 ||
+                    i === pagination.currentPage + 3
+                  ) { %>
+                    <li class="page-item disabled">
+                      <span class="page-link">...</span>
+                    </li>
+                  <% } %>
+                <% } %>
+
+                <li class="page-item <%= !pagination.hasNextPage ? 'disabled' : '' %>">
+                  <a class="page-link" href="?page=<%= pagination.currentPage + 1 %>">
+                    Next <i class="bi bi-chevron-right"></i>
+                  </a>
+                </li>
+              </ul>
+            </nav>
+          <% } %>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let currentTypeFilter = 'all';
+    let currentStatusFilter = 'all';
+
+    function filterByType(type) {
+      currentTypeFilter = type;
+      applyFilters();
+      updateActiveChip('typeFilters', type);
+    }
+
+    function filterByStatus(status) {
+      currentStatusFilter = status;
+      applyFilters();
+      updateActiveChip('statusFilters', status);
+    }
+
+    function applyFilters() {
+      const rows = document.querySelectorAll('#importTableBody tr');
+
+      rows.forEach(row => {
+        const rowType = row.getAttribute('data-type');
+        const rowStatus = row.getAttribute('data-status');
+
+        const typeMatch = currentTypeFilter === 'all' || rowType === currentTypeFilter;
+        const statusMatch = currentStatusFilter === 'all' || rowStatus === currentStatusFilter;
+
+        row.style.display = (typeMatch && statusMatch) ? '' : 'none';
+      });
+    }
+
+    function updateActiveChip(containerId, filter) {
+      const container = document.getElementById(containerId);
+      const chips = container.querySelectorAll('.filter-chip');
+
+      chips.forEach(chip => {
+        if (chip.getAttribute('data-filter') === filter) {
+          chip.classList.add('active');
+        } else {
+          chip.classList.remove('active');
+        }
+      });
+    }
+  </script>
+</body>
+</html>

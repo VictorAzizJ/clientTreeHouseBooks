@@ -19,4 +19,10 @@ const DonationSchema = new Schema({
   donatedAt:     { type: Date, default: Date.now }
 });
 
+// ─── Indexes ─────────────────────────────────────────────────────────────────
+// Index for finding donations by member (used in member detail page)
+DonationSchema.index({ member: 1, donatedAt: -1 });
+// Index for date-based queries (used in admin analytics/charts)
+DonationSchema.index({ donatedAt: -1 });
+
 module.exports = mongoose.model('Donation', DonationSchema);

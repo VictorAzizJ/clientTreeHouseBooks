@@ -1,0 +1,267 @@
+<!-- views/partials/quickActions.ejs -->
+<!-- Quick Action Cards with Help Text -->
+<style>
+  .quick-actions-section {
+    background: linear-gradient(135deg, var(--thb-accent) 0%, white 100%);
+    padding: 2rem;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .quick-action-card {
+    background: white;
+    border: none;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    height: 100%;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+    color: inherit;
+  }
+
+  .quick-action-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(43, 122, 120, 0.15);
+    text-decoration: none;
+  }
+
+  .quick-action-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    color: white;
+  }
+
+  .quick-action-icon.teal { background: linear-gradient(135deg, var(--thb-primary), var(--thb-secondary)); }
+  .quick-action-icon.orange { background: linear-gradient(135deg, #FF6B35, #FF8C61); }
+  .quick-action-icon.blue { background: linear-gradient(135deg, #4A90E2, #7BB3E9); }
+  .quick-action-icon.green { background: linear-gradient(135deg, #52B788, #74C69D); }
+  .quick-action-icon.purple { background: linear-gradient(135deg, #9B59B6, #B57EDC); }
+  .quick-action-icon.pink { background: linear-gradient(135deg, #E74C3C, #F08080); }
+
+  .quick-action-card h5 {
+    color: var(--thb-primary);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .quick-action-card p {
+    color: var(--thb-text-light);
+    font-size: 0.9rem;
+    margin-bottom: 0;
+  }
+
+  .quick-action-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background-color: var(--thb-orange);
+    color: white;
+    font-size: 0.75rem;
+    border-radius: 1rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-header h4 {
+    color: var(--thb-primary);
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .help-link {
+    color: var(--thb-secondary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .help-link:hover {
+    color: var(--thb-primary);
+    text-decoration: underline;
+  }
+</style>
+
+<div class="quick-actions-section">
+  <div class="section-header">
+    <h4><i class="bi bi-lightning-charge"></i> Quick Actions</h4>
+    <div class="ms-auto">
+      <a href="#" class="help-link" data-bs-toggle="modal" data-bs-target="#helpModal">
+        <i class="bi bi-question-circle"></i>
+        Need help?
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- Add Member -->
+    <div class="col-md-4 col-lg-3">
+      <a href="/members/new" class="quick-action-card">
+        <div class="quick-action-icon teal">
+          <i class="bi bi-person-plus"></i>
+        </div>
+        <h5>Add Member</h5>
+        <p>Register new members and families to the library</p>
+      </a>
+    </div>
+
+    <!-- Record Checkout -->
+    <div class="col-md-4 col-lg-3">
+      <a href="/checkouts/new" class="quick-action-card">
+        <div class="quick-action-icon blue">
+          <i class="bi bi-box-arrow-right"></i>
+        </div>
+        <h5>Book Checkout</h5>
+        <p>Record when members check out books</p>
+      </a>
+    </div>
+
+    <!-- Record Donation -->
+    <div class="col-md-4 col-lg-3">
+      <a href="/donations/new" class="quick-action-card">
+        <div class="quick-action-icon green">
+          <i class="bi bi-gift"></i>
+        </div>
+        <h5>Book Donation</h5>
+        <p>Track incoming book donations and donors</p>
+      </a>
+    </div>
+
+    <!-- View All Members -->
+    <div class="col-md-4 col-lg-3">
+      <a href="/members" class="quick-action-card">
+        <div class="quick-action-icon purple">
+          <i class="bi bi-people"></i>
+        </div>
+        <h5>View Members</h5>
+        <p>Browse and search member database</p>
+      </a>
+    </div>
+
+    <!-- Staff/Admin Actions -->
+    <% if (user && (user.role === 'admin' || user.role === 'staff')) { %>
+
+      <!-- Classroom Program -->
+      <div class="col-md-4 col-lg-3">
+        <a href="/classroom/setup" class="quick-action-card">
+          <div class="quick-action-icon orange">
+            <i class="bi bi-mortarboard"></i>
+          </div>
+          <h5>Classroom Program</h5>
+          <p>Create after-school programs with tracking</p>
+          <span class="quick-action-badge">Popular</span>
+        </a>
+      </div>
+
+      <!-- Import Data -->
+      <div class="col-md-4 col-lg-3">
+        <a href="/import" class="quick-action-card">
+          <div class="quick-action-icon pink">
+            <i class="bi bi-cloud-upload"></i>
+          </div>
+          <h5>Import Data</h5>
+          <p>Bulk import from CSV files or Knack</p>
+        </a>
+      </div>
+
+      <!-- Attendance -->
+      <div class="col-md-4 col-lg-3">
+        <a href="/attendance" class="quick-action-card">
+          <div class="quick-action-icon green">
+            <i class="bi bi-check2-square"></i>
+          </div>
+          <h5>Take Attendance</h5>
+          <p>Mark attendance for program sessions</p>
+        </a>
+      </div>
+
+      <!-- Metrics -->
+      <div class="col-md-4 col-lg-3">
+        <a href="/metrics/overview" class="quick-action-card">
+          <div class="quick-action-icon blue">
+            <i class="bi bi-graph-up"></i>
+          </div>
+          <h5>View Metrics</h5>
+          <p>Reports and analytics dashboard</p>
+        </a>
+      </div>
+
+    <% } %>
+  </div>
+</div>
+
+<!-- Help Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background: var(--thb-primary); color: white;">
+        <h5 class="modal-title"><i class="bi bi-question-circle"></i> Dashboard Help</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <h6 class="text-primary"><i class="bi bi-people"></i> Member Management</h6>
+        <ul>
+          <li><strong>Add Member:</strong> Register new members and families. You can link children to parent accounts.</li>
+          <li><strong>View Members:</strong> Search and browse all members. Filter by adult/child, search by name or email.</li>
+        </ul>
+
+        <h6 class="text-primary mt-3"><i class="bi bi-book"></i> Book Transactions</h6>
+        <ul>
+          <li><strong>Book Checkout:</strong> Record when members borrow books. Track number of books, genres, and weight.</li>
+          <li><strong>Book Donation:</strong> Log incoming book donations. Track donors and donation statistics.</li>
+        </ul>
+
+        <% if (user && (user.role === 'admin' || user.role === 'staff')) { %>
+          <h6 class="text-primary mt-3"><i class="bi bi-mortarboard"></i> Classroom Programs</h6>
+          <ul>
+            <li><strong>Create Program:</strong> Set up after-school programs with automatic student tracking.</li>
+            <li><strong>Take Attendance:</strong> Mark daily attendance and track participation.</li>
+            <li><strong>View Metrics:</strong> See reports on behavior, grades, reading levels, and custom metrics.</li>
+          </ul>
+
+          <h6 class="text-primary mt-3"><i class="bi bi-cloud-upload"></i> Data Import</h6>
+          <ul>
+            <li><strong>Import Data:</strong> Bulk upload members, checkouts, donations from CSV files.</li>
+            <li><strong>Preview First:</strong> System validates data before importing - shows errors.</li>
+            <li><strong>Rollback:</strong> Can undo imports if mistakes are made.</li>
+            <li><strong>Knack Migration:</strong> Export from Knack as CSV, then import here.</li>
+          </ul>
+        <% } %>
+
+        <h6 class="text-primary mt-3"><i class="bi bi-sliders"></i> Dashboard Customization</h6>
+        <ul>
+          <li><strong>Widget Visibility:</strong> Hide or show dashboard widgets.</li>
+          <li><strong>Drag & Drop:</strong> Reorder widgets by dragging them.</li>
+          <li><strong>Chart Types:</strong> Switch between line, bar, pie charts.</li>
+        </ul>
+
+        <div class="alert alert-info mt-3">
+          <i class="bi bi-lightbulb"></i>
+          <strong>Tip:</strong> Look for the <i class="bi bi-question-circle text-info"></i> icon throughout the system for context-specific help.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <a href="/documentation" class="btn btn-outline-primary">
+          <i class="bi bi-book"></i> Full Documentation
+        </a>
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it!</button>
+      </div>
+    </div>
+  </div>
+</div>

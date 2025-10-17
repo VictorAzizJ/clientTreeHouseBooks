@@ -8,4 +8,10 @@ const messageSchema = new Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// ─── Indexes ─────────────────────────────────────────────────────────────────
+// Compound index for dashboard message queries ($or: senderId or recipientId)
+// These support both "messages I sent" and "messages sent to me" queries
+messageSchema.index({ senderId: 1, createdAt: -1 });
+messageSchema.index({ recipientId: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Message', messageSchema);

@@ -1,64 +1,112 @@
 // routes/register.js
+// ═════════════════════════════════════════════════════════════════════════════
+// REGISTRATION ROUTES - Local user registration with bcrypt password hashing
+// ═════════════════════════════════════════════════════════════════════════════
+//
+// 📝 REGISTRATION FLOW:
+//
+// 1. User visits /custom-signup (GET) → sees signup form
+// 2. User submits firstName, lastName, email, password → POST /register
+// 3. Server validates input (express-validator)
+// 4. Server checks email doesn't already exist
+// 5. Server creates new User document with plain-text password
+// 6. Mongoose pre-save hook (in models/User.js) automatically hashes password with bcrypt
+// 7. User saved to MongoDB with hashed password
+// 8. User redirected to login page with success message
+//
+// 🔒 SECURITY NOTES:
+//
+// - Input validation prevents injection attacks and malformed data
+// - Passwords are NEVER stored in plain text
+// - Bcrypt automatically salts and hashes (10 rounds) via User model pre-save hook
+// - Email addresses are stored in lowercase and trimmed for consistency
+// - Default role is 'volunteer' (can be promoted by admin later)
+//
+// ─────────────────────────────────────────────────────────────────────────────
+
 const express = require('express');
+const { body, validationResult } = require('express-validator');
 const router = express.Router();
-const axios = require('axios');
-const User = require('../models/User'); // Optional: for storing a local record
+const User = require('../models/User');
 
-// GET /custom-signup: Render the custom sign-up form
+// ─── GET /custom-signup ──────────────────────────────────────────────────────
+// Render the custom sign-up form
 router.get('/custom-signup', (req, res) => {
-  res.render('customSignup');
+  const { error, success } = req.query;
+  res.render('customSignup', { error, success });
 });
 
-// POST /register: Handle form submission and call Okta Users API
-router.post('/register', async (req, res) => {
-  const { firstName, lastName, email, password } = req.body;
+// ─── POST /register ──────────────────────────────────────────────────────────
+// Handle user registration with local authentication
+router.post(
+  '/register',
+  [
+    // Validation rules
+    body('firstName')
+      .trim()
+      .notEmpty().withMessage('First name is required')
+      .isLength({ min: 1, max: 50 }).withMessage('First name must be 1-50 characters')
+      .matches(/^[a-zA-Z\s'-]+$/).withMessage('First name can only contain letters, spaces, hyphens, and apostrophes'),
 
-  // Construct the payload according to Okta Users API (for OIE-enabled orgs)
-  const payload = {
-    profile: {
-      firstName,
-      lastName,
-      email,
-      login: email  // In Okta, login is typically the same as email
-    },
-    credentials: {
-      password: { value: password }
+    body('lastName')
+      .trim()
+      .notEmpty().withMessage('Last name is required')
+      .isLength({ min: 1, max: 50 }).withMessage('Last name must be 1-50 characters')
+      .matches(/^[a-zA-Z\s'-]+$/).withMessage('Last name can only contain letters, spaces, hyphens, and apostrophes'),
+
+    body('email')
+      .trim()
+      .notEmpty().withMessage('Email is required')
+      .isEmail().withMessage('Must be a valid email address')
+      .normalizeEmail(),
+
+    body('password')
+      .notEmpty().withMessage('Password is required')
+      .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long')
+      .matches(/[A-Za-z]/).withMessage('Password must contain at least one letter')
+      .matches(/[0-9]/).withMessage('Password must contain at least one number')
+  ],
+  async (req, res) => {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const firstError = errors.array()[0].msg;
+      const errorMsg = encodeURIComponent(firstError);
+      return res.redirect(`/custom-signup?error=${errorMsg}`);
     }
-  };
-  console.log('Okta Domain:', process.env.OKTA_DOMAIN);
 
-  try {
-    // Call the Okta Users API to create a new user (this is an admin call)
-    const oktaResponse = await axios.post(
-      `https://${process.env.OKTA_DOMAIN}/api/v1/users?activate=true`,
-      payload,
-      {
-        headers: {
-          'Authorization': `SSWS ${process.env.OKTA_API_TOKEN}`,
-          'Content-Type': 'application/json'
-        }
+    const { firstName, lastName, email, password } = req.body;
+
+    try {
+      // 1. Check if email already exists (case-insensitive)
+      const existingUser = await User.findOne({ email: email.toLowerCase() });
+      if (existingUser) {
+        const errorMsg = encodeURIComponent('An account with this email already exists.');
+        return res.redirect(`/custom-signup?error=${errorMsg}`);
       }
-    );
 
-    // Optionally, create a local user record if you want to maintain a local database
-    const oktaUser = oktaResponse.data;
-    let localUser = await User.findOne({ oktaId: oktaUser.id });
-    if (!localUser) {
-      localUser = await User.create({
-        oktaId: oktaUser.id,
-        firstName: oktaUser.profile.firstName,
-        lastName: oktaUser.profile.lastName,
-        email: oktaUser.profile.email,
-        role: 'volunteer'  // Default to volunteer; you can update this later
+      // 2. Create new user
+      // Password will be automatically hashed by the pre-save hook in models/User.js
+      const newUser = await User.create({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.toLowerCase(),
+        password: password, // Will be hashed by Mongoose pre-save hook
+        role: 'volunteer'   // Default role (can be changed by admin later)
       });
-    }
 
-    // On success, redirect to a success page or the login page
-    res.send("User registered successfully! You can now sign in.");
-  } catch (err) {
-    console.error("Error registering user:", err.response ? err.response.data : err.message);
-    res.status(400).send("Registration failed: " + (err.response ? JSON.stringify(err.response.data) : err.message));
+      console.log(`✅ New user registered: ${newUser.email} (ID: ${newUser._id})`);
+
+      // 3. Redirect to login with success message
+      const successMsg = encodeURIComponent('Account created successfully! Please log in.');
+      res.redirect(`/custom-login?success=${successMsg}`);
+
+    } catch (err) {
+      console.error('Registration error:', err);
+      const errorMsg = encodeURIComponent('An error occurred during registration. Please try again.');
+      res.redirect(`/custom-signup?error=${errorMsg}`);
+    }
   }
-});
+);
 
 module.exports = router;

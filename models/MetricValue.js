@@ -13,4 +13,17 @@ const MetricValueSchema = new Schema({
   timestamps: true
 });
 
+// ─── Indexes ─────────────────────────────────────────────────────────────────
+// Compound index for program metric queries
+MetricValueSchema.index({ program: 1, date: -1 });
+// Index for member metric history
+MetricValueSchema.index({ member: 1, date: -1 });
+// Index for finding values by definition
+MetricValueSchema.index({ definition: 1, date: -1 });
+// Unique constraint: one value per program+definition+member+date
+MetricValueSchema.index(
+  { program: 1, definition: 1, member: 1, date: 1 },
+  { unique: true }
+);
+
 module.exports = mongoose.model('MetricValue', MetricValueSchema);

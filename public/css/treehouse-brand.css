@@ -1,0 +1,357 @@
+/**
+ * TreeHouseBooks Philadelphia Brand Styles
+ * Consistent branding across the application
+ */
+
+:root {
+  /* TreeHouseBooks Brand Colors - Nature Inspired */
+  --thb-primary: #6B8E23;         /* Olive Green - primary brand color (natural, earthy) */
+  --thb-primary-dark: #556B2F;    /* Dark Olive for hover states */
+  --thb-secondary: #8FBC8F;       /* Sage Green - secondary actions */
+  --thb-accent: #F5F5DC;          /* Beige/Cream - warm background */
+  --thb-warm: #FFFEF7;            /* Warm ivory white */
+  --thb-orange: #D2691E;          /* Chocolate/Terra Cotta - warm accent */
+  --thb-brown: #8B4513;           /* Saddle Brown - wood tones */
+  --thb-text: #3E3E3E;            /* Dark charcoal text */
+  --thb-text-light: #6B6B6B;      /* Medium gray text */
+  --thb-success: #6B8E23;         /* Olive green for success */
+  --thb-danger: #A0522D;          /* Sienna for errors (warm, not harsh) */
+  --thb-warning: #D2691E;         /* Terra cotta for warnings */
+  --thb-info: #4682B4;            /* Steel blue for info */
+  --thb-leaf: #9ACD32;            /* Yellow-green for highlights */
+}
+
+/* Global Body Styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--thb-text);
+  background: linear-gradient(135deg, var(--thb-accent) 0%, var(--thb-warm) 100%);
+  min-height: 100vh;
+}
+
+/* Override Bootstrap Primary Colors */
+.btn-primary {
+  background-color: var(--thb-primary) !important;
+  border-color: var(--thb-primary) !important;
+  color: white !important;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--thb-primary-dark) !important;
+  border-color: var(--thb-primary-dark) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(43, 122, 120, 0.2);
+}
+
+.btn-outline-primary {
+  color: var(--thb-primary) !important;
+  border-color: var(--thb-primary) !important;
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--thb-primary) !important;
+  border-color: var(--thb-primary) !important;
+  color: white !important;
+}
+
+/* Success Button */
+.btn-success {
+  background-color: var(--thb-success) !important;
+  border-color: var(--thb-success) !important;
+}
+
+/* Cards */
+.card {
+  border: none;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: all 0.2s;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(43, 122, 120, 0.15);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  background-color: var(--thb-accent);
+  border-bottom: 2px solid var(--thb-secondary);
+  font-weight: 600;
+  color: var(--thb-primary);
+}
+
+/* Forms */
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--thb-secondary);
+  box-shadow: 0 0 0 0.25rem rgba(58, 175, 169, 0.25);
+}
+
+.form-check-input:checked {
+  background-color: var(--thb-primary);
+  border-color: var(--thb-primary);
+}
+
+.form-label {
+  color: var(--thb-text);
+  font-weight: 500;
+}
+
+/* Alerts */
+.alert-success {
+  background-color: rgba(82, 183, 136, 0.1);
+  border-color: var(--thb-success);
+  color: #2d5f49;
+}
+
+.alert-info {
+  background-color: rgba(74, 144, 226, 0.1);
+  border-color: var(--thb-info);
+  color: #2b5482;
+}
+
+.alert-warning {
+  background-color: rgba(243, 156, 18, 0.1);
+  border-color: var(--thb-warning);
+  color: #7f5006;
+}
+
+.alert-danger {
+  background-color: rgba(231, 76, 60, 0.1);
+  border-color: var(--thb-danger);
+  color: #7f2b24;
+}
+
+/* Badges */
+.badge.bg-primary {
+  background-color: var(--thb-primary) !important;
+}
+
+.badge.bg-success {
+  background-color: var(--thb-success) !important;
+}
+
+/* Links */
+a {
+  color: var(--thb-primary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: var(--thb-primary-dark);
+}
+
+/* Tables */
+.table {
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.table thead {
+  background-color: var(--thb-accent);
+  color: var(--thb-primary);
+}
+
+.table-hover tbody tr:hover {
+  background-color: var(--thb-accent);
+}
+
+/* Pagination */
+.pagination .page-link {
+  color: var(--thb-primary);
+  border-color: var(--thb-accent);
+}
+
+.pagination .page-item.active .page-link {
+  background-color: var(--thb-primary);
+  border-color: var(--thb-primary);
+}
+
+.pagination .page-link:hover {
+  background-color: var(--thb-accent);
+  border-color: var(--thb-secondary);
+  color: var(--thb-primary-dark);
+}
+
+/* Breadcrumbs */
+.breadcrumb {
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.breadcrumb-item.active {
+  color: var(--thb-primary);
+}
+
+/* Loading Spinner */
+.spinner-border {
+  color: var(--thb-primary);
+}
+
+/* Modals */
+.modal-header {
+  background-color: var(--thb-accent);
+  border-bottom: 2px solid var(--thb-secondary);
+}
+
+.modal-title {
+  color: var(--thb-primary);
+  font-weight: 600;
+}
+
+/* Progress Bars */
+.progress {
+  background-color: var(--thb-accent);
+}
+
+.progress-bar {
+  background-color: var(--thb-primary);
+}
+
+/* Tooltips */
+.tooltip-inner {
+  background-color: var(--thb-primary);
+}
+
+.bs-tooltip-top .tooltip-arrow::before {
+  border-top-color: var(--thb-primary);
+}
+
+.bs-tooltip-end .tooltip-arrow::before {
+  border-right-color: var(--thb-primary);
+}
+
+.bs-tooltip-bottom .tooltip-arrow::before {
+  border-bottom-color: var(--thb-primary);
+}
+
+.bs-tooltip-start .tooltip-arrow::before {
+  border-left-color: var(--thb-primary);
+}
+
+/* Popovers */
+.popover {
+  border-color: var(--thb-secondary);
+}
+
+.popover-header {
+  background-color: var(--thb-accent);
+  color: var(--thb-primary);
+  border-bottom: 1px solid var(--thb-secondary);
+}
+
+/* Text Colors */
+.text-primary {
+  color: var(--thb-primary) !important;
+}
+
+.text-secondary {
+  color: var(--thb-secondary) !important;
+}
+
+.text-success {
+  color: var(--thb-success) !important;
+}
+
+.text-danger {
+  color: var(--thb-danger) !important;
+}
+
+.text-warning {
+  color: var(--thb-warning) !important;
+}
+
+.text-info {
+  color: var(--thb-info) !important;
+}
+
+/* Background Colors */
+.bg-primary {
+  background-color: var(--thb-primary) !important;
+}
+
+.bg-light {
+  background-color: var(--thb-accent) !important;
+}
+
+/* Icon Colors */
+.bi {
+  vertical-align: middle;
+}
+
+/* Utility Classes */
+.thb-gradient-bg {
+  background: linear-gradient(135deg, var(--thb-primary) 0%, var(--thb-secondary) 100%);
+}
+
+.thb-card-hover {
+  transition: all 0.3s ease;
+}
+
+.thb-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(43, 122, 120, 0.15);
+}
+
+/* Scrollbar Styling (Webkit browsers) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--thb-accent);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--thb-secondary);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--thb-primary);
+}
+
+/* Responsive Utilities */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+
+  .card {
+    margin-bottom: 1rem;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background: white;
+  }
+
+  .btn,
+  .navbar,
+  .breadcrumb {
+    display: none;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+}

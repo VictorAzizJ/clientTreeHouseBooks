@@ -3,254 +3,661 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard - TreeHouseBooks</title>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
+      body {
+        background: linear-gradient(135deg, #DEF2F1 0%, #FEFFFF 100%);
+        min-height: 100vh;
+      }
+
+      .dashboard-header {
+        background: white;
+        padding: 1.5rem 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .dashboard-header h2 {
+        color: #2B7A78;
+        font-weight: 600;
+        margin: 0;
+      }
+
       .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
         gap: 1rem;
       }
+
       .widget {
         padding: 1rem;
-        border: 1px solid #dee2e6;
-        border-radius: 0.5rem;
+        border: none;
+        border-radius: 0.75rem;
         background-color: #fff;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.2s;
+        position: relative;
+      }
+
+      .widget:hover {
+        box-shadow: 0 4px 12px rgba(43, 122, 120, 0.15);
+        transform: translateY(-2px);
+      }
+
+      .widget.dragging {
+        opacity: 0.5;
+        cursor: move;
+      }
+
+      .widget.hidden {
+        display: none;
+      }
+
+      .widget-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+      }
+
+      .widget-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #2B7A78;
+      }
+
+      .drag-handle {
+        cursor: grab;
+        color: #3AAFA9;
+        font-size: 1.2rem;
+      }
+
+      .drag-handle:hover {
+        color: #2B7A78;
+      }
+
+      .drag-handle:active {
+        cursor: grabbing;
+      }
+
+      .widget-controls {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .chart-type-selector {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 10;
+      }
+
+      .chart-type-selector .btn-sm {
+        background-color: #DEF2F1;
+        border-color: #3AAFA9;
+        color: #2B7A78;
+      }
+
+      .chart-type-selector .btn-sm.active {
+        background-color: #2B7A78;
+        border-color: #2B7A78;
+        color: white;
+      }
+
+      .preferences-panel {
+        position: fixed;
+        right: -350px;
+        top: 0;
+        height: 100%;
+        width: 350px;
+        background: white;
+        box-shadow: -2px 0 8px rgba(0,0,0,0.15);
+        transition: right 0.3s;
+        z-index: 1000;
+        overflow-y: auto;
+      }
+
+      .preferences-panel.open {
+        right: 0;
+      }
+
+      .preferences-content {
+        padding: 1.5rem;
+      }
+
+      .preferences-content h4 {
+        color: #2B7A78;
+      }
+
+      .widget-toggle {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        border-bottom: 1px solid #DEF2F1;
+        border-radius: 0.5rem;
+        margin-bottom: 0.5rem;
+        transition: background 0.2s;
+      }
+
+      .widget-toggle:hover {
+        background-color: #DEF2F1;
+      }
+
+      .widget-toggle:last-child {
+        border-bottom: none;
+      }
+
+      .form-check-input:checked {
+        background-color: #2B7A78;
+        border-color: #2B7A78;
+      }
+
+      .overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+      }
+
+      .overlay.active {
+        display: block;
       }
     </style>
   </head>
   <body>
-    <div class="container mt-5">
+    <!-- Navigation -->
+    <%- include('partials/nav') %>
+
+    <div class="container-fluid px-4 py-3">
+      <!-- Dashboard Header -->
+      <div class="dashboard-header">
+        <div>
+          <h2><i class="bi bi-speedometer2"></i> Admin Dashboard</h2>
+          <p class="text-muted mb-0">Welcome back, <%= user.firstName %>!</p>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-primary" id="customizeBtn">
+            <i class="bi bi-sliders"></i> Customize Dashboard
+          </button>
+        </div>
+      </div>
 
       <% if (success) { %>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
           <%= success %>
-          <button
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="alert"
-            aria-label="Close"
-          ></button>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
       <% } %>
 
-      <h1 class="mb-4">Admin Dashboard</h1>
-      <p>Welcome, <%= user.claims ? user.claims.firstName : 'Admin' %>!</p>
+      <!-- Quick Actions -->
+      <%- include('partials/quickActions') %>
 
-      <div class="grid">
-        <!-- Notifications -->
-        <div class="widget">
-          <h5>Notifications</h5>
-          <% if (notifications && notifications.length > 0) { %>
-            <ul class="list-group">
-              <% notifications.forEach(n => { %>
-                <li class="list-group-item">
-                  <strong><%= n.title %></strong><br />
-                  <%= n.body %><br />
-                  <small class="text-muted">
-                    From:
-                    <%= n.senderId
-                          ? n.senderId.firstName + ' ' + n.senderId.lastName
-                          : 'Unknown' %>
-                  </small>
-                  <form
-                    action="/notifications/<%= n._id %>/acknowledge"
-                    method="POST"
-                    class="mt-1"
-                  >
-                    <button type="submit" class="btn btn-sm btn-outline-success">
-                      Acknowledge
-                    </button>
-                  </form>
-                </li>
-              <% }) %>
-            </ul>
-          <% } else { %>
-            <p class="text-muted">No new notifications.</p>
-          <% } %>
+      <!-- Dashboard Grid -->
+      <div class="grid" id="dashboardGrid">
+        <!-- Widgets will be inserted here based on preferences -->
+      </div>
+    </div>
+
+    <!-- Preferences Panel -->
+    <div class="overlay" id="overlay"></div>
+    <div class="preferences-panel" id="preferencesPanel">
+      <div class="preferences-content">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="mb-0">Dashboard Settings</h4>
+          <button class="btn-close" id="closePanelBtn"></button>
         </div>
 
-        <!-- Post Announcement -->
-        <div class="widget">
-          <h5>Post Announcement</h5>
-          <form action="/notifications" method="POST">
-            <input
-              type="text"
-              name="title"
-              class="form-control mb-2"
-              placeholder="Title"
-              required
-            />
-            <textarea
-              name="body"
-              class="form-control mb-2"
-              placeholder="Message"
-              rows="3"
-              required
-            ></textarea>
-            <label>Target Roles:</label><br />
-            <% ['volunteer','staff','admin'].forEach(role => { %>
-              <div class="form-check form-check-inline">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  name="targetRoles"
-                  value="<%= role %>"
-                  <%= role==='volunteer'?'checked':'' %>
-                />
-                <label class="form-check-label">
-                  <%= role.charAt(0).toUpperCase() + role.slice(1) %>
-                </label>
-              </div>
-            <% }) %>
-            <button type="submit" class="btn btn-primary mt-2">Send</button>
-          </form>
+        <h6 class="text-muted mb-2">Widget Visibility</h6>
+        <div id="widgetToggles" class="mb-4">
+          <!-- Toggles will be generated by JavaScript -->
         </div>
 
-        <!-- Direct Messages -->
-        <div class="widget">
-          <h5>Direct Messages</h5>
-          <% if (messages && messages.length > 0) { %>
-            <ul class="list-group mb-3">
-              <% messages.forEach(msg => { %>
-                <li class="list-group-item">
-                  <strong>
-                    <%= msg.senderId.firstName %> →
-                    <%= msg.recipientId.firstName %>:
-                  </strong>
-                  <br />
-                  <%= msg.body %><br />
-                  <small class="text-muted">
-                    <%= new Date(msg.createdAt).toLocaleString() %>
-                  </small>
-                </li>
-              <% }) %>
-            </ul>
-          <% } else { %>
-            <p class="text-muted">No messages yet.</p>
-          <% } %>
-          <form action="/messages" method="POST">
-            <div class="mb-2">
-              <label for="recipientId">Send To:</label>
-              <select name="recipientId" class="form-select" required>
-                <% userList.forEach(u => { %>
-                  <% if (u._id !== user._id) { %>
-                    <option value="<%= u._id %>">
-                      <%= u.firstName %> <%= u.lastName %> (<%= u.role %>)
-                    </option>
-                  <% } %>
-                <% }) %>
-              </select>
-            </div>
-            <div class="mb-2">
-              <textarea
-                name="body"
-                class="form-control"
-                rows="2"
-                placeholder="Your message"
-                required
-              ></textarea>
-            </div>
-            <button type="submit" class="btn btn-sm btn-primary">Send Message</button>
-          </form>
+        <div class="d-grid gap-2">
+          <button class="btn btn-outline-danger" id="resetPrefsBtn">
+            <i class="bi bi-arrow-counterclockwise"></i> Reset to Default
+          </button>
         </div>
+      </div>
+    </div>
 
-        <!-- Manage Users -->
-        <div class="widget">
-          <h5>Manage Users</h5>
-          <p>Promote or demote portal users.</p>
-          <div class="d-grid gap-2">
-            <a href="/admin/users" class="btn btn-sm btn-primary">
-              View All Users
-            </a>
-          </div>
-        </div>
-
-        <!-- Book Checkouts Stats -->
-        <div class="widget">
-          <h5>Book Checkouts (Last 12 Months)</h5>
-          <canvas id="checkoutsChart"></canvas>
-          <a href="/checkouts" class="btn btn-link btn-sm mt-2">View All Checkouts</a>
-        </div>
-
-        <!-- Book Donations Stats -->
-        <div class="widget">
-          <h5>Book Donations (Last 12 Months)</h5>
-          <canvas id="donationsChart"></canvas>
-          <a href="/donations" class="btn btn-link btn-sm mt-2">View All Donations</a>
-        </div>
-
-        <!-- New Members Stats -->
-        <div class="widget">
-          <h5>New Members (Last 12 Months)</h5>
-          <canvas id="membersChart"></canvas>
-          <a href="/members" class="btn btn-link btn-sm mt-2">View All Members</a>
-        </div>
-
-        <!-- Attendees per Program -->
-        <div class="widget">
-          <h5>Attendees per Program</h5>
-          <canvas id="programsChart"></canvas>
-          <a href="/programs" class="btn btn-link btn-sm mt-2">View Programs</a>
-        </div>
-
-      </div> <!-- end .grid -->
-
-      <a href="/logout" class="btn btn-danger mt-4">Logout</a>
-    </div> <!-- end .container -->
+    <!-- Widget Templates -->
+    <script id="widgetTemplates" type="application/json">
+    <%- JSON.stringify({
+      notifications: notifications,
+      messages: messages,
+      userList: userList,
+      recentMetrics: recentMetrics,
+      monthLabels: monthLabels,
+      checkoutCounts: checkoutCounts,
+      donationCounts: donationCounts,
+      memberCounts: memberCounts,
+      programStats: programStats,
+      prefs: prefs,
+      user: user
+    }) %>
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
     <script>
-      const monthLabels    = <%- JSON.stringify(monthLabels) %>;
-      const checkoutCounts = <%- JSON.stringify(checkoutCounts) %>;
-      const donationCounts = <%- JSON.stringify(donationCounts) %>;
-      const memberCounts   = <%- JSON.stringify(memberCounts) %>;
-      const programStats   = <%- JSON.stringify(programStats) %>;
+      // Parse data from template
+      const data = JSON.parse(document.getElementById('widgetTemplates').textContent);
+      const { notifications, messages, userList, recentMetrics, monthLabels, checkoutCounts, donationCounts, memberCounts, programStats, prefs, user } = data;
 
-      // 1) Checkouts
-      new Chart(document.getElementById('checkoutsChart'), {
-        type: 'line',
-        data: {
-          labels: monthLabels,
-          datasets: [{ label: 'Book Checkouts', data: checkoutCounts, fill: false }]
+      // Widget definitions
+      const widgetDefs = {
+        notifications: {
+          title: '<i class="bi bi-bell"></i> Notifications',
+          render: () => `
+            <div class="widget" data-widget="notifications" draggable="true">
+              <div class="widget-header">
+                <h5 class="widget-title"><i class="bi bi-bell"></i> Notifications</h5>
+                <span class="drag-handle"><i class="bi bi-grip-vertical"></i></span>
+              </div>
+              ${notifications && notifications.length > 0 ? `
+                <ul class="list-group">
+                  ${notifications.map(n => `
+                    <li class="list-group-item">
+                      <strong>${n.title}</strong><br>
+                      ${n.body}<br>
+                      <small class="text-muted">From: ${n.senderId ? n.senderId.firstName + ' ' + n.senderId.lastName : 'Unknown'}</small>
+                      <form action="/notifications/${n._id}/acknowledge" method="POST" class="mt-1">
+                        <button type="submit" class="btn btn-sm btn-outline-success">Acknowledge</button>
+                      </form>
+                    </li>
+                  `).join('')}
+                </ul>
+              ` : '<p class="text-muted">No new notifications.</p>'}
+            </div>
+          `
         },
-        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        announcements: {
+          title: '<i class="bi bi-megaphone"></i> Post Announcement',
+          render: () => `
+            <div class="widget" data-widget="announcements" draggable="true">
+              <div class="widget-header">
+                <h5 class="widget-title"><i class="bi bi-megaphone"></i> Post Announcement</h5>
+                <span class="drag-handle"><i class="bi bi-grip-vertical"></i></span>
+              </div>
+              <form action="/notifications" method="POST">
+                <input type="text" name="title" class="form-control mb-2" placeholder="Title" required>
+                <textarea name="body" class="form-control mb-2" placeholder="Message" rows="3" required></textarea>
+                <label>Target Roles:</label><br>
+                ${['volunteer','staff','admin'].map(role => `
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="targetRoles" value="${role}" ${role==='volunteer'?'checked':''}>
+                    <label class="form-check-label">${role.charAt(0).toUpperCase() + role.slice(1)}</label>
+                  </div>
+                `).join('')}
+                <button type="submit" class="btn btn-primary mt-2">Send</button>
+              </form>
+            </div>
+          `
+        },
+        messages: {
+          title: '<i class="bi bi-chat-dots"></i> Direct Messages',
+          render: () => `
+            <div class="widget" data-widget="messages" draggable="true">
+              <div class="widget-header">
+                <h5 class="widget-title"><i class="bi bi-chat-dots"></i> Direct Messages</h5>
+                <span class="drag-handle"><i class="bi bi-grip-vertical"></i></span>
+              </div>
+              ${messages && messages.length > 0 ? `
+                <ul class="list-group mb-3">
+                  ${messages.map(msg => `
+                    <li class="list-group-item">
+                      <strong>${msg.senderId.firstName} → ${msg.recipientId.firstName}:</strong><br>
+                      ${msg.body}<br>
+                      <small class="text-muted">${new Date(msg.createdAt).toLocaleString()}</small>
+                    </li>
+                  `).join('')}
+                </ul>
+              ` : '<p class="text-muted">No messages yet.</p>'}
+              <form action="/messages" method="POST">
+                <div class="mb-2">
+                  <label for="recipientId">Send To:</label>
+                  <select name="recipientId" class="form-select" required>
+                    ${userList.map(u => u._id !== user._id ? `<option value="${u._id}">${u.firstName} ${u.lastName} (${u.role})</option>` : '').join('')}
+                  </select>
+                </div>
+                <textarea name="body" class="form-control mb-2" rows="2" placeholder="Your message" required></textarea>
+                <button type="submit" class="btn btn-sm btn-primary">Send Message</button>
+              </form>
+            </div>
+          `
+        },
+        users: {
+          title: '<i class="bi bi-people"></i> Manage Users',
+          render: () => `
+            <div class="widget" data-widget="users" draggable="true">
+              <div class="widget-header">
+                <h5 class="widget-title"><i class="bi bi-people"></i> Manage Users</h5>
+                <span class="drag-handle"><i class="bi bi-grip-vertical"></i></span>
+              </div>
+              <p>Promote or demote portal users.</p>
+              <div class="d-grid gap-2">
+                <a href="/admin/users" class="btn btn-sm btn-primary">View All Users</a>
+              </div>
+            </div>
+          `
+        },
+        checkouts: {
+          title: '<i class="bi bi-book"></i> Book Checkouts',
+          render: () => `
+            <div class="widget" data-widget="checkouts" draggable="true">
+              <div class="widget-header">
+                <h5 class="widget-title"><i class="bi bi-book"></i> Book Checkouts (Last 12 Months)</h5>
+                <span class="drag-handle"><i class="bi bi-grip-vertical"></i></span>
+              </div>
+              <div class="chart-type-selector">
+                <select class="form-select form-select-sm" onchange="changeChartType('checkouts', this.value)">
+                  <option value="line" ${prefs.chartPreferences?.checkoutsChartType === 'line' ? 'selected' : ''}>Line</option>
+                  <option value="bar" ${prefs.chartPreferences?.checkoutsChartType === 'bar' ? 'selected' : ''}>Bar</option>
+                </select>
+              </div>
+              <canvas id="checkoutsChart"></canvas>
+              <a href="/checkouts" class="btn btn-link btn-sm mt-2">View All Checkouts</a>
+            </div>
+          `
+        },
+        donations: {
+          title: '<i class="bi bi-gift"></i> Book Donations',
+          render: () => `
+            <div class="widget" data-widget="donations" draggable="true">
+              <div class="widget-header">
+                <h5 class="widget-title"><i class="bi bi-gift"></i> Book Donations (Last 12 Months)</h5>
+                <span class="drag-handle"><i class="bi bi-grip-vertical"></i></span>
+              </div>
+              <div class="chart-type-selector">
+                <select class="form-select form-select-sm" onchange="changeChartType('donations', this.value)">
+                  <option value="line" ${prefs.chartPreferences?.donationsChartType === 'line' ? 'selected' : ''}>Line</option>
+                  <option value="bar" ${prefs.chartPreferences?.donationsChartType === 'bar' ? 'selected' : ''}>Bar</option>
+                </select>
+              </div>
+              <canvas id="donationsChart"></canvas>
+              <a href="/donations" class="btn btn-link btn-sm mt-2">View All Donations</a>
+            </div>
+          `
+        },
+        members: {
+          title: '<i class="bi bi-person-badge"></i> New Members',
+          render: () => `
+            <div class="widget" data-widget="members" draggable="true">
+              <div class="widget-header">
+                <h5 class="widget-title"><i class="bi bi-person-badge"></i> New Members (Last 12 Months)</h5>
+                <span class="drag-handle"><i class="bi bi-grip-vertical"></i></span>
+              </div>
+              <div class="chart-type-selector">
+                <select class="form-select form-select-sm" onchange="changeChartType('members', this.value)">
+                  <option value="bar" ${prefs.chartPreferences?.membersChartType === 'bar' ? 'selected' : ''}>Bar</option>
+                  <option value="line" ${prefs.chartPreferences?.membersChartType === 'line' ? 'selected' : ''}>Line</option>
+                </select>
+              </div>
+              <canvas id="membersChart"></canvas>
+              <a href="/members" class="btn btn-link btn-sm mt-2">View All Members</a>
+            </div>
+          `
+        },
+        programs: {
+          title: '<i class="bi bi-calendar-event"></i> Programs',
+          render: () => `
+            <div class="widget" data-widget="programs" draggable="true">
+              <div class="widget-header">
+                <h5 class="widget-title"><i class="bi bi-calendar-event"></i> Attendees per Program</h5>
+                <span class="drag-handle"><i class="bi bi-grip-vertical"></i></span>
+              </div>
+              <div class="chart-type-selector">
+                <select class="form-select form-select-sm" onchange="changeChartType('programs', this.value)">
+                  <option value="bar" ${prefs.chartPreferences?.programsChartType === 'bar' ? 'selected' : ''}>Bar</option>
+                  <option value="pie" ${prefs.chartPreferences?.programsChartType === 'pie' ? 'selected' : ''}>Pie</option>
+                  <option value="doughnut" ${prefs.chartPreferences?.programsChartType === 'doughnut' ? 'selected' : ''}>Doughnut</option>
+                </select>
+              </div>
+              <canvas id="programsChart"></canvas>
+              <a href="/programs" class="btn btn-link btn-sm mt-2">View Programs</a>
+            </div>
+          `
+        },
+        metrics: {
+          title: '<i class="bi bi-graph-up"></i> Recent Metrics',
+          render: () => `
+            <div class="widget" data-widget="metrics" draggable="true">
+              <div class="widget-header">
+                <h5 class="widget-title"><i class="bi bi-graph-up"></i> Recent Metrics</h5>
+                <span class="drag-handle"><i class="bi bi-grip-vertical"></i></span>
+              </div>
+              ${recentMetrics && recentMetrics.length > 0 ? `
+                <ul class="list-group">
+                  ${recentMetrics.slice(0, 5).map(m => `
+                    <li class="list-group-item">
+                      <strong>${m.definition?.name || 'Unknown'}</strong> - ${m.program?.name || 'Unknown Program'}<br>
+                      <span class="badge bg-primary">${m.value}</span>
+                      <small class="text-muted"> • ${m.member?.firstName} ${m.member?.lastName} • ${m.date}</small>
+                    </li>
+                  `).join('')}
+                </ul>
+                <a href="/metrics/overview" class="btn btn-link btn-sm mt-2">View All Metrics</a>
+              ` : '<p class="text-muted">No recent metrics.</p>'}
+            </div>
+          `
+        }
+      };
+
+      // Chart instances
+      const charts = {};
+
+      // Initialize dashboard
+      function initDashboard() {
+        const grid = document.getElementById('dashboardGrid');
+        const widgetOrder = prefs.widgetOrder || Object.keys(widgetDefs);
+        const widgetVisibility = new Map(Object.entries(prefs.widgetVisibility || {}));
+
+        // Clear grid
+        grid.innerHTML = '';
+
+        // Render widgets in order
+        widgetOrder.forEach(widgetId => {
+          if (widgetDefs[widgetId] && widgetVisibility.get(widgetId) !== false) {
+            const widgetHTML = widgetDefs[widgetId].render();
+            grid.insertAdjacentHTML('beforeend', widgetHTML);
+          }
+        });
+
+        // Render charts after widgets are in DOM
+        renderCharts();
+
+        // Initialize drag and drop
+        initDragAndDrop();
+      }
+
+      // Render all charts
+      function renderCharts() {
+        // Destroy existing charts
+        Object.values(charts).forEach(chart => chart?.destroy());
+
+        const chartConfigs = {
+          checkouts: { type: prefs.chartPreferences?.checkoutsChartType || 'line', data: checkoutCounts, label: 'Book Checkouts' },
+          donations: { type: prefs.chartPreferences?.donationsChartType || 'line', data: donationCounts, label: 'Book Donations' },
+          members: { type: prefs.chartPreferences?.membersChartType || 'bar', data: memberCounts, label: 'New Members' }
+        };
+
+        Object.entries(chartConfigs).forEach(([id, config]) => {
+          const canvas = document.getElementById(`${id}Chart`);
+          if (canvas) {
+            charts[id] = new Chart(canvas, {
+              type: config.type,
+              data: {
+                labels: monthLabels,
+                datasets: [{ label: config.label, data: config.data, fill: false }]
+              },
+              options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+          }
+        });
+
+        // Programs chart (special case - can be pie/doughnut/bar)
+        const programsCanvas = document.getElementById('programsChart');
+        if (programsCanvas) {
+          const programsType = prefs.chartPreferences?.programsChartType || 'bar';
+          charts.programs = new Chart(programsCanvas, {
+            type: programsType,
+            data: {
+              labels: programStats.map(ps => ps.program),
+              datasets: [{ label: 'Attendees', data: programStats.map(ps => ps.count) }]
+            },
+            options: { responsive: true, scales: programsType === 'bar' ? { y: { beginAtZero: true } } : {} }
+          });
+        }
+      }
+
+      // Change chart type
+      async function changeChartType(chartId, newType) {
+        try {
+          const response = await fetch('/api/dashboard/preferences/chart-type', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chartId: `${chartId}Chart`, chartType: newType })
+          });
+
+          if (response.ok) {
+            // Update preferences and re-render
+            const result = await response.json();
+            Object.assign(prefs, result.prefs);
+            renderCharts();
+          }
+        } catch (err) {
+          console.error('Failed to update chart type:', err);
+        }
+      }
+
+      // Initialize drag and drop
+      function initDragAndDrop() {
+        new Sortable(document.getElementById('dashboardGrid'), {
+          animation: 150,
+          handle: '.drag-handle',
+          onEnd: async function(evt) {
+            const newOrder = Array.from(document.querySelectorAll('[data-widget]'))
+              .map(el => el.getAttribute('data-widget'));
+
+            try {
+              await fetch('/api/dashboard/preferences/widget-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ widgetOrder: newOrder })
+              });
+            } catch (err) {
+              console.error('Failed to save widget order:', err);
+            }
+          }
+        });
+      }
+
+      // Preferences panel
+      const customizeBtn = document.getElementById('customizeBtn');
+      const preferencesPanel = document.getElementById('preferencesPanel');
+      const overlay = document.getElementById('overlay');
+      const closePanelBtn = document.getElementById('closePanelBtn');
+
+      function openPreferences() {
+        preferencesPanel.classList.add('open');
+        overlay.classList.add('active');
+        renderWidgetToggles();
+      }
+
+      function closePreferences() {
+        preferencesPanel.classList.remove('open');
+        overlay.classList.remove('active');
+      }
+
+      customizeBtn.addEventListener('click', openPreferences);
+      closePanelBtn.addEventListener('click', closePreferences);
+      overlay.addEventListener('click', closePreferences);
+
+      // Render widget toggles
+      function renderWidgetToggles() {
+        const togglesContainer = document.getElementById('widgetToggles');
+        const widgetVisibility = new Map(Object.entries(prefs.widgetVisibility || {}));
+
+        togglesContainer.innerHTML = Object.keys(widgetDefs).map(widgetId => {
+          const isVisible = widgetVisibility.get(widgetId) !== false;
+          return `
+            <div class="widget-toggle">
+              <label>${widgetDefs[widgetId].title}</label>
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  ${isVisible ? 'checked' : ''}
+                  onchange="toggleWidget('${widgetId}', this.checked)"
+                >
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Toggle widget visibility
+      async function toggleWidget(widgetId, visible) {
+        try {
+          const response = await fetch('/api/dashboard/preferences/widget-visibility', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ widgetId, visible })
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            Object.assign(prefs, result.prefs);
+            initDashboard();
+          }
+        } catch (err) {
+          console.error('Failed to toggle widget:', err);
+        }
+      }
+
+      // Reset preferences
+      document.getElementById('resetPrefsBtn').addEventListener('click', async function() {
+        if (confirm('Reset all dashboard preferences to default?')) {
+          try {
+            const response = await fetch('/api/dashboard/preferences/reset', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              Object.assign(prefs, result.prefs);
+              initDashboard();
+              closePreferences();
+            }
+          } catch (err) {
+            console.error('Failed to reset preferences:', err);
+          }
+        }
       });
 
-      // 2) Donations
-      new Chart(document.getElementById('donationsChart'), {
-        type: 'line',
-        data: {
-          labels: monthLabels,
-          datasets: [{ label: 'Book Donations', data: donationCounts, fill: false }]
-        },
-        options: { responsive: true, scales: { y: { beginAtZero: true } } }
-      });
-
-      // 3) Members
-      new Chart(document.getElementById('membersChart'), {
-        type: 'bar',
-        data: {
-          labels: monthLabels,
-          datasets: [{ label: 'New Members', data: memberCounts }]
-        },
-        options: { responsive: true, scales: { y: { beginAtZero: true } } }
-      });
-
-      // 4) Attendees per Program
-      new Chart(document.getElementById('programsChart'), {
-        type: 'bar',
-        data: {
-          labels: programStats.map(ps => ps.program),
-          datasets: [{ label: 'Attendees', data: programStats.map(ps => ps.count) }]
-        },
-        options: { responsive: true, scales: { y: { beginAtZero: true } } }
-      });
+      // Initialize on page load
+      initDashboard();
     </script>
   </body>
 </html>

@@ -14,17 +14,50 @@
 <body>
   <div class="container mt-5">
     <h1>All Members</h1>
+
+    <% if (success) { %>
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <%= success %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% } %>
+
+    <% if (error) { %>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <%= error %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% } %>
+
     <div class="d-flex mb-3">
       <a href="/members/new" class="btn btn-success me-2">+ New Member</a>
       <a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
-      <input
-        id="member-filter"
-        type="text"
-        class="form-control ms-auto"
-        placeholder="Search name or email…"
-        style="max-width: 300px;"
-      />
     </div>
+
+    <!-- Search Form (server-side search) -->
+    <form method="GET" action="/members" class="mb-3">
+      <div class="input-group" style="max-width: 500px;">
+        <input
+          type="text"
+          name="search"
+          class="form-control"
+          placeholder="Search by name or email…"
+          value="<%= search || '' %>"
+        />
+        <button class="btn btn-outline-primary" type="submit">Search</button>
+        <% if (search) { %>
+          <a href="/members" class="btn btn-outline-secondary">Clear</a>
+        <% } %>
+      </div>
+    </form>
+
+    <!-- Pagination Info -->
+    <div class="mb-2 text-muted">
+      Showing <%= members.length > 0 ? (pagination.currentPage - 1) * pagination.limit + 1 : 0 %>
+      to <%= Math.min(pagination.currentPage * pagination.limit, pagination.totalMembers) %>
+      of <%= pagination.totalMembers %> members
+    </div>
+
     <table class="table table-hover" id="members-table">
       <thead class="table-light">
         <tr>
@@ -34,37 +67,93 @@
         </tr>
       </thead>
       <tbody>
-        <% members.forEach(m => { %>
-          <tr
-            class="clickable-row"
-            data-href="/members/<%= m._id %>"
-          >
-            <td><%= m.firstName %> <%= m.lastName %></td>
-            <td><%= m.email %></td>
-            <td><%= m.joinedAt.toLocaleDateString() %></td>
+        <% if (members.length === 0) { %>
+          <tr>
+            <td colspan="3" class="text-center text-muted py-4">
+              <% if (search) { %>
+                No members found matching "<%= search %>"
+              <% } else { %>
+                No members yet
+              <% } %>
+            </td>
           </tr>
-        <% }) %>
+        <% } else { %>
+          <% members.forEach(m => { %>
+            <tr
+              class="clickable-row"
+              data-href="/members/<%= m._id %>"
+            >
+              <td><%= m.firstName %> <%= m.lastName %></td>
+              <td><%= m.email %></td>
+              <td><%= m.joinedAt.toLocaleDateString() %></td>
+            </tr>
+          <% }) %>
+        <% } %>
       </tbody>
     </table>
+
+    <!-- Pagination Controls -->
+    <% if (pagination.totalPages > 1) { %>
+      <nav aria-label="Members pagination">
+        <ul class="pagination justify-content-center">
+          <!-- Previous Button -->
+          <li class="page-item <%= !pagination.hasPrevPage ? 'disabled' : '' %>">
+            <a class="page-link" href="/members?page=<%= pagination.currentPage - 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %>">
+              Previous
+            </a>
+          </li>
+
+          <!-- Page Numbers -->
+          <%
+            const startPage = Math.max(1, pagination.currentPage - 2);
+            const endPage = Math.min(pagination.totalPages, pagination.currentPage + 2);
+          %>
+
+          <% if (startPage > 1) { %>
+            <li class="page-item">
+              <a class="page-link" href="/members?page=1<%= search ? '&search=' + encodeURIComponent(search) : '' %>">1</a>
+            </li>
+            <% if (startPage > 2) { %>
+              <li class="page-item disabled"><span class="page-link">...</span></li>
+            <% } %>
+          <% } %>
+
+          <% for (let p = startPage; p <= endPage; p++) { %>
+            <li class="page-item <%= p === pagination.currentPage ? 'active' : '' %>">
+              <a class="page-link" href="/members?page=<%= p %><%= search ? '&search=' + encodeURIComponent(search) : '' %>">
+                <%= p %>
+              </a>
+            </li>
+          <% } %>
+
+          <% if (endPage < pagination.totalPages) { %>
+            <% if (endPage < pagination.totalPages - 1) { %>
+              <li class="page-item disabled"><span class="page-link">...</span></li>
+            <% } %>
+            <li class="page-item">
+              <a class="page-link" href="/members?page=<%= pagination.totalPages %><%= search ? '&search=' + encodeURIComponent(search) : '' %>">
+                <%= pagination.totalPages %>
+              </a>
+            </li>
+          <% } %>
+
+          <!-- Next Button -->
+          <li class="page-item <%= !pagination.hasNextPage ? 'disabled' : '' %>">
+            <a class="page-link" href="/members?page=<%= pagination.currentPage + 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %>">
+              Next
+            </a>
+          </li>
+        </ul>
+      </nav>
+    <% } %>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Make rows clickable
     document.querySelectorAll('.clickable-row').forEach(row => {
       row.addEventListener('click', () => {
         window.location = row.dataset.href;
-      });
-    });
-
-    // Client-side search/filter
-    const filterInput = document.getElementById('member-filter');
-    const tableRows   = document.querySelectorAll('#members-table tbody tr');
-
-    filterInput.addEventListener('input', () => {
-      const q = filterInput.value.trim().toLowerCase();
-      tableRows.forEach(row => {
-        const text = row.innerText.toLowerCase();
-        row.style.display = text.includes(q) ? '' : 'none';
       });
     });
   </script>

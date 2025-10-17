@@ -1,0 +1,381 @@
+<!-- views/partials/nav.ejs -->
+<!-- TreeHouseBooks Navigation with Brand Colors -->
+<link rel="stylesheet" href="/css/treehouse-brand.css">
+<style>
+  :root {
+    /* TreeHouseBooks Brand Colors - Nature Inspired */
+    --thb-primary: #6B8E23;       /* Olive Green */
+    --thb-primary-dark: #556B2F;  /* Dark Olive */
+    --thb-secondary: #8FBC8F;     /* Sage Green */
+    --thb-accent: #F5F5DC;        /* Beige/Cream */
+    --thb-warm: #FFFEF7;          /* Warm ivory */
+    --thb-orange: #D2691E;        /* Terra Cotta */
+    --thb-text: #3E3E3E;          /* Dark charcoal */
+    --thb-text-light: #6B6B6B;    /* Medium gray */
+  }
+
+  /* Override Bootstrap primary color */
+  .btn-primary {
+    background-color: var(--thb-primary) !important;
+    border-color: var(--thb-primary) !important;
+  }
+  .btn-primary:hover {
+    background-color: var(--thb-primary-dark) !important;
+    border-color: var(--thb-primary-dark) !important;
+  }
+
+  /* Navigation styles */
+  .thb-navbar {
+    background: linear-gradient(135deg, var(--thb-primary) 0%, var(--thb-secondary) 100%);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 0.75rem 0;
+  }
+
+  .thb-navbar .navbar-brand {
+    color: white !important;
+    font-weight: 600;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .thb-navbar .nav-link {
+    color: rgba(255,255,255,0.9) !important;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+
+  .thb-navbar .nav-link:hover,
+  .thb-navbar .nav-link.active {
+    background-color: rgba(255,255,255,0.15);
+    color: white !important;
+  }
+
+  .thb-navbar .dropdown-menu {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .thb-navbar .dropdown-item {
+    border-radius: 0.25rem;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .thb-navbar .dropdown-item:hover {
+    background-color: var(--thb-accent);
+    color: var(--thb-primary);
+  }
+
+  .thb-navbar .dropdown-item i {
+    width: 20px;
+    text-align: center;
+  }
+
+  .thb-navbar .dropdown-divider {
+    margin: 0.5rem 0;
+    border-color: var(--thb-accent);
+  }
+
+  .feature-badge {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    background-color: var(--thb-orange);
+    color: white;
+    font-size: 0.7rem;
+    border-radius: 1rem;
+    margin-left: 0.5rem;
+    font-weight: 600;
+  }
+
+  .help-icon {
+    cursor: help;
+    color: var(--thb-secondary);
+    margin-left: 0.25rem;
+  }
+
+  /* User profile dropdown */
+  .user-profile-btn {
+    background-color: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 2rem;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .user-profile-btn:hover {
+    background-color: rgba(255,255,255,0.25);
+    border-color: white;
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    .thb-navbar .navbar-collapse {
+      background-color: rgba(255,255,255,0.1);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin-top: 0.5rem;
+    }
+  }
+</style>
+
+<nav class="navbar navbar-expand-lg thb-navbar">
+  <div class="container-fluid">
+    <!-- Brand -->
+    <a class="navbar-brand" href="/dashboard">
+      <i class="bi bi-book"></i>
+      TreeHouseBooks
+    </a>
+
+    <!-- Mobile toggle -->
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarMain"
+      style="border-color: rgba(255,255,255,0.5);"
+    >
+      <span class="navbar-toggler-icon" style="filter: brightness(0) invert(1);"></span>
+    </button>
+
+    <!-- Main navigation -->
+    <div class="collapse navbar-collapse" id="navbarMain">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+        <!-- Dashboard -->
+        <li class="nav-item">
+          <a class="nav-link" href="/dashboard">
+            <i class="bi bi-speedometer2"></i> Dashboard
+          </a>
+        </li>
+
+        <!-- Members Dropdown -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+            <i class="bi bi-people"></i> Members
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a class="dropdown-item" href="/members">
+                <i class="bi bi-list-ul"></i>
+                <span>View All Members</span>
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/members/new">
+                <i class="bi bi-person-plus"></i>
+                <span>Add New Member</span>
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item" href="/members?type=adult">
+                <i class="bi bi-person"></i>
+                <span>Adult Members</span>
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/members?type=child">
+                <i class="bi bi-person-hearts"></i>
+                <span>Child Members</span>
+              </a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- Books & Donations Dropdown -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+            <i class="bi bi-book"></i> Books
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a class="dropdown-item" href="/checkouts">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Book Checkouts</span>
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/checkouts/new">
+                <i class="bi bi-plus-circle"></i>
+                <span>New Checkout</span>
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item" href="/donations">
+                <i class="bi bi-gift"></i>
+                <span>Book Donations</span>
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/donations/new">
+                <i class="bi bi-plus-circle"></i>
+                <span>Record Donation</span>
+              </a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- Programs Dropdown (Staff & Admin only) -->
+        <% if (user && (user.role === 'admin' || user.role === 'staff')) { %>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-calendar-event"></i> Programs
+            </a>
+            <ul class="dropdown-menu">
+              <li>
+                <a class="dropdown-item" href="/programs">
+                  <i class="bi bi-list-ul"></i>
+                  <span>All Programs</span>
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="/classroom/setup">
+                  <i class="bi bi-mortarboard"></i>
+                  <span>Create Classroom Program</span>
+                  <span class="feature-badge">New</span>
+                </a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <a class="dropdown-item" href="/attendance">
+                  <i class="bi bi-check2-square"></i>
+                  <span>Attendance Tracking</span>
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="/metrics/overview">
+                  <i class="bi bi-graph-up"></i>
+                  <span>Metrics & Reports</span>
+                </a>
+              </li>
+            </ul>
+          </li>
+        <% } %>
+
+        <!-- Data & Tools Dropdown (Staff & Admin only) -->
+        <% if (user && (user.role === 'admin' || user.role === 'staff')) { %>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-tools"></i> Tools
+            </a>
+            <ul class="dropdown-menu">
+              <li>
+                <a class="dropdown-item" href="/import">
+                  <i class="bi bi-cloud-upload"></i>
+                  <span>Import Data</span>
+                  <i class="bi bi-question-circle help-icon"
+                     data-bs-toggle="tooltip"
+                     title="Import members, checkouts, donations, and programs from CSV files. Includes preview and rollback features."></i>
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="/import/history">
+                  <i class="bi bi-clock-history"></i>
+                  <span>Import History</span>
+                </a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <a class="dropdown-item" href="/notifications">
+                  <i class="bi bi-bell"></i>
+                  <span>Send Notifications</span>
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="/messages">
+                  <i class="bi bi-chat-dots"></i>
+                  <span>Messages</span>
+                </a>
+              </li>
+            </ul>
+          </li>
+        <% } %>
+
+        <!-- Admin Tools (Admin only) -->
+        <% if (user && user.role === 'admin') { %>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="bi bi-shield-lock"></i> Admin
+            </a>
+            <ul class="dropdown-menu">
+              <li>
+                <a class="dropdown-item" href="/admin/users">
+                  <i class="bi bi-person-gear"></i>
+                  <span>Manage Users</span>
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="/admin">
+                  <i class="bi bi-gear"></i>
+                  <span>System Settings</span>
+                </a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <a class="dropdown-item" href="/healthz" target="_blank">
+                  <i class="bi bi-heart-pulse"></i>
+                  <span>System Health</span>
+                </a>
+              </li>
+            </ul>
+          </li>
+        <% } %>
+      </ul>
+
+      <!-- Right side - User profile -->
+      <ul class="navbar-nav">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle user-profile-btn" href="#" role="button" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle"></i>
+            <%= user.firstName %> <%= user.lastName %>
+            <span class="badge bg-light text-dark ms-1"><%= user.role %></span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <a class="dropdown-item" href="/profile">
+                <i class="bi bi-person"></i>
+                <span>My Profile</span>
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/dashboard/customize">
+                <i class="bi bi-sliders"></i>
+                <span>Dashboard Settings</span>
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item text-danger" href="/logout">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+              </a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Initialize tooltips -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
+</script>

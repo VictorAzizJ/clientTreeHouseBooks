@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Classroom Program Setup</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <style>
+    .setup-wizard {
+      max-width: 800px;
+      margin: 2rem auto;
+    }
+    .feature-card {
+      border: 1px solid #dee2e6;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .feature-card i {
+      font-size: 2rem;
+      color: #0969da;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="setup-wizard">
+      <div class="text-center mb-4">
+        <h1><i class="bi bi-mortarboard"></i> Create Classroom Program</h1>
+        <p class="text-muted">Set up an after-school program with automatic student tracking</p>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title mb-3">What's Included</h5>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="feature-card">
+                <i class="bi bi-check-circle-fill"></i>
+                <h6 class="mt-2">Automatic Metrics</h6>
+                <small class="text-muted">Attendance, behavior, grades tracking built-in</small>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="feature-card">
+                <i class="bi bi-people-fill"></i>
+                <h6 class="mt-2">Parent Linking</h6>
+                <small class="text-muted">Connect students to parent/guardian members</small>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="feature-card">
+                <i class="bi bi-database-fill"></i>
+                <h6 class="mt-2">Member Sync</h6>
+                <small class="text-muted">Students auto-added to member database</small>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="feature-card">
+                <i class="bi bi-calendar-check"></i>
+                <h6 class="mt-2">Daily Tracking</h6>
+                <small class="text-muted">Easy bulk entry for attendance & metrics</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-body">
+          <h5 class="card-title mb-4">Program Details</h5>
+
+          <form action="/classroom/create" method="POST">
+            <!-- Basic Info -->
+            <div class="mb-3">
+              <label for="name" class="form-label">Program Name *</label>
+              <input
+                type="text"
+                class="form-control"
+                id="name"
+                name="name"
+                placeholder="e.g., After-School Reading Program"
+                required
+              >
+            </div>
+
+            <div class="mb-3">
+              <label for="description" class="form-label">Description</label>
+              <textarea
+                class="form-control"
+                id="description"
+                name="description"
+                rows="3"
+                placeholder="Brief description of the program..."
+              ></textarea>
+            </div>
+
+            <!-- Grade Levels -->
+            <div class="mb-3">
+              <label class="form-label">Grade Levels</label>
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="gradeLevels" value="K" id="gradeK">
+                    <label class="form-check-label" for="gradeK">Kindergarten</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="gradeLevels" value="1" id="grade1">
+                    <label class="form-check-label" for="grade1">1st Grade</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="gradeLevels" value="2" id="grade2">
+                    <label class="form-check-label" for="grade2">2nd Grade</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="gradeLevels" value="3" id="grade3">
+                    <label class="form-check-label" for="grade3">3rd Grade</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="gradeLevels" value="4" id="grade4">
+                    <label class="form-check-label" for="grade4">4th Grade</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="gradeLevels" value="5" id="grade5">
+                    <label class="form-check-label" for="grade5">5th Grade</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="gradeLevels" value="6" id="grade6">
+                    <label class="form-check-label" for="grade6">6th Grade</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="gradeLevels" value="7" id="grade7">
+                    <label class="form-check-label" for="grade7">7th Grade</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="gradeLevels" value="8" id="grade8">
+                    <label class="form-check-label" for="grade8">8th Grade</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="gradeLevels" value="9-12" id="gradeHS">
+                    <label class="form-check-label" for="gradeHS">High School</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Schedule -->
+            <div class="mb-3">
+              <label class="form-label">Meeting Days</label>
+              <div class="row">
+                <% ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].forEach(day => { %>
+                  <div class="col-md-4">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" name="days" value="<%= day %>" id="day<%= day %>">
+                      <label class="form-check-label" for="day<%= day %>"><%= day %></label>
+                    </div>
+                  </div>
+                <% }) %>
+              </div>
+            </div>
+
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <label for="startTime" class="form-label">Start Time</label>
+                <input type="time" class="form-control" id="startTime" name="startTime" value="15:00">
+              </div>
+              <div class="col-md-6">
+                <label for="endTime" class="form-label">End Time</label>
+                <input type="time" class="form-control" id="endTime" name="endTime" value="17:00">
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="d-flex justify-content-between">
+              <a href="/programs" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Cancel
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle"></i> Create Classroom Program
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="alert alert-info mt-4">
+        <i class="bi bi-info-circle"></i>
+        <strong>What happens next?</strong> After creating the program, you'll be able to:
+        <ul class="mb-0 mt-2">
+          <li>Add students and link them to parent/guardian members</li>
+          <li>Track daily attendance with a simple checkbox interface</li>
+          <li>Record behavior, grades, and custom metrics for each student</li>
+          <li>View reports and analytics on student progress</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
