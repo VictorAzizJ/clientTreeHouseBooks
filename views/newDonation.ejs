@@ -27,9 +27,8 @@
 
     <div class="card">
       <div class="card-body">
-        <form method="POST" action="/donations/create">
+        <form method="POST" action="<%= member ? `/members/${member._id}/donations` : '/donations/create' %>">
           <% if (member) { %>
-            <input type="hidden" name="memberId" value="<%= member._id %>">
 
             <div class="alert alert-info mb-4">
               <i class="bi bi-info-circle"></i>
@@ -38,65 +37,27 @@
           <% } %>
 
           <div class="mb-3">
-            <label for="bookTitle" class="form-label">Book Title *</label>
-            <input type="text" class="form-control" id="bookTitle" name="bookTitle" required>
-          </div>
-
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="author" class="form-label">Author</label>
-              <input type="text" class="form-control" id="author" name="author">
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="isbn" class="form-label">ISBN</label>
-              <input type="text" class="form-control" id="isbn" name="isbn">
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="condition" class="form-label">Condition *</label>
-              <select class="form-select" id="condition" name="condition" required>
-                <option value="">Select condition...</option>
-                <option value="new">New</option>
-                <option value="like-new">Like New</option>
-                <option value="very-good">Very Good</option>
-                <option value="good">Good</option>
-                <option value="acceptable">Acceptable</option>
-              </select>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label for="quantity" class="form-label">Quantity *</label>
-              <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" required>
-            </div>
+            <label for="numberOfBooks" class="form-label">Number of Books *</label>
+            <input type="number" class="form-control" id="numberOfBooks" name="numberOfBooks" value="1" min="1" max="1000" required>
           </div>
 
           <div class="mb-3">
-            <label for="category" class="form-label">Category</label>
-            <select class="form-select" id="category" name="category">
-              <option value="">Select category...</option>
+            <label for="genres" class="form-label">Genres</label>
+            <select class="form-select" id="genres" name="genres" multiple>
+              <option value="fiction">Fiction</option>
+              <option value="non-fiction">Non-Fiction</option>
               <option value="picture-book">Picture Book</option>
               <option value="chapter-book">Chapter Book</option>
               <option value="young-adult">Young Adult</option>
-              <option value="non-fiction">Non-Fiction</option>
+              <option value="educational">Educational</option>
               <option value="reference">Reference</option>
-              <option value="other">Other</option>
             </select>
+            <small class="text-muted">Hold Ctrl/Cmd to select multiple</small>
           </div>
 
           <div class="mb-3">
-            <label for="ageRange" class="form-label">Age Range</label>
-            <input type="text" class="form-control" id="ageRange" name="ageRange" placeholder="e.g., 4-8 years">
-          </div>
-
-          <div class="mb-3">
-            <label for="notes" class="form-label">Notes</label>
-            <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any additional information about the donation"></textarea>
-          </div>
-
-          <div class="mb-3">
-            <label for="donationDate" class="form-label">Donation Date *</label>
-            <input type="date" class="form-control" id="donationDate" name="donationDate" value="<%= new Date().toISOString().split('T')[0] %>" required>
+            <label for="weight" class="form-label">Weight (lbs)</label>
+            <input type="number" class="form-control" id="weight" name="weight" min="0" max="10000" step="0.1" placeholder="Optional">
           </div>
 
           <div class="text-end">

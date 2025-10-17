@@ -30,9 +30,19 @@ function ensureStaffOrAdmin(req, res, next) {
   res.status(403).send('Forbidden');
 }
 
-// GET all checkouts (optional, you can keep or remove)
+// GET all checkouts list
 router.get('/checkouts', ensureStaffOrAdmin, async (req, res) => {
-  // ...
+  try {
+    const checkouts = await Checkout.find()
+      .populate('member', 'firstName lastName email')
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .lean();
+    res.render('checkoutsList', { user: req.session.user, checkouts });
+  } catch (err) {
+    console.error('Error fetching checkouts:', err);
+    res.status(500).send('Error loading checkouts');
+  }
 });
 
 // POST create a checkout

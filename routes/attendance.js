@@ -6,7 +6,9 @@ const { ensureStaffOrAdmin } = require('./_middleware');
 
 // Show attendance for a program on a given date
 router.get('/programs/:programId/attendance', ensureStaffOrAdmin, async (req, res) => {
-  const attendees = await Attendee.find({ program: req.params.programId }).lean();
+  const attendees = await Attendee.find({ program: req.params.programId })
+    .populate('program', 'name')
+    .lean();
   // default date = today
   const date = req.query.date ? new Date(req.query.date) : new Date();
   // fetch existing
@@ -14,7 +16,13 @@ router.get('/programs/:programId/attendance', ensureStaffOrAdmin, async (req, re
     date,
     attendee: { $in: attendees.map(a=>a._id) }
   }).lean();
-  res.render('attendanceForm', { user: req.session.user, attendees, records, date });
+  res.render('attendanceForm', {
+    user: req.session.user,
+    attendees,
+    records,
+    date,
+    programId: req.params.programId
+  });
 });
 
 // Submit attendance (bulk)

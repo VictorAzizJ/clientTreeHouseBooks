@@ -14,17 +14,17 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h1><i class="bi bi-check2-square"></i> Take Attendance</h1>
-        <p class="text-muted">Record attendance for <%= date %></p>
+        <p class="text-muted">Record attendance for <%= new Date(date).toLocaleDateString() %></p>
       </div>
-      <a href="/programs" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Back to Programs
+      <a href="/programs/<%= programId %>" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Program
       </a>
     </div>
 
     <div class="card">
       <div class="card-body">
-        <form method="POST" action="/attendance/record">
-          <input type="hidden" name="date" value="<%= date %>">
+        <form method="POST" action="/programs/<%= programId %>/attendance">
+          <input type="hidden" name="date" value="<%= typeof date === 'string' ? date : date.toISOString().split('T')[0] %>">
 
           <div class="table-responsive">
             <table class="table table-hover">
@@ -50,9 +50,9 @@
                       <input
                         type="checkbox"
                         class="form-check-input"
-                        name="attendance[<%= attendee._id %>]"
-                        value="true"
-                        <%= records[attendee._id] ? 'checked' : '' %>
+                        name="attended[]"
+                        value="<%= attendee._id %>"
+                        <%= records.find(r => r.attendee.toString() === attendee._id.toString()) ? 'checked' : '' %>
                       >
                     </td>
                   </tr>
