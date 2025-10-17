@@ -3,19 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Import Details - <%= importHistory.importType %></title>
+  <title>Import Details - <%= importHistory.importType %> - TreeHouseBooks</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/treehouse-brand.css">
   <style>
     .stat-card {
       border-left: 4px solid;
       padding: 1rem;
       margin-bottom: 1rem;
     }
-    .stat-card.success { border-color: #198754; }
-    .stat-card.danger { border-color: #dc3545; }
-    .stat-card.warning { border-color: #ffc107; }
-    .stat-card.info { border-color: #0dcaf0; }
+    .stat-card.success { border-color: var(--thb-success); }
+    .stat-card.danger { border-color: var(--thb-danger); }
+    .stat-card.warning { border-color: var(--thb-warning); }
+    .stat-card.info { border-color: var(--thb-info); }
 
     .error-item {
       background: #f8d7da;
@@ -50,12 +51,13 @@
       width: 0.75rem;
       height: 0.75rem;
       border-radius: 50%;
-      background: #0969da;
+      background: var(--thb-primary);
       border: 2px solid #fff;
     }
   </style>
 </head>
 <body>
+  <%- include('partials/nav') %>
   <div class="container mt-4 mb-5">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
