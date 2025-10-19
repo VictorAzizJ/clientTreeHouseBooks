@@ -30,18 +30,7 @@ function ensureStaffOrAdmin(req, res, next) {
   res.status(403).send('Forbidden');
 }
 
-// GET form to create new checkout
-router.get('/checkouts/new', ensureStaffOrAdmin, async (req, res) => {
-  try {
-    // Don't load all members - use search instead
-    res.render('newCheckout', { user: req.session.user });
-  } catch (err) {
-    console.error('Error loading checkout form:', err);
-    res.status(500).send('Error loading form');
-  }
-});
-
-// GET all checkouts list
+// Redirect /checkouts to list view (backward compatibility)
 router.get('/checkouts', ensureStaffOrAdmin, async (req, res) => {
   try {
     const checkouts = await Checkout.find()
@@ -53,6 +42,17 @@ router.get('/checkouts', ensureStaffOrAdmin, async (req, res) => {
   } catch (err) {
     console.error('Error fetching checkouts:', err);
     res.status(500).send('Error loading checkouts');
+  }
+});
+
+// GET form to create new checkout
+router.get('/checkouts/new', ensureStaffOrAdmin, async (req, res) => {
+  try {
+    // Don't load all members - use search instead
+    res.render('newCheckout', { user: req.session.user });
+  } catch (err) {
+    console.error('Error loading checkout form:', err);
+    res.status(500).send('Error loading form');
   }
 });
 

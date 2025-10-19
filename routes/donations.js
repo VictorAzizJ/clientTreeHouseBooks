@@ -25,6 +25,11 @@ const Member    = require('../models/Member');
 const { ensureStaffOrAdmin } = require('./_middleware');
 const { sendDonationThankYouEmail } = require('../services/mailer');
 
+// Redirect /donations to /donations/new
+router.get('/donations', ensureStaffOrAdmin, (req, res) => {
+  res.redirect('/donations/new');
+});
+
 // Show form to record a donation (standalone - choose member)
 router.get('/donations/new', ensureStaffOrAdmin, async (req, res) => {
   try {

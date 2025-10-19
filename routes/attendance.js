@@ -5,6 +5,11 @@ const Attendee   = require('../models/Attendee');
 const Program    = require('../models/Program');
 const { ensureStaffOrAdmin } = require('./_middleware');
 
+// Redirect /attendance to /attendance/new
+router.get('/attendance', ensureStaffOrAdmin, (req, res) => {
+  res.redirect('/attendance/new');
+});
+
 // Show attendance form - select program first
 router.get('/attendance/new', ensureStaffOrAdmin, async (req, res) => {
   try {
