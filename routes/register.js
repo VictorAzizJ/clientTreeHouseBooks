@@ -103,8 +103,26 @@ router.post(
 
     } catch (err) {
       console.error('Registration error:', err);
-      const errorMsg = encodeURIComponent('An error occurred during registration. Please try again.');
-      res.redirect(`/custom-signup?error=${errorMsg}`);
+      console.error('Error details:', {
+        message: err.message,
+        stack: err.stack,
+        code: err.code,
+        name: err.name
+      });
+
+      let errorMsg = 'An error occurred during registration. Please try again.';
+
+      // Provide more specific error messages
+      if (err.code === 11000) {
+        errorMsg = 'This email is already registered. Please use a different email or log in.';
+      } else if (err.name === 'ValidationError') {
+        errorMsg = 'Please check your information and try again.';
+      } else if (err.message) {
+        // Use the actual error message for debugging (remove in production)
+        errorMsg = `Error: ${err.message}`;
+      }
+
+      res.redirect(`/custom-signup?error=${encodeURIComponent(errorMsg)}`);
     }
   }
 );

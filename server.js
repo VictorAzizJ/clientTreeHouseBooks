@@ -61,8 +61,8 @@ app.use(helmet.contentSecurityPolicy({
       "https://fonts.googleapis.com",
       "'unsafe-inline'"
     ],
-    fontSrc: ["'self'", "https://fonts.gstatic.com"],
-    connectSrc: ["'self'", "https://secure.lglforms.com"],
+    fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"],
+    connectSrc: ["'self'", "https://secure.lglforms.com", "https://cdn.jsdelivr.net"],
     frameSrc: ["'self'", "https://secure.lglforms.com"],
     imgSrc: ["'self'", "data:"],
     formAction: [
