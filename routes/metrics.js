@@ -94,6 +94,53 @@ router.get('/metrics/overview', ensureStaffOrAdmin, async (req, res, next) => {
 });
 
 /**
+ * POST /programs/:programId/metrics
+ * Create a new metric definition for a program.
+ * Body payload:
+ *   - name: metric name
+ *   - type: "number" | "text" | "boolean" | "date"
+ *   - description: optional description
+ */
+router.post(
+  '/programs/:programId/metrics',
+  ensureStaffOrAdmin,
+  async (req, res, next) => {
+    try {
+      const { programId } = req.params;
+      const { name, type, description } = req.body;
+
+      // Validate required fields
+      if (!name || !type) {
+        req.session.error = 'Metric name and type are required';
+        return res.redirect(`/programs/${programId}`);
+      }
+
+      // Validate type
+      const validTypes = ['number', 'text', 'boolean', 'date'];
+      if (!validTypes.includes(type)) {
+        req.session.error = 'Invalid metric type';
+        return res.redirect(`/programs/${programId}`);
+      }
+
+      // Create metric definition
+      await MetricDef.create({
+        program: programId,
+        name,
+        type,
+        description: description || ''
+      });
+
+      req.session.success = `Metric "${name}" created successfully`;
+      res.redirect(`/programs/${programId}`);
+    } catch (err) {
+      console.error('Error creating metric definition:', err);
+      req.session.error = 'Failed to create metric';
+      res.redirect(`/programs/${req.params.programId}`);
+    }
+  }
+);
+
+/**
  * POST /programs/:programId/metrics/data
  * Records metric values for a given program, date, and member.
  * Body payload:

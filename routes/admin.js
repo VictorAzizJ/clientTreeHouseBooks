@@ -13,6 +13,11 @@ function ensureAdmin(req, res, next) {
   return res.status(403).send("Forbidden: You are not an admin");
 }
 
+// GET /admin — admin dashboard (redirect to users for now)
+router.get('/admin', ensureAdmin, (req, res) => {
+  res.redirect('/admin/users');
+});
+
 // GET /admin/users — list everyone
 router.get('/admin/users', ensureAdmin, async (req, res, next) => {
   try {
