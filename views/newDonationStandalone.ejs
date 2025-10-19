@@ -7,6 +7,31 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <link rel="stylesheet" href="/css/treehouse-brand.css">
+  <style>
+    .member-search-results {
+      position: absolute;
+      z-index: 1000;
+      width: 100%;
+      max-height: 300px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: none;
+    }
+    .member-search-item {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+    .member-search-item:hover {
+      background-color: #f8f9fa;
+    }
+    .member-search-item:last-child {
+      border-bottom: none;
+    }
+  </style>
 </head>
 <body>
   <%- include('partials/nav') %>
@@ -24,17 +49,23 @@
     <div class="card">
       <div class="card-body">
         <form id="donationForm">
-          <div class="mb-3">
-            <label for="memberId" class="form-label">Donor (Member) *</label>
-            <select class="form-select" id="memberId" name="memberId" required>
-              <option value="">Select a member...</option>
-              <% members.forEach(member => { %>
-                <option value="<%= member._id %>">
-                  <%= member.firstName %> <%= member.lastName %>
-                  <% if (member.email) { %> - <%= member.email %><% } %>
-                </option>
-              <% }); %>
-            </select>
+          <div class="mb-3 position-relative">
+            <label for="memberSearch" class="form-label">Search Donor *</label>
+            <input
+              type="text"
+              class="form-control"
+              id="memberSearch"
+              placeholder="Type name or email..."
+              autocomplete="off"
+            >
+            <div id="searchResults" class="member-search-results"></div>
+            <input type="hidden" id="memberId" name="memberId" required>
+            <div id="selectedMember" class="mt-2" style="display:none;">
+              <div class="alert alert-info">
+                <i class="bi bi-person-check"></i> Selected: <strong id="selectedMemberName"></strong>
+                <button type="button" class="btn btn-sm btn-outline-secondary float-end" onclick="clearSelection()">Change</button>
+              </div>
+            </div>
           </div>
 
           <div class="mb-3">
@@ -92,6 +123,70 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    let debounceTimer;
+    const searchInput = document.getElementById('memberSearch');
+    const searchResults = document.getElementById('searchResults');
+    const memberIdInput = document.getElementById('memberId');
+    const selectedMemberDiv = document.getElementById('selectedMember');
+    const selectedMemberName = document.getElementById('selectedMemberName');
+
+    searchInput.addEventListener('input', function() {
+      const query = this.value.trim();
+
+      clearTimeout(debounceTimer);
+
+      if (query.length < 2) {
+        searchResults.style.display = 'none';
+        return;
+      }
+
+      debounceTimer = setTimeout(async () => {
+        try {
+          const response = await fetch(`/api/members/search?q=${encodeURIComponent(query)}`);
+          const members = await response.json();
+
+          if (members.length === 0) {
+            searchResults.innerHTML = '<div class="member-search-item text-muted">No donors found</div>';
+            searchResults.style.display = 'block';
+            return;
+          }
+
+          searchResults.innerHTML = members.map(member => `
+            <div class="member-search-item" onclick="selectMember('${member._id}', '${member.firstName} ${member.lastName}', '${member.email || ''}')">
+              <strong>${member.firstName} ${member.lastName}</strong>
+              ${member.email ? `<br><small class="text-muted">${member.email}</small>` : ''}
+            </div>
+          `).join('');
+          searchResults.style.display = 'block';
+        } catch (err) {
+          console.error('Search failed:', err);
+        }
+      }, 300);
+    });
+
+    function selectMember(id, name, email) {
+      memberIdInput.value = id;
+      selectedMemberName.textContent = name + (email ? ` (${email})` : '');
+      selectedMemberDiv.style.display = 'block';
+      searchInput.style.display = 'none';
+      searchResults.style.display = 'none';
+    }
+
+    function clearSelection() {
+      memberIdInput.value = '';
+      selectedMemberDiv.style.display = 'none';
+      searchInput.style.display = 'block';
+      searchInput.value = '';
+      searchInput.focus();
+    }
+
+    // Hide results when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+        searchResults.style.display = 'none';
+      }
+    });
+
     // Submit to the correct member-specific endpoint
     document.getElementById('donationForm').addEventListener('submit', function(e) {
       e.preventDefault();

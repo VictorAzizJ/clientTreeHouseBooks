@@ -28,8 +28,8 @@ const { sendDonationThankYouEmail } = require('../services/mailer');
 // Show form to record a donation (standalone - choose member)
 router.get('/donations/new', ensureStaffOrAdmin, async (req, res) => {
   try {
-    const members = await Member.find().sort({ lastName: 1, firstName: 1 }).lean();
-    res.render('newDonationStandalone', { user: req.session.user, members });
+    // Don't load all members - use search instead
+    res.render('newDonationStandalone', { user: req.session.user });
   } catch (err) {
     console.error('Error loading donation form:', err);
     res.status(500).send('Error loading form');

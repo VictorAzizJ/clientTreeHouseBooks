@@ -33,8 +33,8 @@ function ensureStaffOrAdmin(req, res, next) {
 // GET form to create new checkout
 router.get('/checkouts/new', ensureStaffOrAdmin, async (req, res) => {
   try {
-    const members = await Member.find().sort({ lastName: 1, firstName: 1 }).lean();
-    res.render('newCheckout', { user: req.session.user, members });
+    // Don't load all members - use search instead
+    res.render('newCheckout', { user: req.session.user });
   } catch (err) {
     console.error('Error loading checkout form:', err);
     res.status(500).send('Error loading form');

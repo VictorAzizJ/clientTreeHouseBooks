@@ -175,6 +175,9 @@ app.get('/healthz', (req, res) => {
 });
 
 // ─── 10. Route Mounting ─────────────────────────────────────────────────────
+// API routes (must come before other routes to avoid conflicts)
+app.use('/', require('./routes/api'));
+
 // Core flows:
 app.use('/', require('./routes/register'));
 app.use('/', require('./routes/index'));
