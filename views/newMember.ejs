@@ -8,12 +8,38 @@
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
     rel="stylesheet" />
   <link rel="stylesheet" href="/css/treehouse-brand.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
 </head>
 <body>
   <%- include('partials/nav') %>
   <div class="container mt-5">
     <h1>New Member</h1>
     <form action="/members" method="POST">
+      <!-- Member Type Selection -->
+      <div class="mb-3">
+        <label class="form-label">Member Type</label>
+        <div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="memberType" id="typeAdult" value="adult" checked>
+            <label class="form-check-label" for="typeAdult">Adult</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="memberType" id="typeChild" value="child">
+            <label class="form-check-label" for="typeChild">Child</label>
+          </div>
+        </div>
+        <small class="text-muted">Select "Child" for students who need to be linked to a parent/guardian</small>
+      </div>
+
+      <!-- Parent Selection (shown only for children) -->
+      <div class="mb-3" id="parentField" style="display: none;">
+        <label for="parent" class="form-label">Parent/Guardian</label>
+        <select id="parent" name="parent" class="form-control">
+          <option value="">Select a parent/guardian...</option>
+        </select>
+        <small class="text-muted">Link this child to an existing adult member</small>
+      </div>
+
       <div class="mb-3">
         <label for="firstName" class="form-label">First Name</label>
         <input id="firstName" name="firstName" class="form-control" required>
@@ -31,12 +57,61 @@
         <input id="phone" name="phone" class="form-control">
       </div>
       <div class="mb-3">
-        <label for="address" class="form-label">Address</label>
-        <textarea id="address" name="address" class="form-control"></textarea>
+        <label for="zipCode" class="form-label">Zip Code</label>
+        <input id="zipCode" name="zipCode" class="form-control" placeholder="12345 or 12345-6789">
       </div>
+      <% if (user.role === 'staff' || user.role === 'admin') { %>
+        <div class="mb-3">
+          <label for="address" class="form-label">Full Address (Staff/Admin Only)</label>
+          <textarea id="address" name="address" class="form-control" placeholder="Street, City, State"></textarea>
+          <small class="text-muted">Only staff and admin can enter full addresses</small>
+        </div>
+      <% } %>
       <button type="submit" class="btn btn-success">Create Member</button>
       <a href="/dashboard" class="btn btn-secondary ms-2">Back to Dashboard</a>
     </form>
   </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script>
+    // Show/hide parent field based on member type
+    document.querySelectorAll('input[name="memberType"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const parentField = document.getElementById('parentField');
+        if (this.value === 'child') {
+          parentField.style.display = 'block';
+        } else {
+          parentField.style.display = 'none';
+        }
+      });
+    });
+
+    // Initialize Select2 for parent selection with AJAX search
+    $(document).ready(function() {
+      $('#parent').select2({
+        placeholder: 'Search for parent/guardian...',
+        allowClear: true,
+        ajax: {
+          url: '/api/members/search',
+          dataType: 'json',
+          delay: 250,
+          data: function(params) {
+            return {
+              q: params.term,
+              memberType: 'adult'  // Only search adult members
+            };
+          },
+          processResults: function(data) {
+            return {
+              results: data
+            };
+          },
+          cache: true
+        },
+        minimumInputLength: 2
+      });
+    });
+  </script>
 </body>
 </html>

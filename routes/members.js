@@ -28,14 +28,14 @@ function ensureAuthenticated(req, res, next) {
 }
 
 // 1. GET /members/new — form to add a new member
-router.get('/members/new', ensureStaffOrAdmin, (req, res) => {
+router.get('/members/new', ensureAuthenticated, (req, res) => {
   res.render('newMember', { user: req.session.user });
 });
 
 // 2. POST /members — create the member
 router.post(
   '/members',
-  ensureStaffOrAdmin,
+  ensureAuthenticated,
   [
     // Validation rules
     body('firstName')
@@ -61,6 +61,11 @@ router.post(
       .trim()
       .matches(/^[\d\s\-()+]+$/).withMessage('Phone must contain only numbers, spaces, hyphens, parentheses, and plus signs'),
 
+    body('zipCode')
+      .optional({ checkFalsy: true })
+      .trim()
+      .matches(/^\d{5}(-\d{4})?$/).withMessage('Zip code must be in format 12345 or 12345-6789'),
+
     body('address')
       .optional({ checkFalsy: true })
       .trim()
@@ -75,10 +80,29 @@ router.post(
       return res.redirect('/members/new');
     }
 
-    const { firstName, lastName, email, phone, address } = req.body;
+    const { firstName, lastName, email, phone, address, zipCode, memberType, parent } = req.body;
 
     try {
-      await Member.create({ firstName, lastName, email, phone, address });
+      const memberData = {
+        firstName,
+        lastName,
+        email,
+        phone,
+        zipCode,
+        memberType: memberType || 'adult'
+      };
+
+      // Only staff/admin can set full address
+      if (req.session.user.role === 'staff' || req.session.user.role === 'admin') {
+        memberData.address = address;
+      }
+
+      // If it's a child member with a parent
+      if (memberType === 'child' && parent) {
+        memberData.parent = parent;
+      }
+
+      await Member.create(memberData);
       req.session.success = 'Member created';
       res.redirect('/members');
     } catch (err) {
@@ -150,7 +174,7 @@ router.get('/members', ensureAuthenticated, async (req, res) => {
 
 // 4. GET /members/:id — show details + history
 router.get('/members/:id', ensureAuthenticated, async (req, res) => {
-  const member = await Member.findById(req.params.id).lean();
+  const member = await Member.findById(req.params.id).populate('parent', 'firstName lastName').lean();
 
   const checkoutHistory = await Checkout.find({ member: member._id })
     .sort('-checkoutDate')
@@ -170,16 +194,25 @@ router.get('/members/:id', ensureAuthenticated, async (req, res) => {
 
 // 5. GET /members/search — JSON endpoint for autocomplete widgets
 router.get('/members/search', ensureAuthenticated, async (req, res) => {
-  const q     = req.query.q || '';
-  const regex = new RegExp(q, 'i');
+  const q           = req.query.q || '';
+  const memberType  = req.query.memberType;
+  const regex       = new RegExp(q, 'i');
+
+  const query = {
+    $or: [
+      { firstName: regex },
+      { lastName:  regex },
+      { email:     regex }
+    ]
+  };
+
+  // Filter by member type if specified
+  if (memberType) {
+    query.memberType = memberType;
+  }
+
   const results = await Member
-    .find({
-      $or: [
-        { firstName: regex },
-        { lastName:  regex },
-        { email:     regex }
-      ]
-    })
+    .find(query)
     .limit(10)
     .lean();
 

@@ -8,6 +8,7 @@ const MemberSchema = new Schema({
   email:       { type: String, required: true, unique: true },
   phone:       { type: String },
   address:     { type: String },
+  zipCode:     { type: String },  // Zip code - visible to all roles
   joinedAt:    { type: Date, default: Date.now },
 
   // ─── Parent-Child Relationships ──────────────────────────────────────────
