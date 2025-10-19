@@ -24,7 +24,9 @@
     <div class="mb-4">
       <p><strong>Email:</strong> <%= member.email %></p>
       <p><strong>Phone:</strong> <%= member.phone || 'N/A' %></p>
-      <p><strong>Address:</strong> <%= member.address || 'N/A' %></p>
+      <% if (user.role === 'staff' || user.role === 'admin') { %>
+        <p><strong>Address:</strong> <%= member.address || 'N/A' %></p>
+      <% } %>
       <p><strong>Joined:</strong> <%= new Date(member.joinedAt).toLocaleDateString() %></p>
     </div>
 

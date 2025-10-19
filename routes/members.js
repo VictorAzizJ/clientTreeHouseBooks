@@ -17,6 +17,16 @@ function ensureStaffOrAdmin(req, res, next) {
   return res.status(403).send('Forbidden');
 }
 
+/**
+ * Middleware: authenticated users (volunteer, staff, or admin)
+ */
+function ensureAuthenticated(req, res, next) {
+  if (req.session?.user) {
+    return next();
+  }
+  return res.status(403).send('Forbidden');
+}
+
 // 1. GET /members/new — form to add a new member
 router.get('/members/new', ensureStaffOrAdmin, (req, res) => {
   res.render('newMember', { user: req.session.user });
@@ -80,7 +90,7 @@ router.post(
 );
 
 // 3. GET /members — list all members (with pagination)
-router.get('/members', ensureStaffOrAdmin, async (req, res) => {
+router.get('/members', ensureAuthenticated, async (req, res) => {
   // Pagination parameters
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 25; // 25 members per page
@@ -139,7 +149,7 @@ router.get('/members', ensureStaffOrAdmin, async (req, res) => {
 });
 
 // 4. GET /members/:id — show details + history
-router.get('/members/:id', ensureStaffOrAdmin, async (req, res) => {
+router.get('/members/:id', ensureAuthenticated, async (req, res) => {
   const member = await Member.findById(req.params.id).lean();
 
   const checkoutHistory = await Checkout.find({ member: member._id })
@@ -159,7 +169,7 @@ router.get('/members/:id', ensureStaffOrAdmin, async (req, res) => {
 }); // <— this was missing
 
 // 5. GET /members/search — JSON endpoint for autocomplete widgets
-router.get('/members/search', ensureStaffOrAdmin, async (req, res) => {
+router.get('/members/search', ensureAuthenticated, async (req, res) => {
   const q     = req.query.q || '';
   const regex = new RegExp(q, 'i');
   const results = await Member
