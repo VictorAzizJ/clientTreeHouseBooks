@@ -3,19 +3,12 @@
  * Logs all registered routes on server startup
  */
 
-const winston = require('winston');
-
-// Use existing logger or create simple one
-let logger;
-try {
-  logger = require('../utils/logger');
-} catch (e) {
-  logger = winston.createLogger({
-    level: 'info',
-    format: winston.format.simple(),
-    transports: [new winston.transports.Console()]
-  });
-}
+// Simple console logger fallback
+const logger = {
+  info: (msg) => console.log(msg),
+  warn: (msg) => console.warn(msg),
+  error: (msg) => console.error(msg)
+};
 
 /**
  * Extract routes from Express app

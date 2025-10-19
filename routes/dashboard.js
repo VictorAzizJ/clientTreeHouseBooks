@@ -80,10 +80,21 @@ router.get('/dashboard', ensureAuthenticated, async (req, res) => {
       .lean();
   }
 
-  // 3. Count programs (staff/admin only)
-  let programCount = 0;
+  // 3. Get stats for role-specific dashboards
+  const stats = {};
+
+  // All roles get total programs and checkouts
+  stats.totalPrograms = await Program.countDocuments();
+  stats.totalCheckouts = await Checkout.countDocuments();
+
+  // Staff and admin get member counts
   if (['staff','admin'].includes(user.role)) {
-    programCount = await Program.countDocuments();
+    stats.totalMembers = await Member.countDocuments();
+  }
+
+  // Only admin gets user counts
+  if (user.role === 'admin') {
+    stats.totalUsers = await require('../models/User').countDocuments();
   }
 
   // 4. Get metrics summary (staff/admin only)
@@ -98,6 +109,8 @@ router.get('/dashboard', ensureAuthenticated, async (req, res) => {
       .populate('member', 'firstName lastName')
       .lean();
   }
+
+  let programCount = stats.totalPrograms;
 
   // 5. Prepare chart data (admin only)
   let monthLabels = [], checkoutCounts = [], donationCounts = [], memberCounts = [], programStats = [];
@@ -155,14 +168,15 @@ router.get('/dashboard', ensureAuthenticated, async (req, res) => {
   }
 console.log({ monthLabels, checkoutCounts, donationCounts, memberCounts, programStats })
   // Determine which dashboard template to render
-  const templateName = user.role === 'admin' ? 'dashboard-admin'
-                     : user.role === 'staff' ? 'dashboard-staff'
-                     : 'dashboard-volunteer';
+  const templateName = user.role === 'admin' ? 'dashboardAdmin'
+                     : user.role === 'staff' ? 'dashboardStaff'
+                     : 'dashboardVolunteer';
 
   // Prepare common data
   const dashboardData = {
     user,
     success,
+    stats,  // Stats object for role-specific dashboards
     notifications,
     hasMoreNotifications,
     messages,
