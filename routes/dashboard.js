@@ -168,18 +168,16 @@ router.get('/dashboard', ensureAuthenticated, async (req, res) => {
   }
 console.log({ monthLabels, checkoutCounts, donationCounts, memberCounts, programStats })
 
-  // Allow super admin (victor.d.jackson@gmail.com) to switch views
+  // Allow admins to switch between dashboard views
   let templateName;
   const requestedView = req.query.view;
 
-  if (user.email === 'victor.d.jackson@gmail.com' && requestedView) {
-    // Super admin can view any dashboard
+  if (user.role === 'admin' && requestedView) {
+    // Admins can view any dashboard
     templateName = requestedView === 'admin' ? 'dashboardAdmin'
                  : requestedView === 'staff' ? 'dashboardStaff'
                  : requestedView === 'volunteer' ? 'dashboardVolunteer'
-                 : (user.role === 'admin' ? 'dashboardAdmin'
-                     : user.role === 'staff' ? 'dashboardStaff'
-                     : 'dashboardVolunteer');
+                 : 'dashboardAdmin'; // Default to admin view for invalid requests
   } else {
     // Normal users see their role-based dashboard
     templateName = user.role === 'admin' ? 'dashboardAdmin'

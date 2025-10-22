@@ -28,8 +28,8 @@
 <body>
   <%- include('partials/nav') %>
   <div class="container mt-4">
-    <!-- Dashboard Switcher -->
-    <% if (user.email === 'victor.d.jackson@gmail.com') { %>
+    <!-- Dashboard Switcher (Admin Only) -->
+    <% if (user.role === 'admin') { %>
       <div class="dashboard-switcher">
         <div class="btn-group" role="group">
           <a href="/dashboard?view=admin" class="btn btn-sm btn-danger">
