@@ -13,9 +13,9 @@
   <%- include('partials/nav') %>
   <div class="container mt-5">
     <h1>Admin Dashboard</h1>
-    <p>Welcome, <%= currentUser.firstName %>!</p>
+    <p>Welcome, <%= currentUser?.firstName || user?.firstName || 'Admin' %>!</p>
 
-    <% if (success) { %>
+    <% if (typeof success !== 'undefined' && success) { %>
       <div class="alert alert-success alert-dismissible fade show" role="alert">
         <%= success %>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
