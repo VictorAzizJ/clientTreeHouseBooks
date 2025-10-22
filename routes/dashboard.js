@@ -167,10 +167,25 @@ router.get('/dashboard', ensureAuthenticated, async (req, res) => {
     ]);
   }
 console.log({ monthLabels, checkoutCounts, donationCounts, memberCounts, programStats })
-  // Determine which dashboard template to render
-  const templateName = user.role === 'admin' ? 'dashboardAdmin'
+
+  // Allow super admin (victor.d.jackson@gmail.com) to switch views
+  let templateName;
+  const requestedView = req.query.view;
+
+  if (user.email === 'victor.d.jackson@gmail.com' && requestedView) {
+    // Super admin can view any dashboard
+    templateName = requestedView === 'admin' ? 'dashboardAdmin'
+                 : requestedView === 'staff' ? 'dashboardStaff'
+                 : requestedView === 'volunteer' ? 'dashboardVolunteer'
+                 : (user.role === 'admin' ? 'dashboardAdmin'
                      : user.role === 'staff' ? 'dashboardStaff'
-                     : 'dashboardVolunteer';
+                     : 'dashboardVolunteer');
+  } else {
+    // Normal users see their role-based dashboard
+    templateName = user.role === 'admin' ? 'dashboardAdmin'
+                 : user.role === 'staff' ? 'dashboardStaff'
+                 : 'dashboardVolunteer';
+  }
 
   // Prepare common data
   const dashboardData = {
