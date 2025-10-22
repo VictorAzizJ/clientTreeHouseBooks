@@ -7,10 +7,10 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "lint": "eslint .",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "migrate:drop-okta-index": "node scripts/drop-okta-index.js"
   },
   "dependencies": {
-    "@okta/oidc-middleware": "^5.5.0",
     "@sentry/node": "^9.46.0",
     "@sentry/profiling-node": "^10.20.0",
     "axios": "^1.8.4",
@@ -23,7 +23,6 @@
     "dotenv": "^16.5.0",
     "ejs": "^3.1.10",
     "express": "^4.21.2",
-    "express-openid-connect": "^2.17.1",
     "express-rate-limit": "^7.5.0",
     "express-session": "^1.18.1",
     "express-validator": "^7.2.1",

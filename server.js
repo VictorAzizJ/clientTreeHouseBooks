@@ -147,6 +147,9 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Simple favicon handler to prevent 404 errors
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 // ─── 8. MongoDB Connection ──────────────────────────────────────────────────
 if (process.env.NODE_ENV !== 'test') {
   mongoose.connect(process.env.MONGO_URI, {
