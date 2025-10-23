@@ -26,6 +26,7 @@ router.get('/admin/users', ensureAdmin, async (req, res, next) => {
     delete req.session.success;
     res.render('adminUsers', {
       currentUser: req.session.user,
+      user: req.session.user,
       users,
       success
     });
