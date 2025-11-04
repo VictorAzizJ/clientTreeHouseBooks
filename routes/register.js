@@ -81,8 +81,11 @@ router.post(
       // 1. Check if email already exists (case-insensitive)
       const existingUser = await User.findOne({ email: email.toLowerCase() });
       if (existingUser) {
-        const errorMsg = encodeURIComponent('An account with this email already exists.');
-        return res.redirect(`/custom-signup?error=${errorMsg}`);
+        // Email already exists - redirect to login instead
+        const errorMsg = encodeURIComponent('This email is already registered. Redirecting you to login...');
+        console.log(`⚠️  Registration attempt with existing email: ${email}`);
+        // Redirect to login page with email pre-filled
+        return res.redirect(`/custom-login?error=${errorMsg}&email=${encodeURIComponent(email)}`);
       }
 
       // 2. Create new user
@@ -99,7 +102,7 @@ router.post(
 
       // 3. Redirect to login with success message
       const successMsg = encodeURIComponent('Account created successfully! Please log in.');
-      res.redirect(`/custom-login?success=${successMsg}`);
+      res.redirect(`/custom-login?success=${successMsg}&email=${encodeURIComponent(email)}`);
 
     } catch (err) {
       console.error('Registration error:', err);
@@ -114,11 +117,15 @@ router.post(
 
       // Provide more specific error messages
       if (err.code === 11000) {
-        errorMsg = 'This email is already registered. Please use a different email or log in.';
+        // Duplicate key error (email already exists)
+        // This is a backup check in case the findOne check above missed it (race condition)
+        errorMsg = 'This email is already registered. Redirecting you to login...';
+        const emailEncoded = encodeURIComponent(email);
+        return res.redirect(`/custom-login?error=${encodeURIComponent(errorMsg)}&email=${emailEncoded}`);
       } else if (err.name === 'ValidationError') {
         errorMsg = 'Please check your information and try again.';
-      } else if (err.message) {
-        // Use the actual error message for debugging (remove in production)
+      } else if (err.message && process.env.NODE_ENV !== 'production') {
+        // Use the actual error message for debugging (only in development)
         errorMsg = `Error: ${err.message}`;
       }
 
