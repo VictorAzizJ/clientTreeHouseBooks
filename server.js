@@ -28,6 +28,7 @@ require('./models/MetricValue');          // ← added
 require('./models/MetricDefinition');     // ← added
 require('./models/DashboardPreference');  // ← added
 require('./models/ImportHistory');        // ← added for data import
+require('./models/TravelingStop');        // ← Traveling Tree House Program
 // (Program, Member, Checkout, Donation, etc. are pulled in by their routes)
 
 
@@ -202,6 +203,7 @@ app.use('/', require('./routes/metrics'));       // ← verify mounting ends wit
 app.use('/', require('./routes/dashboardPreferences'));
 app.use('/', require('./routes/classroom'));     // Classroom program routes
 app.use('/', require('./routes/dataImport'));    // Data import routes
+app.use('/', require('./routes/travelingTreehouse')); // Traveling Tree House Program
 
 // ─── 11. Logout ─────────────────────────────────────────────────────────────
 app.get('/logout', (req, res) => {

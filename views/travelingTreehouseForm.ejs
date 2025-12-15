@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= stop ? 'Edit Stop' : 'Record New Stop' %> - Traveling Tree House</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/treehouse-brand.css">
+  <style>
+    /* Conditional fields styling */
+    .conditional-fields {
+      display: none;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    .conditional-fields.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .type-badge {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 1rem;
+    }
+    .form-section {
+      background: #f8f9fa;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .form-section h5 {
+      color: var(--thb-primary-dark);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--thb-secondary);
+    }
+  </style>
+</head>
+<body>
+  <%- include('partials/nav') %>
+
+  <div class="container mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="/traveling-treehouse">Traveling Tree House</a></li>
+            <li class="breadcrumb-item active"><%= stop ? 'Edit Stop' : 'New Stop' %></li>
+          </ol>
+        </nav>
+        <h1>
+          <i class="bi bi-truck"></i>
+          <%= stop ? 'Edit Stop' : 'Record New Stop' %>
+        </h1>
+        <p class="text-muted">
+          <%= stop ? 'Update the details for this stop visit.' : 'Record a new Traveling Tree House stop visit.' %>
+        </p>
+      </div>
+    </div>
+
+    <!-- Error Alert -->
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> <%= error %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    <% } %>
+
+    <!-- Form -->
+    <form action="<%= stop ? '/traveling-treehouse/' + stop._id : '/traveling-treehouse' %>" method="POST">
+
+      <!-- Core Information Section -->
+      <div class="form-section">
+        <h5><i class="bi bi-info-circle"></i> Stop Information</h5>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="date" class="form-label">Date <span class="text-danger">*</span></label>
+            <input
+              type="date"
+              class="form-control"
+              id="date"
+              name="date"
+              value="<%= stop ? stop.date : today %>"
+              required
+            >
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="stopType" class="form-label">Stop Type <span class="text-danger">*</span></label>
+            <select class="form-select" id="stopType" name="stopType" required>
+              <option value="">Select type...</option>
+              <% stopTypes.forEach(type => { %>
+                <option
+                  value="<%= type %>"
+                  <%= stop && stop.stopType === type ? 'selected' : '' %>
+                >
+                  <%= formatStopType(type) %>
+                </option>
+              <% }); %>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="stopName" class="form-label">Stop Name <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control"
+              id="stopName"
+              name="stopName"
+              value="<%= stop ? stop.stopName : '' %>"
+              placeholder="e.g., Sunshine Daycare, Main Street Branch"
+              maxlength="200"
+              required
+            >
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="booksDistributed" class="form-label">Books Distributed <span class="text-danger">*</span></label>
+            <input
+              type="number"
+              class="form-control"
+              id="booksDistributed"
+              name="booksDistributed"
+              value="<%= stop ? stop.booksDistributed : '' %>"
+              placeholder="Enter number of books"
+              min="0"
+              max="100000"
+              required
+            >
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-8 mb-3">
+            <label for="stopAddress" class="form-label">Address <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control"
+              id="stopAddress"
+              name="stopAddress"
+              value="<%= stop ? stop.stopAddress : '' %>"
+              placeholder="Full street address"
+              maxlength="500"
+              required
+            >
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <label for="stopZipCode" class="form-label">ZIP Code <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control"
+              id="stopZipCode"
+              name="stopZipCode"
+              value="<%= stop ? stop.stopZipCode : '' %>"
+              placeholder="12345 or 12345-6789"
+              pattern="^\d{5}(-\d{4})?$"
+              required
+            >
+            <div class="form-text">5-digit ZIP or ZIP+4 format</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact & Marketing Section -->
+      <div class="form-section">
+        <h5><i class="bi bi-megaphone"></i> Contact & Outreach</h5>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="contactMethod" class="form-label">How were we contacted/requested?</label>
+            <input
+              type="text"
+              class="form-control"
+              id="contactMethod"
+              name="contactMethod"
+              value="<%= stop ? stop.contactMethod : '' %>"
+              placeholder="e.g., Phone call, Email, Website form, Referral"
+              maxlength="500"
+            >
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="howHeardAboutUs" class="form-label">How did they hear about us?</label>
+            <input
+              type="text"
+              class="form-control"
+              id="howHeardAboutUs"
+              name="howHeardAboutUs"
+              value="<%= stop ? stop.howHeardAboutUs : '' %>"
+              placeholder="e.g., Social media, Word of mouth, Partner organization"
+              maxlength="500"
+            >
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="didWeReadToThem"
+              name="didWeReadToThem"
+              <%= stop && stop.didWeReadToThem ? 'checked' : '' %>
+            >
+            <label class="form-check-label" for="didWeReadToThem">
+              <i class="bi bi-book"></i> Did we read to them?
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daycare-Specific Fields -->
+      <div class="form-section conditional-fields" id="daycareFields">
+        <h5>
+          <i class="bi bi-house-heart"></i> Daycare-Specific Questions
+          <span class="type-badge bg-info text-white">Daycare Only</span>
+        </h5>
+
+        <div class="form-check">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="hasStickerDisplayed"
+            name="hasStickerDisplayed"
+            <%= stop && stop.daycareSettings?.hasStickerDisplayed ? 'checked' : '' %>
+          >
+          <label class="form-check-label" for="hasStickerDisplayed">
+            Do they have our sticker displayed?
+          </label>
+        </div>
+      </div>
+
+      <!-- Branch-Specific Fields -->
+      <div class="form-section conditional-fields" id="branchFields">
+        <h5>
+          <i class="bi bi-building"></i> Branch-Specific Questions
+          <span class="type-badge bg-success text-white">Branch Only</span>
+        </h5>
+
+        <div class="form-check">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="hasSignageDisplayed"
+            name="hasSignageDisplayed"
+            <%= stop && stop.branchSettings?.hasSignageDisplayed ? 'checked' : '' %>
+          >
+          <label class="form-check-label" for="hasSignageDisplayed">
+            Do they have TreeHouse Books signage displayed?
+          </label>
+        </div>
+      </div>
+
+      <!-- Community Event-Specific Fields -->
+      <div class="form-section conditional-fields" id="communityEventFields">
+        <h5>
+          <i class="bi bi-calendar-event"></i> Community Event Questions
+          <span class="type-badge bg-warning text-dark">Event Only</span>
+        </h5>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-check mb-2">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="wereWeOnFlyer"
+                name="wereWeOnFlyer"
+                <%= stop && stop.communityEventSettings?.wereWeOnFlyer ? 'checked' : '' %>
+              >
+              <label class="form-check-label" for="wereWeOnFlyer">
+                Were we on their promotional flyer?
+              </label>
+            </div>
+
+            <div class="form-check mb-2">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="featuredOnTheirSocialMedia"
+                name="featuredOnTheirSocialMedia"
+                <%= stop && stop.communityEventSettings?.featuredOnTheirSocialMedia ? 'checked' : '' %>
+              >
+              <label class="form-check-label" for="featuredOnTheirSocialMedia">
+                Did they feature us on their social media beforehand?
+              </label>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-check mb-2">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="didWeShareOnOurSocialMedia"
+                name="didWeShareOnOurSocialMedia"
+                <%= stop && stop.communityEventSettings?.didWeShareOnOurSocialMedia ? 'checked' : '' %>
+              >
+              <label class="form-check-label" for="didWeShareOnOurSocialMedia">
+                Did we share/post the event on our social media?
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes Section -->
+      <div class="form-section">
+        <h5><i class="bi bi-journal-text"></i> Additional Notes</h5>
+
+        <div class="mb-3">
+          <label for="notes" class="form-label">Notes</label>
+          <textarea
+            class="form-control"
+            id="notes"
+            name="notes"
+            rows="4"
+            placeholder="Any additional observations, feedback, or details about this stop..."
+            maxlength="2000"
+          ><%= stop ? stop.notes : '' %></textarea>
+          <div class="form-text">Optional - up to 2000 characters</div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="d-flex justify-content-between align-items-center mb-5">
+        <a href="/traveling-treehouse" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-primary btn-lg">
+          <i class="bi bi-check-lg"></i>
+          <%= stop ? 'Update Stop' : 'Record Stop' %>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // ─── Conditional Fields Logic ─────────────────────────────────────────────
+    // Show/hide type-specific fields based on selected stop type
+    const stopTypeSelect = document.getElementById('stopType');
+    const daycareFields = document.getElementById('daycareFields');
+    const branchFields = document.getElementById('branchFields');
+    const communityEventFields = document.getElementById('communityEventFields');
+
+    function updateConditionalFields() {
+      const selectedType = stopTypeSelect.value;
+
+      // Hide all conditional sections first
+      daycareFields.classList.remove('active');
+      branchFields.classList.remove('active');
+      communityEventFields.classList.remove('active');
+
+      // Show the relevant section based on selection
+      switch (selectedType) {
+        case 'daycare':
+          daycareFields.classList.add('active');
+          break;
+        case 'branch':
+          branchFields.classList.add('active');
+          break;
+        case 'community_event':
+          communityEventFields.classList.add('active');
+          break;
+      }
+    }
+
+    // Listen for changes and run on page load
+    stopTypeSelect.addEventListener('change', updateConditionalFields);
+    document.addEventListener('DOMContentLoaded', updateConditionalFields);
+  </script>
+</body>
+</html>
