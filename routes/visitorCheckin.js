@@ -55,11 +55,6 @@ router.post(
       .isEmail().withMessage('Must be a valid email address')
       .normalizeEmail(),
 
-    body('purpose')
-      .optional({ checkFalsy: true })
-      .trim()
-      .isLength({ max: 500 }),
-
     body('notes')
       .optional({ checkFalsy: true })
       .trim()
@@ -73,7 +68,7 @@ router.post(
       return res.redirect('/visitor-checkin');
     }
 
-    const { memberId, firstName, lastName, email, purpose, notes } = req.body;
+    const { memberId, firstName, lastName, email, notes } = req.body;
 
     try {
       let member;
@@ -106,7 +101,6 @@ router.post(
       await Visit.create({
         member: member._id,
         visitDate: new Date(),
-        purpose: purpose || undefined,
         notes: notes || undefined,
         recordedBy: req.session.user._id
       });

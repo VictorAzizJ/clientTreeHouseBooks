@@ -69,15 +69,13 @@ router.post(
 
     // Book category quantities (all optional, at least one should have value)
     body('bookCategories.blackAuthorAdult.quantity').optional({ checkFalsy: true }).isInt({ min: 0 }),
-    body('bookCategories.blackAuthorAdult.weight').optional({ checkFalsy: true }).isFloat({ min: 0 }),
     body('bookCategories.adult.quantity').optional({ checkFalsy: true }).isInt({ min: 0 }),
-    body('bookCategories.adult.weight').optional({ checkFalsy: true }).isFloat({ min: 0 }),
     body('bookCategories.blackAuthorKids.quantity').optional({ checkFalsy: true }).isInt({ min: 0 }),
-    body('bookCategories.blackAuthorKids.weight').optional({ checkFalsy: true }).isFloat({ min: 0 }),
     body('bookCategories.kids.quantity').optional({ checkFalsy: true }).isInt({ min: 0 }),
-    body('bookCategories.kids.weight').optional({ checkFalsy: true }).isFloat({ min: 0 }),
     body('bookCategories.boardBooks.quantity').optional({ checkFalsy: true }).isInt({ min: 0 }),
-    body('bookCategories.boardBooks.weight').optional({ checkFalsy: true }).isFloat({ min: 0 }),
+
+    // Single total weight for entire checkout
+    body('totalWeight').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('Weight must be a positive number'),
 
     // Legacy fields for backward compatibility
     body('numberOfBooks').optional({ checkFalsy: true }).isInt({ min: 1, max: 1000 }),
@@ -94,7 +92,7 @@ router.post(
       return res.redirect(redirectTo);
     }
 
-    const { memberId, bookCategories, numberOfBooks, genres, weight, redirectTo } = req.body;
+    const { memberId, bookCategories, totalWeight, numberOfBooks, genres, weight, redirectTo } = req.body;
 
     try {
       // Build checkout data
@@ -107,24 +105,19 @@ router.post(
       if (bookCategories) {
         checkoutData.bookCategories = {
           blackAuthorAdult: {
-            quantity: parseInt(bookCategories.blackAuthorAdult?.quantity) || 0,
-            weight: parseFloat(bookCategories.blackAuthorAdult?.weight) || 0
+            quantity: parseInt(bookCategories.blackAuthorAdult?.quantity) || 0
           },
           adult: {
-            quantity: parseInt(bookCategories.adult?.quantity) || 0,
-            weight: parseFloat(bookCategories.adult?.weight) || 0
+            quantity: parseInt(bookCategories.adult?.quantity) || 0
           },
           blackAuthorKids: {
-            quantity: parseInt(bookCategories.blackAuthorKids?.quantity) || 0,
-            weight: parseFloat(bookCategories.blackAuthorKids?.weight) || 0
+            quantity: parseInt(bookCategories.blackAuthorKids?.quantity) || 0
           },
           kids: {
-            quantity: parseInt(bookCategories.kids?.quantity) || 0,
-            weight: parseFloat(bookCategories.kids?.weight) || 0
+            quantity: parseInt(bookCategories.kids?.quantity) || 0
           },
           boardBooks: {
-            quantity: parseInt(bookCategories.boardBooks?.quantity) || 0,
-            weight: parseFloat(bookCategories.boardBooks?.weight) || 0
+            quantity: parseInt(bookCategories.boardBooks?.quantity) || 0
           }
         };
 
@@ -136,13 +129,9 @@ router.post(
           checkoutData.bookCategories.kids.quantity +
           checkoutData.bookCategories.boardBooks.quantity;
 
-        // Calculate total weight
-        checkoutData.weight =
-          checkoutData.bookCategories.blackAuthorAdult.weight +
-          checkoutData.bookCategories.adult.weight +
-          checkoutData.bookCategories.blackAuthorKids.weight +
-          checkoutData.bookCategories.kids.weight +
-          checkoutData.bookCategories.boardBooks.weight;
+        // Single total weight
+        checkoutData.totalWeight = totalWeight ? parseFloat(totalWeight) : 0;
+        checkoutData.weight = checkoutData.totalWeight; // Also store in legacy field
       } else {
         // Legacy format support
         const genreArray = Array.isArray(genres) ? genres : (genres ? [genres] : []);

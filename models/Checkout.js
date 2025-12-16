@@ -5,31 +5,29 @@ const Schema   = mongoose.Schema;
 const CheckoutSchema = new Schema({
   member:        { type: Schema.Types.ObjectId, ref: 'Member', required: true },
 
-  // New book categories structure (5 categories with qty + weight each)
+  // Book categories structure (5 categories with qty only)
   bookCategories: {
     blackAuthorAdult: {
-      quantity: { type: Number, default: 0 },
-      weight: { type: Number, default: 0 }
+      quantity: { type: Number, default: 0 }
     },
     adult: {
-      quantity: { type: Number, default: 0 },
-      weight: { type: Number, default: 0 }
+      quantity: { type: Number, default: 0 }
     },
     blackAuthorKids: {
-      quantity: { type: Number, default: 0 },
-      weight: { type: Number, default: 0 }
+      quantity: { type: Number, default: 0 }
     },
     kids: {
-      quantity: { type: Number, default: 0 },
-      weight: { type: Number, default: 0 }
+      quantity: { type: Number, default: 0 }
     },
     boardBooks: {
-      quantity: { type: Number, default: 0 },
-      weight: { type: Number, default: 0 }
+      quantity: { type: Number, default: 0 }
     }
   },
 
-  // Legacy fields kept for backward compatibility with existing data
+  // Single total weight for entire checkout (lbs)
+  totalWeight:   { type: Number, default: 0 },
+
+  // Legacy/computed fields
   numberOfBooks: { type: Number },
   genres:        [{
     type: String,
@@ -40,7 +38,7 @@ const CheckoutSchema = new Schema({
       'Young Adult'
     ]
   }],
-  weight:        { type: Number },
+  weight:        { type: Number },  // Legacy - kept for old data
 
   checkoutDate:  { type: Date, default: Date.now },
   recordedBy:    { type: Schema.Types.ObjectId, ref: 'User' }

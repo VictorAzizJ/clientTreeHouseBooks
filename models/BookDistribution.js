@@ -3,12 +3,26 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const BookDistributionSchema = new Schema({
-  // Event/Location information
-  location:    { type: String, required: true },
+  // Recipient information
+  recipientType: {
+    type: String,
+    enum: ['member', 'organization'],
+    required: true
+  },
+  member:       { type: Schema.Types.ObjectId, ref: 'Member' },
+  organization: { type: Schema.Types.ObjectId, ref: 'Organization' },
+
+  // Legacy location field for backward compatibility
+  location:    { type: String },
+
+  // Event information
   eventName:   { type: String },
   eventDate:   { type: Date, default: Date.now },
 
-  // Book categories (same structure as Checkout)
+  // Simple total books count
+  totalBooks:  { type: Number, required: true, min: 1 },
+
+  // Legacy bookCategories for backward compatibility with existing data
   bookCategories: {
     blackAuthorAdult: {
       quantity: { type: Number, default: 0 },

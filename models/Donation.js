@@ -8,14 +8,19 @@ const DonationSchema = new Schema({
 
   // Donor information
   donorType:      { type: String, enum: ['organization', 'person', 'undisclosed'], default: 'undisclosed' },
-  donorName:      { type: String },  // For org/person name when not linked to member
-  member:         { type: Schema.Types.ObjectId, ref: 'Member' },  // Now optional
+  donorName:      { type: String },  // Legacy field - kept for backward compatibility
+  member:         { type: Schema.Types.ObjectId, ref: 'Member' },  // For person donors
+  organization:   { type: Schema.Types.ObjectId, ref: 'Organization' },  // For org donors
 
   // Book information
   numberOfBooks:  { type: Number, required: true },
 
   // Monetary donation (optional)
   monetaryAmount: { type: Number, default: 0 },
+
+  // Book Drive indicator
+  isBookDrive:    { type: Boolean, default: false },
+  bookDriveName:  { type: String },  // Optional name/description of book drive
 
   // Notes
   notes:          { type: String },

@@ -3,6 +3,8 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
 const BookDistribution = require('../models/BookDistribution');
+const Member = require('../models/Member');
+const Organization = require('../models/Organization');
 
 // Middleware: staff or admin only
 function ensureStaffOrAdmin(req, res, next) {
@@ -58,10 +60,18 @@ router.post(
   '/book-distribution',
   ensureStaffOrAdmin,
   [
-    body('location')
+    body('recipientType')
       .trim()
-      .notEmpty().withMessage('Location is required')
-      .isLength({ max: 200 }),
+      .notEmpty().withMessage('Recipient type is required')
+      .isIn(['member', 'organization']).withMessage('Recipient type must be member or organization'),
+
+    body('memberId')
+      .optional({ checkFalsy: true })
+      .isMongoId().withMessage('Invalid member ID'),
+
+    body('organizationId')
+      .optional({ checkFalsy: true })
+      .isMongoId().withMessage('Invalid organization ID'),
 
     body('eventName')
       .optional({ checkFalsy: true })
@@ -72,17 +82,10 @@ router.post(
       .optional({ checkFalsy: true })
       .isISO8601().withMessage('Invalid date format'),
 
-    // Book category quantities
-    body('bookCategories.blackAuthorAdult.quantity').optional({ checkFalsy: true }).isInt({ min: 0 }),
-    body('bookCategories.blackAuthorAdult.weight').optional({ checkFalsy: true }).isFloat({ min: 0 }),
-    body('bookCategories.adult.quantity').optional({ checkFalsy: true }).isInt({ min: 0 }),
-    body('bookCategories.adult.weight').optional({ checkFalsy: true }).isFloat({ min: 0 }),
-    body('bookCategories.blackAuthorKids.quantity').optional({ checkFalsy: true }).isInt({ min: 0 }),
-    body('bookCategories.blackAuthorKids.weight').optional({ checkFalsy: true }).isFloat({ min: 0 }),
-    body('bookCategories.kids.quantity').optional({ checkFalsy: true }).isInt({ min: 0 }),
-    body('bookCategories.kids.weight').optional({ checkFalsy: true }).isFloat({ min: 0 }),
-    body('bookCategories.boardBooks.quantity').optional({ checkFalsy: true }).isInt({ min: 0 }),
-    body('bookCategories.boardBooks.weight').optional({ checkFalsy: true }).isFloat({ min: 0 }),
+    body('totalBooks')
+      .trim()
+      .notEmpty().withMessage('Total books is required')
+      .isInt({ min: 1, max: 100000 }).withMessage('Total books must be between 1 and 100,000'),
 
     body('notes')
       .optional({ checkFalsy: true })
@@ -97,51 +100,44 @@ router.post(
       return res.redirect('/book-distribution/new');
     }
 
-    const { location, eventName, eventDate, bookCategories, notes } = req.body;
+    const { recipientType, memberId, organizationId, eventName, eventDate, totalBooks, notes } = req.body;
+
+    // Validate recipient is provided based on type
+    if (recipientType === 'member' && !memberId) {
+      req.session.error = 'Please select a person';
+      return res.redirect('/book-distribution/new');
+    }
+    if (recipientType === 'organization' && !organizationId) {
+      req.session.error = 'Please select an organization';
+      return res.redirect('/book-distribution/new');
+    }
 
     try {
+      // Build location string from recipient name for backward compatibility
+      let locationName = '';
+      if (recipientType === 'member' && memberId) {
+        const member = await Member.findById(memberId).lean();
+        if (member) {
+          locationName = `${member.firstName} ${member.lastName}`;
+        }
+      } else if (recipientType === 'organization' && organizationId) {
+        const org = await Organization.findById(organizationId).lean();
+        if (org) {
+          locationName = org.name;
+        }
+      }
+
       const distributionData = {
-        location,
+        recipientType,
+        member: memberId || undefined,
+        organization: organizationId || undefined,
+        location: locationName,  // For backward compatibility
         eventName: eventName || undefined,
         eventDate: eventDate ? new Date(eventDate) : new Date(),
-        bookCategories: {
-          blackAuthorAdult: {
-            quantity: parseInt(bookCategories?.blackAuthorAdult?.quantity) || 0,
-            weight: parseFloat(bookCategories?.blackAuthorAdult?.weight) || 0
-          },
-          adult: {
-            quantity: parseInt(bookCategories?.adult?.quantity) || 0,
-            weight: parseFloat(bookCategories?.adult?.weight) || 0
-          },
-          blackAuthorKids: {
-            quantity: parseInt(bookCategories?.blackAuthorKids?.quantity) || 0,
-            weight: parseFloat(bookCategories?.blackAuthorKids?.weight) || 0
-          },
-          kids: {
-            quantity: parseInt(bookCategories?.kids?.quantity) || 0,
-            weight: parseFloat(bookCategories?.kids?.weight) || 0
-          },
-          boardBooks: {
-            quantity: parseInt(bookCategories?.boardBooks?.quantity) || 0,
-            weight: parseFloat(bookCategories?.boardBooks?.weight) || 0
-          }
-        },
+        totalBooks: parseInt(totalBooks, 10),
         notes: notes || undefined,
         recordedBy: req.session.user._id
       };
-
-      // Calculate totals for validation
-      const totalBooks =
-        distributionData.bookCategories.blackAuthorAdult.quantity +
-        distributionData.bookCategories.adult.quantity +
-        distributionData.bookCategories.blackAuthorKids.quantity +
-        distributionData.bookCategories.kids.quantity +
-        distributionData.bookCategories.boardBooks.quantity;
-
-      if (totalBooks < 1) {
-        req.session.error = 'Please enter at least one book';
-        return res.redirect('/book-distribution/new');
-      }
 
       await BookDistribution.create(distributionData);
 

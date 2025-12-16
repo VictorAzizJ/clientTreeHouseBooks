@@ -32,6 +32,7 @@ require('./models/TravelingStop');        // ← Traveling Tree House Program
 require('./models/Organization');         // ← Organization catalog for Traveling Tree House
 require('./models/Visit');                // ← Visitor check-in tracking
 require('./models/BookDistribution');     // ← Book distribution to communities
+require('./models/SidewalkBooksWeek');    // ← Sidewalk Books weekly inventory
 // (Program, Member, Checkout, Donation, etc. are pulled in by their routes)
 
 
@@ -209,6 +210,7 @@ app.use('/', require('./routes/dataImport'));    // Data import routes
 app.use('/', require('./routes/travelingTreehouse')); // Traveling Tree House Program
 app.use('/', require('./routes/visitorCheckin'));     // Visitor check-in
 app.use('/', require('./routes/bookDistribution'));   // Book distribution to communities
+app.use('/', require('./routes/sidewalkBooks'));      // Sidewalk Books weekly inventory
 
 // ─── 11. Logout ─────────────────────────────────────────────────────────────
 app.get('/logout', (req, res) => {

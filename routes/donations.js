@@ -22,6 +22,7 @@ const { body, validationResult } = require('express-validator');
 const router    = express.Router();
 const Donation  = require('../models/Donation');
 const Member    = require('../models/Member');
+const Organization = require('../models/Organization');
 const { ensureStaffOrAdmin } = require('./_middleware');
 const { sendDonationThankYouEmail } = require('../services/mailer');
 
@@ -64,14 +65,13 @@ router.post(
       .optional({ checkFalsy: true })
       .isIn(['organization', 'person', 'undisclosed']),
 
-    body('donorName')
-      .optional({ checkFalsy: true })
-      .trim()
-      .isLength({ max: 200 }),
-
     body('memberId')
       .optional({ checkFalsy: true })
       .isMongoId().withMessage('Invalid member ID'),
+
+    body('organizationId')
+      .optional({ checkFalsy: true })
+      .isMongoId().withMessage('Invalid organization ID'),
 
     body('numberOfBooks')
       .trim()
@@ -81,6 +81,14 @@ router.post(
     body('monetaryAmount')
       .optional({ checkFalsy: true })
       .isFloat({ min: 0 }).withMessage('Monetary amount must be a positive number'),
+
+    body('isBookDrive')
+      .optional({ checkFalsy: true }),
+
+    body('bookDriveName')
+      .optional({ checkFalsy: true })
+      .trim()
+      .isLength({ max: 200 }),
 
     body('notes')
       .optional({ checkFalsy: true })
@@ -95,23 +103,28 @@ router.post(
       return res.redirect('/donations/new');
     }
 
-    const { donationType, donorType, donorName, memberId, numberOfBooks, monetaryAmount, notes } = req.body;
+    const { donationType, donorType, memberId, organizationId, numberOfBooks, monetaryAmount, isBookDrive, bookDriveName, notes } = req.body;
 
     try {
       const donationData = {
         donationType,
         donorType: donorType || 'undisclosed',
-        donorName: donorName || undefined,
         member: memberId || undefined,
+        organization: organizationId || undefined,
         numberOfBooks: parseInt(numberOfBooks, 10),
         monetaryAmount: monetaryAmount ? parseFloat(monetaryAmount) : 0,
+        isBookDrive: isBookDrive === 'true',
+        bookDriveName: bookDriveName || undefined,
         notes: notes || undefined,
         recordedBy: req.session.user._id
       };
 
       await Donation.create(donationData);
 
-      // Send thank-you email if member has email
+      // Send thank-you email
+      let emailSent = false;
+
+      // If person donor with member record
       if (memberId) {
         const member = await Member.findById(memberId).lean();
         if (member && member.email) {
@@ -121,6 +134,15 @@ router.post(
           }).catch(err => {
             console.error('Email sending failed (non-critical):', err.message);
           });
+          emailSent = true;
+        }
+      }
+
+      // If organization donor (check if org has contact email - future enhancement)
+      if (organizationId && !emailSent) {
+        const org = await Organization.findById(organizationId).lean();
+        if (org) {
+          console.log(`Donation recorded for organization: ${org.name} (no email automation for orgs yet)`);
         }
       }
 
@@ -154,6 +176,14 @@ router.post(
       .optional({ checkFalsy: true })
       .isFloat({ min: 0 }).withMessage('Monetary amount must be a positive number'),
 
+    body('isBookDrive')
+      .optional({ checkFalsy: true }),
+
+    body('bookDriveName')
+      .optional({ checkFalsy: true })
+      .trim()
+      .isLength({ max: 200 }),
+
     body('notes')
       .optional({ checkFalsy: true })
       .trim()
@@ -167,7 +197,7 @@ router.post(
       return res.redirect(`/members/${req.params.memberId}/donations/new`);
     }
 
-    const { donationType, numberOfBooks, monetaryAmount, notes } = req.body;
+    const { donationType, numberOfBooks, monetaryAmount, isBookDrive, bookDriveName, notes } = req.body;
 
     try {
       const donationData = {
@@ -176,6 +206,8 @@ router.post(
         member: req.params.memberId,
         numberOfBooks: parseInt(numberOfBooks, 10),
         monetaryAmount: monetaryAmount ? parseFloat(monetaryAmount) : 0,
+        isBookDrive: isBookDrive === 'true',
+        bookDriveName: bookDriveName || undefined,
         notes: notes || undefined,
         recordedBy: req.session.user._id
       };
