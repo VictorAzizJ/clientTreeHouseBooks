@@ -14,7 +14,7 @@
   <%- include('partials/nav') %>
   <div class="container mt-5">
     <h1>New Member</h1>
-    <form action="/members" method="POST">
+    <form action="/members" method="POST" id="memberForm">
       <!-- Member Type Selection -->
       <div class="mb-3">
         <label class="form-label">Member Type</label>
@@ -31,42 +31,87 @@
         <small class="text-muted">Select "Child" for students who need to be linked to a parent/guardian</small>
       </div>
 
-      <!-- Parent Selection (shown only for children) -->
-      <div class="mb-3" id="parentField" style="display: none;">
-        <label for="parent" class="form-label">Parent/Guardian</label>
+      <!-- Parent Selection (shown only for children, now optional) -->
+      <div class="mb-3 child-field" id="parentField" style="display: none;">
+        <label for="parent" class="form-label">Parent/Guardian (Optional)</label>
         <select id="parent" name="parent" class="form-control">
           <option value="">Select a parent/guardian...</option>
         </select>
-        <small class="text-muted">Link this child to an existing adult member</small>
+        <small class="text-muted">Optionally link this child to an existing adult member</small>
+      </div>
+
+      <!-- Date of Birth (shown only for children) -->
+      <div class="mb-3 child-field" id="dobField" style="display: none;">
+        <label for="dateOfBirth" class="form-label">Date of Birth</label>
+        <input id="dateOfBirth" name="dateOfBirth" type="date" class="form-control">
       </div>
 
       <div class="mb-3">
-        <label for="firstName" class="form-label">First Name</label>
+        <label for="firstName" class="form-label">First Name *</label>
         <input id="firstName" name="firstName" class="form-control" required>
       </div>
       <div class="mb-3">
-        <label for="lastName" class="form-label">Last Name</label>
+        <label for="lastName" class="form-label">Last Name *</label>
         <input id="lastName" name="lastName" class="form-control" required>
       </div>
+
+      <!-- Email (required for adults, optional for children) -->
       <div class="mb-3">
-        <label for="email" class="form-label">Email</label>
+        <label for="email" class="form-label">
+          Email <span id="emailRequired">*</span>
+        </label>
         <input id="email" name="email" type="email" class="form-control" required>
+        <small class="text-muted" id="emailHelp">Required for adults</small>
       </div>
-      <div class="mb-3">
+
+      <!-- Phone (shown for adults only) -->
+      <div class="mb-3 adult-field" id="phoneField">
         <label for="phone" class="form-label">Phone</label>
         <input id="phone" name="phone" class="form-control">
       </div>
+
+      <!-- Zip Code (shown for all) -->
       <div class="mb-3">
         <label for="zipCode" class="form-label">Zip Code</label>
         <input id="zipCode" name="zipCode" class="form-control" placeholder="12345 or 12345-6789">
       </div>
+
+      <!-- Full Address (Staff/Admin only, for adults) -->
       <% if (user.role === 'staff' || user.role === 'admin') { %>
-        <div class="mb-3">
+        <div class="mb-3 adult-field" id="addressField">
           <label for="address" class="form-label">Full Address (Staff/Admin Only)</label>
           <textarea id="address" name="address" class="form-control" placeholder="Street, City, State"></textarea>
           <small class="text-muted">Only staff and admin can enter full addresses</small>
         </div>
       <% } %>
+
+      <!-- Additional child fields -->
+      <div class="mb-3 child-field" id="gradeField" style="display: none;">
+        <label for="grade" class="form-label">Grade</label>
+        <select id="grade" name="grade" class="form-select">
+          <option value="">Select grade...</option>
+          <option value="Pre-K">Pre-K</option>
+          <option value="K">Kindergarten</option>
+          <option value="1">1st Grade</option>
+          <option value="2">2nd Grade</option>
+          <option value="3">3rd Grade</option>
+          <option value="4">4th Grade</option>
+          <option value="5">5th Grade</option>
+          <option value="6">6th Grade</option>
+          <option value="7">7th Grade</option>
+          <option value="8">8th Grade</option>
+          <option value="9">9th Grade</option>
+          <option value="10">10th Grade</option>
+          <option value="11">11th Grade</option>
+          <option value="12">12th Grade</option>
+        </select>
+      </div>
+
+      <div class="mb-3 child-field" id="schoolField" style="display: none;">
+        <label for="school" class="form-label">School</label>
+        <input id="school" name="school" class="form-control" placeholder="School name">
+      </div>
+
       <button type="submit" class="btn btn-success">Create Member</button>
       <a href="/dashboard" class="btn btn-secondary ms-2">Back to Dashboard</a>
     </form>
@@ -75,15 +120,40 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script>
-    // Show/hide parent field based on member type
+    const emailInput = document.getElementById('email');
+    const emailRequired = document.getElementById('emailRequired');
+    const emailHelp = document.getElementById('emailHelp');
+
+    // Show/hide fields based on member type
+    function updateFieldVisibility(memberType) {
+      const childFields = document.querySelectorAll('.child-field');
+      const adultFields = document.querySelectorAll('.adult-field');
+
+      if (memberType === 'child') {
+        // Show child fields
+        childFields.forEach(field => field.style.display = 'block');
+        // Hide adult fields
+        adultFields.forEach(field => field.style.display = 'none');
+        // Make email optional
+        emailInput.required = false;
+        emailRequired.textContent = '(optional)';
+        emailHelp.textContent = 'Optional for children';
+      } else {
+        // Hide child fields
+        childFields.forEach(field => field.style.display = 'none');
+        // Show adult fields
+        adultFields.forEach(field => field.style.display = 'block');
+        // Make email required
+        emailInput.required = true;
+        emailRequired.textContent = '*';
+        emailHelp.textContent = 'Required for adults';
+      }
+    }
+
+    // Listen for member type changes
     document.querySelectorAll('input[name="memberType"]').forEach(radio => {
       radio.addEventListener('change', function() {
-        const parentField = document.getElementById('parentField');
-        if (this.value === 'child') {
-          parentField.style.display = 'block';
-        } else {
-          parentField.style.display = 'none';
-        }
+        updateFieldVisibility(this.value);
       });
     });
 

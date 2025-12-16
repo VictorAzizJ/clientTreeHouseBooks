@@ -50,9 +50,18 @@ router.post(
       .isLength({ min: 1, max: 50 }).withMessage('Last name must be 1-50 characters')
       .matches(/^[a-zA-Z\s'-]+$/).withMessage('Last name can only contain letters, spaces, hyphens, and apostrophes'),
 
+    // Email is required for adults, optional for children
     body('email')
+      .if((value, { req }) => req.body.memberType !== 'child')
       .trim()
-      .notEmpty().withMessage('Email is required')
+      .notEmpty().withMessage('Email is required for adult members')
+      .isEmail().withMessage('Must be a valid email address')
+      .normalizeEmail(),
+
+    body('email')
+      .if((value, { req }) => req.body.memberType === 'child')
+      .optional({ checkFalsy: true })
+      .trim()
       .isEmail().withMessage('Must be a valid email address')
       .normalizeEmail(),
 
@@ -80,13 +89,13 @@ router.post(
       return res.redirect('/members/new');
     }
 
-    const { firstName, lastName, email, phone, address, zipCode, memberType, parent } = req.body;
+    const { firstName, lastName, email, phone, address, zipCode, memberType, parent, dateOfBirth, grade, school } = req.body;
 
     try {
       const memberData = {
         firstName,
         lastName,
-        email,
+        email: email || undefined,  // Allow empty email for children
         phone,
         zipCode,
         memberType: memberType || 'adult'
@@ -97,9 +106,22 @@ router.post(
         memberData.address = address;
       }
 
-      // If it's a child member with a parent
-      if (memberType === 'child' && parent) {
-        memberData.parent = parent;
+      // If it's a child member
+      if (memberType === 'child') {
+        // Parent is now optional
+        if (parent) {
+          memberData.parent = parent;
+        }
+        // Additional child fields
+        if (dateOfBirth) {
+          memberData.dateOfBirth = new Date(dateOfBirth);
+        }
+        if (grade) {
+          memberData.grade = grade;
+        }
+        if (school) {
+          memberData.school = school;
+        }
       }
 
       await Member.create(memberData);

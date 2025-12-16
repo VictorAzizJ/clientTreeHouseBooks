@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Book Distributions - TreeHouseBooks</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/treehouse-brand.css">
+</head>
+<body>
+  <%- include('partials/nav') %>
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1><i class="bi bi-truck"></i> Book Distributions</h1>
+        <p class="text-muted">Books distributed to communities</p>
+      </div>
+      <a href="/book-distribution/new" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> New Distribution
+      </a>
+    </div>
+
+    <% if (typeof success !== 'undefined' && success) { %>
+      <div class="alert alert-success alert-dismissible fade show">
+        <%= success %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    <% } %>
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-danger alert-dismissible fade show">
+        <%= error %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    <% } %>
+
+    <div class="card">
+      <div class="card-body">
+        <% if (distributions && distributions.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Location</th>
+                  <th>Event</th>
+                  <th>Total Books</th>
+                  <th>Total Weight</th>
+                  <th>Recorded By</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% distributions.forEach(d => {
+                  const totalQty = (d.bookCategories?.blackAuthorAdult?.quantity || 0) +
+                                   (d.bookCategories?.adult?.quantity || 0) +
+                                   (d.bookCategories?.blackAuthorKids?.quantity || 0) +
+                                   (d.bookCategories?.kids?.quantity || 0) +
+                                   (d.bookCategories?.boardBooks?.quantity || 0);
+                  const totalWeight = (d.bookCategories?.blackAuthorAdult?.weight || 0) +
+                                      (d.bookCategories?.adult?.weight || 0) +
+                                      (d.bookCategories?.blackAuthorKids?.weight || 0) +
+                                      (d.bookCategories?.kids?.weight || 0) +
+                                      (d.bookCategories?.boardBooks?.weight || 0);
+                %>
+                  <tr>
+                    <td><%= new Date(d.eventDate).toLocaleDateString() %></td>
+                    <td><%= d.location %></td>
+                    <td><%= d.eventName || '-' %></td>
+                    <td><%= totalQty %></td>
+                    <td><%= totalWeight.toFixed(1) %> lbs</td>
+                    <td>
+                      <% if (d.recordedBy) { %>
+                        <%= d.recordedBy.firstName %> <%= d.recordedBy.lastName %>
+                      <% } else { %>
+                        -
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Summary Stats -->
+          <%
+            let grandTotalBooks = 0;
+            let grandTotalWeight = 0;
+            distributions.forEach(d => {
+              grandTotalBooks += (d.bookCategories?.blackAuthorAdult?.quantity || 0) +
+                                 (d.bookCategories?.adult?.quantity || 0) +
+                                 (d.bookCategories?.blackAuthorKids?.quantity || 0) +
+                                 (d.bookCategories?.kids?.quantity || 0) +
+                                 (d.bookCategories?.boardBooks?.quantity || 0);
+              grandTotalWeight += (d.bookCategories?.blackAuthorAdult?.weight || 0) +
+                                  (d.bookCategories?.adult?.weight || 0) +
+                                  (d.bookCategories?.blackAuthorKids?.weight || 0) +
+                                  (d.bookCategories?.kids?.weight || 0) +
+                                  (d.bookCategories?.boardBooks?.weight || 0);
+            });
+          %>
+          <div class="row mt-4">
+            <div class="col-md-4">
+              <div class="card text-center bg-light">
+                <div class="card-body">
+                  <h3><%= distributions.length %></h3>
+                  <p class="text-muted mb-0">Total Distributions</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card text-center bg-light">
+                <div class="card-body">
+                  <h3><%= grandTotalBooks.toLocaleString() %></h3>
+                  <p class="text-muted mb-0">Total Books Distributed</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card text-center bg-light">
+                <div class="card-body">
+                  <h3><%= grandTotalWeight.toFixed(1) %> lbs</h3>
+                  <p class="text-muted mb-0">Total Weight</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% } else { %>
+          <div class="text-center py-5">
+            <i class="bi bi-truck" style="font-size: 3rem; color: #ccc;"></i>
+            <p class="text-muted mt-3">No distributions recorded yet.</p>
+            <a href="/book-distribution/new" class="btn btn-primary">
+              <i class="bi bi-plus-circle"></i> Record First Distribution
+            </a>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Book Distribution - TreeHouseBooks</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/treehouse-brand.css">
+  <style>
+    .category-table input[type="number"] {
+      width: 100px;
+    }
+    .totals-row {
+      background-color: #f8f9fa;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <%- include('partials/nav') %>
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1><i class="bi bi-truck"></i> Book Distribution</h1>
+        <p class="text-muted">Record books distributed to communities</p>
+      </div>
+      <a href="/book-distribution" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> View All Distributions
+      </a>
+    </div>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+    <% if (typeof success !== 'undefined' && success) { %>
+      <div class="alert alert-success"><%= success %></div>
+    <% } %>
+
+    <div class="card">
+      <div class="card-header" style="background-color: var(--thb-primary); color: white;">
+        <h5 class="mb-0"><i class="bi bi-truck"></i> Record Distribution</h5>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="/book-distribution">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="location" class="form-label">Location *</label>
+              <input type="text" class="form-control" id="location" name="location" placeholder="e.g., Community Center, School Name" required>
+            </div>
+            <div class="col-md-6">
+              <label for="eventName" class="form-label">Event Name</label>
+              <input type="text" class="form-control" id="eventName" name="eventName" placeholder="e.g., Back to School Drive">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="eventDate" class="form-label">Event Date</label>
+            <input type="date" class="form-control" id="eventDate" name="eventDate" value="<%= new Date().toISOString().split('T')[0] %>">
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Book Categories *</label>
+            <p class="text-muted small">Enter quantity and weight (lbs) for each category of books distributed</p>
+            <table class="table table-bordered category-table">
+              <thead class="table-light">
+                <tr>
+                  <th>Category</th>
+                  <th>Quantity</th>
+                  <th>Weight (lbs)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Black Author Adult</td>
+                  <td><input type="number" class="form-control qty-input" name="bookCategories[blackAuthorAdult][quantity]" min="0" value="0"></td>
+                  <td><input type="number" class="form-control weight-input" name="bookCategories[blackAuthorAdult][weight]" min="0" step="0.1" value="0"></td>
+                </tr>
+                <tr>
+                  <td>Adult</td>
+                  <td><input type="number" class="form-control qty-input" name="bookCategories[adult][quantity]" min="0" value="0"></td>
+                  <td><input type="number" class="form-control weight-input" name="bookCategories[adult][weight]" min="0" step="0.1" value="0"></td>
+                </tr>
+                <tr>
+                  <td>Black Author Kids</td>
+                  <td><input type="number" class="form-control qty-input" name="bookCategories[blackAuthorKids][quantity]" min="0" value="0"></td>
+                  <td><input type="number" class="form-control weight-input" name="bookCategories[blackAuthorKids][weight]" min="0" step="0.1" value="0"></td>
+                </tr>
+                <tr>
+                  <td>Kids</td>
+                  <td><input type="number" class="form-control qty-input" name="bookCategories[kids][quantity]" min="0" value="0"></td>
+                  <td><input type="number" class="form-control weight-input" name="bookCategories[kids][weight]" min="0" step="0.1" value="0"></td>
+                </tr>
+                <tr>
+                  <td>Board Books</td>
+                  <td><input type="number" class="form-control qty-input" name="bookCategories[boardBooks][quantity]" min="0" value="0"></td>
+                  <td><input type="number" class="form-control weight-input" name="bookCategories[boardBooks][weight]" min="0" step="0.1" value="0"></td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr class="totals-row">
+                  <td>Total</td>
+                  <td id="totalQty">0</td>
+                  <td id="totalWeight">0 lbs</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <div class="mb-3">
+            <label for="notes" class="form-label">Notes</label>
+            <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Any additional notes about this distribution..."></textarea>
+          </div>
+
+          <div class="text-end">
+            <a href="/book-distribution" class="btn btn-secondary me-2">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-circle"></i> Record Distribution
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function updateTotals() {
+      const qtyInputs = document.querySelectorAll('.qty-input');
+      const weightInputs = document.querySelectorAll('.weight-input');
+
+      let totalQty = 0;
+      let totalWeight = 0;
+
+      qtyInputs.forEach(input => {
+        totalQty += parseInt(input.value) || 0;
+      });
+
+      weightInputs.forEach(input => {
+        totalWeight += parseFloat(input.value) || 0;
+      });
+
+      document.getElementById('totalQty').textContent = totalQty;
+      document.getElementById('totalWeight').textContent = totalWeight.toFixed(1) + ' lbs';
+    }
+
+    document.querySelectorAll('.qty-input, .weight-input').forEach(input => {
+      input.addEventListener('input', updateTotals);
+    });
+  </script>
+</body>
+</html>

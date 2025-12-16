@@ -141,13 +141,19 @@
           <div class="card-body">
             <div class="list-group list-group-flush">
               <a href="/checkouts/new" class="list-group-item list-group-item-action">
-                <i class="bi bi-box-arrow-right"></i> Record Checkout
+                <i class="bi bi-box-arrow-right"></i> Book Checkout
               </a>
               <a href="/checkouts" class="list-group-item list-group-item-action">
                 <i class="bi bi-list-check"></i> View All Checkouts
               </a>
               <a href="/donations/new" class="list-group-item list-group-item-action">
-                <i class="bi bi-gift"></i> Record Donation
+                <i class="bi bi-gift"></i> Book Donation
+              </a>
+              <a href="/book-distribution/new" class="list-group-item list-group-item-action">
+                <i class="bi bi-truck"></i> Book Distribution
+              </a>
+              <a href="/visitor-checkin" class="list-group-item list-group-item-action">
+                <i class="bi bi-person-check"></i> Visitor Check-In
               </a>
             </div>
           </div>
@@ -168,6 +174,129 @@
                 <i class="bi bi-clock-history"></i> Import History
               </a>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications & Messages Section -->
+    <div class="row">
+      <!-- Announcements (Notifications) -->
+      <div class="col-md-6 mb-4">
+        <div class="card h-100">
+          <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0"><i class="bi bi-megaphone"></i> Announcements</h5>
+          </div>
+          <div class="card-body">
+            <% if (notifications && notifications.length > 0) { %>
+              <div class="list-group list-group-flush mb-3" style="max-height: 300px; overflow-y: auto;">
+                <% notifications.forEach(n => { %>
+                  <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h6 class="mb-1"><%= n.title || 'Announcement' %></h6>
+                      <small class="text-muted"><%= new Date(n.createdAt).toLocaleDateString() %></small>
+                    </div>
+                    <p class="mb-1 small"><%= n.body %></p>
+                    <small class="text-muted">
+                      From: <%= n.senderId ? n.senderId.firstName + ' ' + n.senderId.lastName : 'System' %>
+                    </small>
+                    <form action="/notifications/<%= n._id %>/acknowledge" method="POST" class="mt-2">
+                      <button type="submit" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-check"></i> Acknowledge
+                      </button>
+                    </form>
+                  </div>
+                <% }); %>
+              </div>
+              <% if (hasMoreNotifications) { %>
+                <p class="text-muted small mb-0">Showing latest 10 announcements</p>
+              <% } %>
+            <% } else { %>
+              <p class="text-muted mb-3">No new announcements</p>
+            <% } %>
+
+            <!-- Create Announcement Form -->
+            <hr>
+            <h6><i class="bi bi-plus-circle"></i> Send Announcement</h6>
+            <form action="/notifications" method="POST">
+              <div class="mb-2">
+                <input type="text" name="title" class="form-control form-control-sm" placeholder="Title" required>
+              </div>
+              <div class="mb-2">
+                <textarea name="body" class="form-control form-control-sm" rows="2" placeholder="Message" required></textarea>
+              </div>
+              <div class="mb-2">
+                <label class="form-label small">Send to:</label>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="checkbox" name="targetRoles" value="volunteer" id="roleVolunteer" checked>
+                  <label class="form-check-label small" for="roleVolunteer">Volunteers</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="checkbox" name="targetRoles" value="staff" id="roleStaff">
+                  <label class="form-check-label small" for="roleStaff">Staff</label>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-warning btn-sm">
+                <i class="bi bi-send"></i> Send Announcement
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Direct Messages -->
+      <div class="col-md-6 mb-4">
+        <div class="card h-100">
+          <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="bi bi-chat-dots"></i> Direct Messages</h5>
+          </div>
+          <div class="card-body">
+            <% if (messages && messages.length > 0) { %>
+              <div class="list-group list-group-flush mb-3" style="max-height: 300px; overflow-y: auto;">
+                <% messages.forEach(m => { %>
+                  <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                      <small class="text-muted">
+                        <% if (m.senderId && m.senderId._id && m.senderId._id.toString() === user._id.toString()) { %>
+                          <strong>You</strong> → <%= m.recipientId ? m.recipientId.firstName + ' ' + m.recipientId.lastName : 'Unknown' %>
+                        <% } else { %>
+                          <strong><%= m.senderId ? m.senderId.firstName + ' ' + m.senderId.lastName : 'Unknown' %></strong> → You
+                        <% } %>
+                      </small>
+                      <small class="text-muted"><%= new Date(m.createdAt).toLocaleDateString() %></small>
+                    </div>
+                    <p class="mb-0 small"><%= m.body %></p>
+                  </div>
+                <% }); %>
+              </div>
+              <% if (hasMoreMessages) { %>
+                <p class="text-muted small mb-0">Showing latest 10 messages</p>
+              <% } %>
+            <% } else { %>
+              <p class="text-muted mb-3">No messages</p>
+            <% } %>
+
+            <!-- Send Message Form -->
+            <hr>
+            <h6><i class="bi bi-plus-circle"></i> Send Message</h6>
+            <form action="/messages" method="POST">
+              <div class="mb-2">
+                <select name="recipientId" class="form-select form-select-sm" required>
+                  <option value="">Select recipient...</option>
+                  <% if (userList && userList.length > 0) { %>
+                    <% userList.forEach(u => { %>
+                      <option value="<%= u._id %>"><%= u.firstName %> <%= u.lastName %> (<%= u.role %>)</option>
+                    <% }); %>
+                  <% } %>
+                </select>
+              </div>
+              <div class="mb-2">
+                <textarea name="body" class="form-control form-control-sm" rows="2" placeholder="Your message..." required></textarea>
+              </div>
+              <button type="submit" class="btn btn-info btn-sm text-white">
+                <i class="bi bi-send"></i> Send Message
+              </button>
+            </form>
           </div>
         </div>
       </div>

@@ -29,6 +29,8 @@ require('./models/MetricDefinition');     // ← added
 require('./models/DashboardPreference');  // ← added
 require('./models/ImportHistory');        // ← added for data import
 require('./models/TravelingStop');        // ← Traveling Tree House Program
+require('./models/Visit');                // ← Visitor check-in tracking
+require('./models/BookDistribution');     // ← Book distribution to communities
 // (Program, Member, Checkout, Donation, etc. are pulled in by their routes)
 
 
@@ -204,6 +206,8 @@ app.use('/', require('./routes/dashboardPreferences'));
 app.use('/', require('./routes/classroom'));     // Classroom program routes
 app.use('/', require('./routes/dataImport'));    // Data import routes
 app.use('/', require('./routes/travelingTreehouse')); // Traveling Tree House Program
+app.use('/', require('./routes/visitorCheckin'));     // Visitor check-in
+app.use('/', require('./routes/bookDistribution'));   // Book distribution to communities
 
 // ─── 11. Logout ─────────────────────────────────────────────────────────────
 app.get('/logout', (req, res) => {

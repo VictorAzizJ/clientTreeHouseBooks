@@ -67,17 +67,22 @@ router.post(
       .notEmpty().withMessage('Member is required')
       .isMongoId().withMessage('Invalid member ID'),
 
-    body('numberOfBooks')
-      .trim()
-      .notEmpty().withMessage('Number of books is required')
-      .isInt({ min: 1, max: 1000 }).withMessage('Number of books must be between 1 and 1000'),
+    // Book category quantities (all optional, at least one should have value)
+    body('bookCategories.blackAuthorAdult.quantity').optional({ checkFalsy: true }).isInt({ min: 0 }),
+    body('bookCategories.blackAuthorAdult.weight').optional({ checkFalsy: true }).isFloat({ min: 0 }),
+    body('bookCategories.adult.quantity').optional({ checkFalsy: true }).isInt({ min: 0 }),
+    body('bookCategories.adult.weight').optional({ checkFalsy: true }).isFloat({ min: 0 }),
+    body('bookCategories.blackAuthorKids.quantity').optional({ checkFalsy: true }).isInt({ min: 0 }),
+    body('bookCategories.blackAuthorKids.weight').optional({ checkFalsy: true }).isFloat({ min: 0 }),
+    body('bookCategories.kids.quantity').optional({ checkFalsy: true }).isInt({ min: 0 }),
+    body('bookCategories.kids.weight').optional({ checkFalsy: true }).isFloat({ min: 0 }),
+    body('bookCategories.boardBooks.quantity').optional({ checkFalsy: true }).isInt({ min: 0 }),
+    body('bookCategories.boardBooks.weight').optional({ checkFalsy: true }).isFloat({ min: 0 }),
 
-    body('genres')
-      .optional({ checkFalsy: true }),
-
-    body('weight')
-      .optional({ checkFalsy: true })
-      .isFloat({ min: 0, max: 10000 }).withMessage('Weight must be a positive number less than 10000')
+    // Legacy fields for backward compatibility
+    body('numberOfBooks').optional({ checkFalsy: true }).isInt({ min: 1, max: 1000 }),
+    body('genres').optional({ checkFalsy: true }),
+    body('weight').optional({ checkFalsy: true }).isFloat({ min: 0, max: 10000 })
   ],
   async (req, res) => {
     // Check for validation errors
@@ -89,30 +94,81 @@ router.post(
       return res.redirect(redirectTo);
     }
 
-    const { memberId, numberOfBooks, genres, weight, redirectTo } = req.body;
-    const genreArray = Array.isArray(genres) ? genres : (genres ? [genres] : []);
+    const { memberId, bookCategories, numberOfBooks, genres, weight, redirectTo } = req.body;
 
     try {
+      // Build checkout data
+      const checkoutData = {
+        member: memberId,
+        recordedBy: req.session.user._id
+      };
+
+      // If new bookCategories structure is used
+      if (bookCategories) {
+        checkoutData.bookCategories = {
+          blackAuthorAdult: {
+            quantity: parseInt(bookCategories.blackAuthorAdult?.quantity) || 0,
+            weight: parseFloat(bookCategories.blackAuthorAdult?.weight) || 0
+          },
+          adult: {
+            quantity: parseInt(bookCategories.adult?.quantity) || 0,
+            weight: parseFloat(bookCategories.adult?.weight) || 0
+          },
+          blackAuthorKids: {
+            quantity: parseInt(bookCategories.blackAuthorKids?.quantity) || 0,
+            weight: parseFloat(bookCategories.blackAuthorKids?.weight) || 0
+          },
+          kids: {
+            quantity: parseInt(bookCategories.kids?.quantity) || 0,
+            weight: parseFloat(bookCategories.kids?.weight) || 0
+          },
+          boardBooks: {
+            quantity: parseInt(bookCategories.boardBooks?.quantity) || 0,
+            weight: parseFloat(bookCategories.boardBooks?.weight) || 0
+          }
+        };
+
+        // Calculate total books from categories
+        checkoutData.numberOfBooks =
+          checkoutData.bookCategories.blackAuthorAdult.quantity +
+          checkoutData.bookCategories.adult.quantity +
+          checkoutData.bookCategories.blackAuthorKids.quantity +
+          checkoutData.bookCategories.kids.quantity +
+          checkoutData.bookCategories.boardBooks.quantity;
+
+        // Calculate total weight
+        checkoutData.weight =
+          checkoutData.bookCategories.blackAuthorAdult.weight +
+          checkoutData.bookCategories.adult.weight +
+          checkoutData.bookCategories.blackAuthorKids.weight +
+          checkoutData.bookCategories.kids.weight +
+          checkoutData.bookCategories.boardBooks.weight;
+      } else {
+        // Legacy format support
+        const genreArray = Array.isArray(genres) ? genres : (genres ? [genres] : []);
+        checkoutData.numberOfBooks = parseInt(numberOfBooks, 10);
+        checkoutData.genres = genreArray;
+        checkoutData.weight = weight ? parseFloat(weight) : undefined;
+      }
+
+      // Validate at least some books were checked out
+      if (!checkoutData.numberOfBooks || checkoutData.numberOfBooks < 1) {
+        req.session.error = 'Please enter at least one book';
+        return res.redirect(redirectTo || '/checkouts/new');
+      }
+
       // 1. Create checkout record
-      await Checkout.create({
-        member:        memberId,
-        numberOfBooks: parseInt(numberOfBooks, 10),
-        genres:        genreArray,
-        weight:        weight ? parseFloat(weight) : undefined
-      });
+      await Checkout.create(checkoutData);
 
       // 2. Fetch member details for email
       const member = await Member.findById(memberId).lean();
 
       // 3. Send thank-you email (non-blocking, fails silently if email not configured)
       if (member && member.email) {
-        // Fire and forget - don't await (don't block the response)
         sendCheckoutThankYouEmail(member.email, member.firstName, {
-          numberOfBooks: parseInt(numberOfBooks, 10),
-          genres: genreArray,
-          weight: weight ? parseFloat(weight) : undefined
+          numberOfBooks: checkoutData.numberOfBooks,
+          weight: checkoutData.weight
         }).catch(err => {
-          // Already logged in mailer.js, just prevent unhandled rejection
           console.error('Email sending failed (non-critical):', err.message);
         });
       }

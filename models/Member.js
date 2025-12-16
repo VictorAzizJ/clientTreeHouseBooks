@@ -5,7 +5,21 @@ const Schema   = mongoose.Schema;
 const MemberSchema = new Schema({
   firstName:   { type: String, required: true },
   lastName:    { type: String, required: true },
-  email:       { type: String, required: true, unique: true },
+  email:       {
+    type: String,
+    unique: true,
+    sparse: true,  // Allow multiple null values for children without email
+    validate: {
+      validator: function(v) {
+        // Email is required for adults, optional for children
+        if (this.memberType === 'adult') {
+          return v && v.length > 0;
+        }
+        return true; // Optional for children
+      },
+      message: 'Email is required for adult members'
+    }
+  },
   phone:       { type: String },
   address:     { type: String },
   zipCode:     { type: String },  // Zip code - visible to all roles

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Record Book Donation - TreeHouseBooks</title>
+  <title><%= donationType === 'new' ? 'New' : 'Used' %> Book Donation - TreeHouseBooks</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <link rel="stylesheet" href="/css/treehouse-brand.css">
@@ -31,6 +31,13 @@
     .member-search-item:last-child {
       border-bottom: none;
     }
+    .type-tabs .nav-link {
+      font-weight: 500;
+    }
+    .type-tabs .nav-link.active {
+      background-color: var(--thb-primary);
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -38,36 +45,83 @@
   <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h1><i class="bi bi-gift"></i> Record Book Donation</h1>
-        <p class="text-muted">Record a new book donation</p>
+        <h1><i class="bi bi-gift"></i> Book Donation</h1>
+        <p class="text-muted">Record a book donation</p>
       </div>
-      <a href="/members" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Back to Members
+      <a href="/dashboard" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
       </a>
     </div>
 
+    <!-- Donation Type Tabs -->
+    <ul class="nav nav-tabs type-tabs mb-4">
+      <li class="nav-item">
+        <a class="nav-link <%= donationType === 'used' ? 'active' : '' %>" href="/donations/new?type=used">
+          <i class="bi bi-recycle"></i> Used Book Donation
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link <%= donationType === 'new' ? 'active' : '' %>" href="/donations/new?type=new">
+          <i class="bi bi-star"></i> New Book Donation
+        </a>
+      </li>
+    </ul>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+    <% if (typeof success !== 'undefined' && success) { %>
+      <div class="alert alert-success"><%= success %></div>
+    <% } %>
+
     <div class="card">
+      <div class="card-header" style="background-color: var(--thb-primary); color: white;">
+        <h5 class="mb-0">
+          <i class="bi bi-<%= donationType === 'new' ? 'star' : 'recycle' %>"></i>
+          <%= donationType === 'new' ? 'New' : 'Used' %> Book Donation
+        </h5>
+      </div>
       <div class="card-body">
-        <form id="donationForm">
-          <div class="mb-3 position-relative">
-            <label for="memberSearch" class="form-label">Search Donor *</label>
+        <form method="POST" action="/donations">
+          <input type="hidden" name="donationType" value="<%= donationType %>">
+
+          <!-- Donor Type -->
+          <div class="mb-3">
+            <label class="form-label">Donor Type *</label>
+            <select class="form-select" id="donorType" name="donorType" required onchange="toggleDonorFields()">
+              <option value="undisclosed">Undisclosed / Anonymous</option>
+              <option value="person">Individual Person</option>
+              <option value="organization">Organization</option>
+            </select>
+          </div>
+
+          <!-- Donor Name (for person/organization) -->
+          <div class="mb-3" id="donorNameSection" style="display: none;">
+            <label for="donorName" class="form-label">Donor Name</label>
+            <input type="text" class="form-control" id="donorName" name="donorName" placeholder="Enter name or organization">
+          </div>
+
+          <!-- Member Search (optional - for linking to existing member) -->
+          <div class="mb-3 position-relative" id="memberSearchSection" style="display: none;">
+            <label for="memberSearch" class="form-label">Link to Existing Member (Optional)</label>
             <input
               type="text"
               class="form-control"
               id="memberSearch"
-              placeholder="Type name or email..."
+              placeholder="Search by name or email..."
               autocomplete="off"
             >
             <div id="searchResults" class="member-search-results"></div>
-            <input type="hidden" id="memberId" name="memberId" required>
+            <input type="hidden" id="memberId" name="memberId">
             <div id="selectedMember" class="mt-2" style="display:none;">
               <div class="alert alert-info">
-                <i class="bi bi-person-check"></i> Selected: <strong id="selectedMemberName"></strong>
-                <button type="button" class="btn btn-sm btn-outline-secondary float-end" onclick="clearSelection()">Change</button>
+                <i class="bi bi-person-check"></i> Linked to: <strong id="selectedMemberName"></strong>
+                <button type="button" class="btn btn-sm btn-outline-secondary float-end" onclick="clearSelection()">Remove</button>
               </div>
             </div>
           </div>
 
+          <!-- Number of Books -->
           <div class="mb-3">
             <label for="numberOfBooks" class="form-label">Number of Books *</label>
             <input
@@ -77,41 +131,37 @@
               name="numberOfBooks"
               value="1"
               min="1"
-              max="1000"
+              max="100000"
               required
             >
           </div>
 
+          <!-- Monetary Amount -->
           <div class="mb-3">
-            <label for="genres" class="form-label">Genres</label>
-            <select class="form-select" id="genres" name="genres" multiple>
-              <option value="fiction">Fiction</option>
-              <option value="non-fiction">Non-Fiction</option>
-              <option value="picture-book">Picture Book</option>
-              <option value="chapter-book">Chapter Book</option>
-              <option value="young-adult">Young Adult</option>
-              <option value="educational">Educational</option>
-              <option value="reference">Reference</option>
-            </select>
-            <small class="text-muted">Hold Ctrl/Cmd to select multiple</small>
+            <label for="monetaryAmount" class="form-label">Monetary Donation ($)</label>
+            <div class="input-group">
+              <span class="input-group-text">$</span>
+              <input
+                type="number"
+                class="form-control"
+                id="monetaryAmount"
+                name="monetaryAmount"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+              >
+            </div>
+            <small class="text-muted">Optional - if donor also included a monetary contribution</small>
           </div>
 
+          <!-- Notes -->
           <div class="mb-3">
-            <label for="weight" class="form-label">Weight (lbs)</label>
-            <input
-              type="number"
-              class="form-control"
-              id="weight"
-              name="weight"
-              min="0"
-              max="10000"
-              step="0.1"
-              placeholder="Optional"
-            >
+            <label for="notes" class="form-label">Notes</label>
+            <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Any additional notes..."></textarea>
           </div>
 
           <div class="text-end">
-            <a href="/members" class="btn btn-secondary me-2">Cancel</a>
+            <a href="/dashboard" class="btn btn-secondary me-2">Cancel</a>
             <button type="submit" class="btn btn-primary">
               <i class="bi bi-check-circle"></i> Record Donation
             </button>
@@ -130,6 +180,23 @@
     const selectedMemberDiv = document.getElementById('selectedMember');
     const selectedMemberName = document.getElementById('selectedMemberName');
 
+    function toggleDonorFields() {
+      const donorType = document.getElementById('donorType').value;
+      const donorNameSection = document.getElementById('donorNameSection');
+      const memberSearchSection = document.getElementById('memberSearchSection');
+
+      if (donorType === 'undisclosed') {
+        donorNameSection.style.display = 'none';
+        memberSearchSection.style.display = 'none';
+      } else if (donorType === 'person') {
+        donorNameSection.style.display = 'block';
+        memberSearchSection.style.display = 'block';
+      } else if (donorType === 'organization') {
+        donorNameSection.style.display = 'block';
+        memberSearchSection.style.display = 'none';
+      }
+    }
+
     searchInput.addEventListener('input', function() {
       const query = this.value.trim();
 
@@ -146,17 +213,37 @@
           const members = await response.json();
 
           if (members.length === 0) {
-            searchResults.innerHTML = '<div class="member-search-item text-muted">No donors found</div>';
+            searchResults.innerHTML = '<div class="member-search-item text-muted">No members found</div>';
             searchResults.style.display = 'block';
             return;
           }
 
-          searchResults.innerHTML = members.map(member => `
-            <div class="member-search-item" onclick="selectMember('${member._id}', '${member.firstName} ${member.lastName}', '${member.email || ''}')">
-              <strong>${member.firstName} ${member.lastName}</strong>
-              ${member.email ? `<br><small class="text-muted">${member.email}</small>` : ''}
-            </div>
-          `).join('');
+          // Build results using data attributes to avoid special character issues
+          searchResults.innerHTML = members.map(member => {
+            const name = `${member.firstName} ${member.lastName}`;
+            const email = member.email || '';
+            return `
+              <div class="member-search-item"
+                   data-id="${member._id}"
+                   data-name="${encodeURIComponent(name)}"
+                   data-email="${encodeURIComponent(email)}">
+                <strong>${escapeHtml(name)}</strong>
+                ${email ? `<br><small class="text-muted">${escapeHtml(email)}</small>` : ''}
+              </div>
+            `;
+          }).join('');
+
+          // Attach click handlers using event delegation
+          searchResults.querySelectorAll('.member-search-item').forEach(item => {
+            item.addEventListener('click', function() {
+              selectMember(
+                this.dataset.id,
+                decodeURIComponent(this.dataset.name),
+                decodeURIComponent(this.dataset.email)
+              );
+            });
+          });
+
           searchResults.style.display = 'block';
         } catch (err) {
           console.error('Search failed:', err);
@@ -164,12 +251,22 @@
       }, 300);
     });
 
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
     function selectMember(id, name, email) {
       memberIdInput.value = id;
       selectedMemberName.textContent = name + (email ? ` (${email})` : '');
       selectedMemberDiv.style.display = 'block';
       searchInput.style.display = 'none';
       searchResults.style.display = 'none';
+      // Auto-fill donor name if empty
+      if (!document.getElementById('donorName').value) {
+        document.getElementById('donorName').value = name;
+      }
     }
 
     function clearSelection() {
@@ -184,17 +281,6 @@
     document.addEventListener('click', function(e) {
       if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
         searchResults.style.display = 'none';
-      }
-    });
-
-    // Submit to the correct member-specific endpoint
-    document.getElementById('donationForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const memberId = document.getElementById('memberId').value;
-      if (memberId) {
-        this.action = `/members/${memberId}/donations`;
-        this.method = 'POST';
-        this.submit();
       }
     });
   </script>
