@@ -8,6 +8,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
 const TravelingStop = require('../models/TravelingStop');
+const Organization = require('../models/Organization');
 const { ensureStaffOrAdmin } = require('./_middleware');
 
 // ─── Validation Rules ────────────────────────────────────────────────────────
@@ -95,12 +96,68 @@ function buildStopData(body, userId = null) {
     }
   };
 
+  // Link to organization if selected
+  if (body.organizationId) {
+    data.organization = body.organizationId;
+  }
+
   // Only set createdBy on new records
   if (userId) {
     data.createdBy = userId;
   }
 
   return data;
+}
+
+/**
+ * Create or find organization based on form data
+ * @param {Object} body - Request body
+ * @param {String} userId - User ID for createdBy
+ * @returns {Promise<String|null>} Organization ID or null
+ */
+async function handleOrganization(body, userId) {
+  // If organization was selected from dropdown, return its ID
+  if (body.organizationId) {
+    return body.organizationId;
+  }
+
+  // If "save for future" is checked, create new organization
+  if (body.saveOrganization === 'on' || body.saveOrganization === true) {
+    try {
+      const orgData = {
+        name: body.stopName,
+        address: body.stopAddress,
+        zipCode: body.stopZipCode,
+        contactMethod: body.contactMethod,
+        howHeardAboutUs: body.howHeardAboutUs,
+        organizationType: mapStopTypeToOrgType(body.stopType),
+        createdBy: userId
+      };
+
+      const org = await Organization.create(orgData);
+      return org._id;
+    } catch (err) {
+      console.error('Error creating organization:', err);
+      // Don't fail the stop creation if org creation fails
+      return null;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Map stop type to organization type
+ * @param {String} stopType - Stop type value
+ * @returns {String} Organization type
+ */
+function mapStopTypeToOrgType(stopType) {
+  const mapping = {
+    'daycare': 'daycare',
+    'branch': 'branch',
+    'community_event': 'community_partner'
+  };
+  return mapping[stopType] || 'other';
 }
 
 /**
@@ -144,6 +201,82 @@ function formatStopType(type) {
   };
   return formats[type] || type;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ORGANIZATION API ENDPOINTS
+// For organization auto-fill functionality
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Search organizations - GET /api/organizations/search
+router.get('/api/organizations/search', ensureStaffOrAdmin, async (req, res, next) => {
+  try {
+    const q = req.query.q || '';
+    const results = await Organization.search(q, 10);
+
+    res.json(results.map(org => ({
+      id: org._id,
+      text: org.name,
+      name: org.name,
+      address: org.address || '',
+      zipCode: org.zipCode || '',
+      contactMethod: org.contactMethod || '',
+      howHeardAboutUs: org.howHeardAboutUs || '',
+      organizationType: org.organizationType || 'other'
+    })));
+  } catch (err) {
+    console.error('Error searching organizations:', err);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
+// Get organization by ID - GET /api/organizations/:id
+router.get('/api/organizations/:id', ensureStaffOrAdmin, async (req, res, next) => {
+  try {
+    const org = await Organization.findById(req.params.id).lean();
+    if (!org) {
+      return res.status(404).json({ error: 'Organization not found' });
+    }
+    res.json({
+      id: org._id,
+      name: org.name,
+      address: org.address || '',
+      zipCode: org.zipCode || '',
+      contactMethod: org.contactMethod || '',
+      howHeardAboutUs: org.howHeardAboutUs || '',
+      organizationType: org.organizationType || 'other',
+      notes: org.notes || ''
+    });
+  } catch (err) {
+    console.error('Error fetching organization:', err);
+    res.status(500).json({ error: 'Failed to fetch organization' });
+  }
+});
+
+// Create new organization - POST /api/organizations
+router.post('/api/organizations', ensureStaffOrAdmin, async (req, res, next) => {
+  try {
+    const orgData = {
+      name: req.body.name,
+      address: req.body.address,
+      zipCode: req.body.zipCode,
+      contactMethod: req.body.contactMethod,
+      howHeardAboutUs: req.body.howHeardAboutUs,
+      organizationType: req.body.organizationType || 'other',
+      notes: req.body.notes,
+      createdBy: req.session.user._id
+    };
+
+    const org = await Organization.create(orgData);
+    res.status(201).json({
+      id: org._id,
+      name: org.name,
+      message: 'Organization created successfully'
+    });
+  } catch (err) {
+    console.error('Error creating organization:', err);
+    res.status(500).json({ error: 'Failed to create organization' });
+  }
+});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DASHBOARD - GET /traveling-treehouse/dashboard
@@ -400,6 +533,12 @@ router.post('/traveling-treehouse', ensureStaffOrAdmin, stopValidation, async (r
   }
 
   try {
+    // Handle organization creation/linking
+    const organizationId = await handleOrganization(req.body, req.session.user._id);
+    if (organizationId) {
+      req.body.organizationId = organizationId;
+    }
+
     const stopData = buildStopData(req.body, req.session.user._id);
     await TravelingStop.create(stopData);
     req.session.success = 'Stop recorded successfully!';

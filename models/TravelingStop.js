@@ -13,6 +13,13 @@ const STOP_TYPES = ['daycare', 'branch', 'community_event'];
 
 // ─── Schema Definition ─────────────────────────────────────────────────────────
 const TravelingStopSchema = new Schema({
+  // ─── Organization Reference ─────────────────────────────────────────────────
+  // Optional link to the Organization catalog for auto-fill functionality
+  organization: {
+    type: Schema.Types.ObjectId,
+    ref: 'Organization'
+  },
+
   // ─── Core Fields (Required) ─────────────────────────────────────────────────
   // Date of the stop visit (stored as YYYY-MM-DD string per project convention)
   date: {

@@ -37,6 +37,49 @@
       padding-bottom: 0.5rem;
       border-bottom: 2px solid var(--thb-secondary);
     }
+    /* Organization search styles */
+    .org-search-results {
+      position: absolute;
+      z-index: 1000;
+      width: 100%;
+      max-height: 300px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: none;
+    }
+    .org-search-item {
+      padding: 10px 15px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+    .org-search-item:hover {
+      background-color: #f0f7f0;
+    }
+    .org-search-item:last-child {
+      border-bottom: none;
+    }
+    .selected-org-badge {
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+    }
+    .org-mode-toggle {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .org-mode-toggle .btn {
+      flex: 1;
+    }
+    .org-mode-toggle .btn.active {
+      background-color: var(--thb-primary);
+      border-color: var(--thb-primary);
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -73,6 +116,71 @@
 
     <!-- Form -->
     <form action="<%= stop ? '/traveling-treehouse/' + stop._id : '/traveling-treehouse' %>" method="POST">
+
+      <!-- Organization Selection Section (only for new stops) -->
+      <% if (!stop) { %>
+      <div class="form-section">
+        <h5><i class="bi bi-building"></i> Organization</h5>
+        <p class="text-muted small mb-3">Search for an existing organization to auto-fill details, or enter new organization information below.</p>
+
+        <!-- Mode Toggle -->
+        <div class="org-mode-toggle">
+          <button type="button" class="btn btn-outline-primary active" id="btnExistingOrg" onclick="setOrgMode('existing')">
+            <i class="bi bi-search"></i> Search Existing
+          </button>
+          <button type="button" class="btn btn-outline-primary" id="btnNewOrg" onclick="setOrgMode('new')">
+            <i class="bi bi-plus-circle"></i> New Organization
+          </button>
+        </div>
+
+        <!-- Existing Organization Search -->
+        <div id="existingOrgSection">
+          <div class="mb-3 position-relative">
+            <label for="orgSearch" class="form-label">Search organizations</label>
+            <input
+              type="text"
+              class="form-control"
+              id="orgSearch"
+              placeholder="Start typing to search..."
+              autocomplete="off"
+            >
+            <div id="orgSearchResults" class="org-search-results"></div>
+            <input type="hidden" id="organizationId" name="organizationId">
+          </div>
+
+          <!-- Selected Organization Display -->
+          <div id="selectedOrgDisplay" style="display: none;">
+            <div class="selected-org-badge d-flex justify-content-between align-items-center">
+              <div>
+                <i class="bi bi-check-circle text-success"></i>
+                <strong id="selectedOrgName"></strong>
+                <small class="text-muted d-block" id="selectedOrgAddress"></small>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearSelectedOrg()">
+                <i class="bi bi-x"></i> Clear
+              </button>
+            </div>
+            <small class="text-muted">Fields below have been auto-filled. You can still modify them for this visit.</small>
+          </div>
+        </div>
+
+        <!-- New Organization Save Option -->
+        <div id="newOrgSection" style="display: none;">
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="saveOrganization"
+              name="saveOrganization"
+            >
+            <label class="form-check-label" for="saveOrganization">
+              <i class="bi bi-floppy"></i> Save this organization for future visits
+            </label>
+          </div>
+          <small class="text-muted">Check this box to save the organization details so you can quickly select them next time.</small>
+        </div>
+      </div>
+      <% } %>
 
       <!-- Core Information Section -->
       <div class="form-section">
@@ -378,6 +486,154 @@
     // Listen for changes and run on page load
     stopTypeSelect.addEventListener('change', updateConditionalFields);
     document.addEventListener('DOMContentLoaded', updateConditionalFields);
+
+    // ─── Organization Search & Auto-Fill Logic ─────────────────────────────────
+    <% if (!stop) { %>
+    let debounceTimer;
+    const orgSearchInput = document.getElementById('orgSearch');
+    const orgSearchResults = document.getElementById('orgSearchResults');
+    const organizationIdInput = document.getElementById('organizationId');
+    const selectedOrgDisplay = document.getElementById('selectedOrgDisplay');
+    const selectedOrgName = document.getElementById('selectedOrgName');
+    const selectedOrgAddress = document.getElementById('selectedOrgAddress');
+    const existingOrgSection = document.getElementById('existingOrgSection');
+    const newOrgSection = document.getElementById('newOrgSection');
+    const btnExistingOrg = document.getElementById('btnExistingOrg');
+    const btnNewOrg = document.getElementById('btnNewOrg');
+
+    // Form fields to auto-fill
+    const stopNameInput = document.getElementById('stopName');
+    const stopAddressInput = document.getElementById('stopAddress');
+    const stopZipCodeInput = document.getElementById('stopZipCode');
+    const contactMethodInput = document.getElementById('contactMethod');
+    const howHeardAboutUsInput = document.getElementById('howHeardAboutUs');
+
+    // Switch between existing/new organization modes
+    function setOrgMode(mode) {
+      if (mode === 'existing') {
+        existingOrgSection.style.display = 'block';
+        newOrgSection.style.display = 'none';
+        btnExistingOrg.classList.add('active');
+        btnNewOrg.classList.remove('active');
+        // Clear save checkbox when switching to existing mode
+        document.getElementById('saveOrganization').checked = false;
+      } else {
+        existingOrgSection.style.display = 'none';
+        newOrgSection.style.display = 'block';
+        btnExistingOrg.classList.remove('active');
+        btnNewOrg.classList.add('active');
+        // Clear selected org when switching to new mode
+        clearSelectedOrg();
+      }
+    }
+
+    // Organization search with debouncing
+    orgSearchInput.addEventListener('input', function() {
+      const query = this.value.trim();
+      clearTimeout(debounceTimer);
+
+      if (query.length < 2) {
+        orgSearchResults.style.display = 'none';
+        return;
+      }
+
+      debounceTimer = setTimeout(async () => {
+        try {
+          const response = await fetch(`/api/organizations/search?q=${encodeURIComponent(query)}`);
+          const orgs = await response.json();
+
+          if (orgs.length === 0) {
+            orgSearchResults.innerHTML = '<div class="org-search-item text-muted">No organizations found - enter details below</div>';
+            orgSearchResults.style.display = 'block';
+            return;
+          }
+
+          orgSearchResults.innerHTML = orgs.map(org => {
+            return `
+              <div class="org-search-item"
+                   data-id="${org.id}"
+                   data-name="${encodeURIComponent(org.name)}"
+                   data-address="${encodeURIComponent(org.address || '')}"
+                   data-zipcode="${encodeURIComponent(org.zipCode || '')}"
+                   data-contactmethod="${encodeURIComponent(org.contactMethod || '')}"
+                   data-howheardaboutus="${encodeURIComponent(org.howHeardAboutUs || '')}">
+                <strong>${escapeHtml(org.name)}</strong>
+                ${org.address ? `<br><small class="text-muted">${escapeHtml(org.address)}</small>` : ''}
+              </div>
+            `;
+          }).join('');
+
+          // Add click listeners to search results
+          orgSearchResults.querySelectorAll('.org-search-item').forEach(item => {
+            item.addEventListener('click', function() {
+              selectOrganization(
+                this.dataset.id,
+                decodeURIComponent(this.dataset.name),
+                decodeURIComponent(this.dataset.address),
+                decodeURIComponent(this.dataset.zipcode),
+                decodeURIComponent(this.dataset.contactmethod),
+                decodeURIComponent(this.dataset.howheardaboutus)
+              );
+            });
+          });
+
+          orgSearchResults.style.display = 'block';
+        } catch (err) {
+          console.error('Organization search failed:', err);
+        }
+      }, 300);
+    });
+
+    // Select an organization and auto-fill fields
+    function selectOrganization(id, name, address, zipCode, contactMethod, howHeardAboutUs) {
+      // Set hidden field
+      organizationIdInput.value = id;
+
+      // Show selected display
+      selectedOrgName.textContent = name;
+      selectedOrgAddress.textContent = address || 'No address on file';
+      selectedOrgDisplay.style.display = 'block';
+      orgSearchInput.style.display = 'none';
+      orgSearchResults.style.display = 'none';
+
+      // Auto-fill form fields
+      stopNameInput.value = name;
+      stopAddressInput.value = address;
+      stopZipCodeInput.value = zipCode;
+      contactMethodInput.value = contactMethod;
+      howHeardAboutUsInput.value = howHeardAboutUs;
+
+      // Highlight auto-filled fields briefly
+      [stopNameInput, stopAddressInput, stopZipCodeInput, contactMethodInput, howHeardAboutUsInput].forEach(input => {
+        input.style.backgroundColor = '#d4edda';
+        setTimeout(() => {
+          input.style.backgroundColor = '';
+        }, 1500);
+      });
+    }
+
+    // Clear selected organization
+    function clearSelectedOrg() {
+      organizationIdInput.value = '';
+      selectedOrgDisplay.style.display = 'none';
+      orgSearchInput.style.display = 'block';
+      orgSearchInput.value = '';
+    }
+
+    // Escape HTML to prevent XSS
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Close search results when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!orgSearchInput.contains(e.target) && !orgSearchResults.contains(e.target)) {
+        orgSearchResults.style.display = 'none';
+      }
+    });
+    <% } %>
   </script>
 </body>
 </html>

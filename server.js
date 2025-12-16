@@ -29,6 +29,7 @@ require('./models/MetricDefinition');     // ← added
 require('./models/DashboardPreference');  // ← added
 require('./models/ImportHistory');        // ← added for data import
 require('./models/TravelingStop');        // ← Traveling Tree House Program
+require('./models/Organization');         // ← Organization catalog for Traveling Tree House
 require('./models/Visit');                // ← Visitor check-in tracking
 require('./models/BookDistribution');     // ← Book distribution to communities
 // (Program, Member, Checkout, Donation, etc. are pulled in by their routes)
