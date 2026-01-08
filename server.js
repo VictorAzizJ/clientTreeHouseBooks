@@ -225,6 +225,7 @@ app.use('/', require('./routes/dataImport'));    // Data import routes
 app.use('/', require('./routes/travelingTreehouse')); // Traveling Tree House Program
 app.use('/', require('./routes/visitorCheckin'));     // Visitor check-in
 app.use('/', require('./routes/bookDistribution'));   // Book distribution to communities
+app.use('/', require('./routes/organizations'));      // Organizations management
 app.use('/', require('./routes/sidewalkBooks'));      // Sidewalk Books weekly inventory
 
 // ─── 11. Logout ─────────────────────────────────────────────────────────────

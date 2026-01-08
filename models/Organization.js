@@ -71,7 +71,7 @@ const OrganizationSchema = new Schema({
     maxlength: [2000, 'Notes cannot exceed 2000 characters']
   },
 
-  // Whether this organization is active (for soft delete)
+  // Whether this organization is active (legacy - use isDeleted instead)
   isActive: {
     type: Boolean,
     default: true
@@ -89,6 +89,23 @@ const OrganizationSchema = new Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+
+  // ─── Audit & Soft Delete Fields ─────────────────────────────────────────────
+  updatedBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  deletedAt: {
+    type: Date
+  },
+  deletedBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
   }
 });
 
@@ -101,6 +118,9 @@ OrganizationSchema.index({ name: 'text' });
 
 // Filter by type and active status
 OrganizationSchema.index({ organizationType: 1, isActive: 1 });
+
+// Index for soft delete filtering
+OrganizationSchema.index({ isDeleted: 1 });
 
 // ─── Pre-save Hook ───────────────────────────────────────────────────────────
 OrganizationSchema.pre('save', function(next) {
