@@ -91,10 +91,24 @@ app.use(cors({
 
 // ─── 3. Rate Limiting ───────────────────────────────────────────────────────
 app.use(rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  max: 500,                   // Increased from 100 to handle multiple concurrent users
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  // Use session user ID for authenticated users, fall back to IP for anonymous
+  keyGenerator: (req) => {
+    if (req.session && req.session.userId) {
+      return `user_${req.session.userId}`;
+    }
+    return req.ip;
+  },
+  // Skip rate limiting for static assets
+  skip: (req) => {
+    return req.path.startsWith('/css/') ||
+           req.path.startsWith('/js/') ||
+           req.path.startsWith('/images/');
+  },
+  message: { error: 'Too many requests, please try again later.' }
 }));
 
 // ─── 4. Logging ─────────────────────────────────────────────────────────────
