@@ -41,7 +41,14 @@ const CheckoutSchema = new Schema({
   weight:        { type: Number },  // Legacy - kept for old data
 
   checkoutDate:  { type: Date, default: Date.now },
-  recordedBy:    { type: Schema.Types.ObjectId, ref: 'User' }
+  recordedBy:    { type: Schema.Types.ObjectId, ref: 'User' },
+
+  // ─── Audit & Soft Delete Fields ─────────────────────────────────────────────
+  updatedBy:     { type: Schema.Types.ObjectId, ref: 'User' },
+  updatedAt:     { type: Date },
+  isDeleted:     { type: Boolean, default: false },
+  deletedAt:     { type: Date },
+  deletedBy:     { type: Schema.Types.ObjectId, ref: 'User' }
 });
 
 // ─── Indexes ─────────────────────────────────────────────────────────────────
@@ -49,5 +56,7 @@ const CheckoutSchema = new Schema({
 CheckoutSchema.index({ member: 1, checkoutDate: -1 });
 // Index for date-based queries (used in admin analytics/charts)
 CheckoutSchema.index({ checkoutDate: -1 });
+// Index for soft delete filtering
+CheckoutSchema.index({ isDeleted: 1 });
 
 module.exports = mongoose.model('Checkout', CheckoutSchema);

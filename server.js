@@ -33,6 +33,7 @@ require('./models/Organization');         // ← Organization catalog for Travel
 require('./models/Visit');                // ← Visitor check-in tracking
 require('./models/BookDistribution');     // ← Book distribution to communities
 require('./models/SidewalkBooksWeek');    // ← Sidewalk Books weekly inventory
+require('./models/AuditLog');            // ← Audit trail for record changes
 // (Program, Member, Checkout, Donation, etc. are pulled in by their routes)
 
 

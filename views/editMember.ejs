@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Edit Member - TreeHouseBooks</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="/css/treehouse-brand.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+</head>
+<body>
+  <%- include('partials/nav') %>
+  <div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1>Edit Member</h1>
+      <span class="badge bg-warning text-dark">Admin Only</span>
+    </div>
+
+    <% if (error) { %>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <%= error %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    <% } %>
+
+    <% if (member.isDeleted) { %>
+      <div class="alert alert-warning">
+        <strong>This member has been deleted.</strong>
+        <form action="/members/<%= member._id %>/restore" method="POST" class="d-inline">
+          <button type="submit" class="btn btn-sm btn-success ms-2">Restore Member</button>
+        </form>
+      </div>
+    <% } %>
+
+    <form action="/members/<%= member._id %>" method="POST" id="memberForm">
+      <!-- Member Type Selection -->
+      <div class="mb-3">
+        <label class="form-label">Member Type</label>
+        <div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="memberType" id="typeAdult" value="adult" <%= member.memberType !== 'child' ? 'checked' : '' %>>
+            <label class="form-check-label" for="typeAdult">Adult</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="memberType" id="typeChild" value="child" <%= member.memberType === 'child' ? 'checked' : '' %>>
+            <label class="form-check-label" for="typeChild">Child</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Parent Selection (for children) -->
+      <div class="mb-3 child-field" id="parentField" style="display: <%= member.memberType === 'child' ? 'block' : 'none' %>;">
+        <label for="parent" class="form-label">Parent/Guardian (Optional)</label>
+        <select id="parent" name="parent" class="form-control">
+          <option value="">Select a parent/guardian...</option>
+          <% adults.forEach(function(adult) { %>
+            <option value="<%= adult._id %>" <%= member.parent && member.parent._id && member.parent._id.toString() === adult._id.toString() ? 'selected' : '' %>>
+              <%= adult.lastName %>, <%= adult.firstName %> <%= adult.email ? '(' + adult.email + ')' : '' %>
+            </option>
+          <% }); %>
+        </select>
+      </div>
+
+      <!-- Date of Birth (for children) -->
+      <div class="mb-3 child-field" id="dobField" style="display: <%= member.memberType === 'child' ? 'block' : 'none' %>;">
+        <label for="dateOfBirth" class="form-label">Date of Birth</label>
+        <input id="dateOfBirth" name="dateOfBirth" type="date" class="form-control"
+          value="<%= member.dateOfBirth ? new Date(member.dateOfBirth).toISOString().split('T')[0] : '' %>">
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="firstName" class="form-label">First Name *</label>
+          <input id="firstName" name="firstName" class="form-control" required value="<%= member.firstName %>">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="lastName" class="form-label">Last Name *</label>
+          <input id="lastName" name="lastName" class="form-control" required value="<%= member.lastName %>">
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="mb-3">
+        <label for="email" class="form-label">
+          Email <span id="emailRequired"><%= member.memberType === 'child' ? '(optional)' : '*' %></span>
+        </label>
+        <input id="email" name="email" type="email" class="form-control"
+          value="<%= member.email || '' %>"
+          <%= member.memberType !== 'child' ? 'required' : '' %>>
+        <small class="text-muted" id="emailHelp"><%= member.memberType === 'child' ? 'Optional for children' : 'Required for adults' %></small>
+      </div>
+
+      <!-- Phone -->
+      <div class="mb-3 adult-field" id="phoneField" style="display: <%= member.memberType !== 'child' ? 'block' : 'none' %>;">
+        <label for="phone" class="form-label">Phone</label>
+        <input id="phone" name="phone" class="form-control" value="<%= member.phone || '' %>">
+      </div>
+
+      <!-- Zip Code -->
+      <div class="mb-3">
+        <label for="zipCode" class="form-label">Zip Code</label>
+        <input id="zipCode" name="zipCode" class="form-control" placeholder="12345 or 12345-6789" value="<%= member.zipCode || '' %>">
+      </div>
+
+      <!-- Full Address -->
+      <div class="mb-3">
+        <label for="address" class="form-label">Full Address</label>
+        <textarea id="address" name="address" class="form-control" placeholder="Street, City, State"><%= member.address || '' %></textarea>
+      </div>
+
+      <!-- Grade (for children) -->
+      <div class="mb-3 child-field" id="gradeField" style="display: <%= member.memberType === 'child' ? 'block' : 'none' %>;">
+        <label for="grade" class="form-label">Grade</label>
+        <select id="grade" name="grade" class="form-select">
+          <option value="">Select grade...</option>
+          <% ['Pre-K', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'].forEach(function(g) { %>
+            <option value="<%= g %>" <%= member.grade === g ? 'selected' : '' %>><%= g === 'K' ? 'Kindergarten' : (g === 'Pre-K' ? 'Pre-K' : g + (g > 0 ? (['st','nd','rd'][g-1] || 'th') + ' Grade' : '')) %></option>
+          <% }); %>
+        </select>
+      </div>
+
+      <!-- School (for children) -->
+      <div class="mb-3 child-field" id="schoolField" style="display: <%= member.memberType === 'child' ? 'block' : 'none' %>;">
+        <label for="school" class="form-label">School</label>
+        <input id="school" name="school" class="form-control" placeholder="School name" value="<%= member.school || '' %>">
+      </div>
+
+      <!-- Notes -->
+      <div class="mb-3">
+        <label for="notes" class="form-label">Notes</label>
+        <textarea id="notes" name="notes" class="form-control" rows="3" placeholder="Medical info, special needs, or other notes"><%= member.notes || '' %></textarea>
+      </div>
+
+      <!-- Emergency Contact -->
+      <div class="card mb-4">
+        <div class="card-header">Emergency Contact (Optional)</div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="emergencyContactName" class="form-label">Name</label>
+              <input id="emergencyContactName" name="emergencyContactName" class="form-control"
+                value="<%= member.emergencyContact?.name || '' %>">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="emergencyContactPhone" class="form-label">Phone</label>
+              <input id="emergencyContactPhone" name="emergencyContactPhone" class="form-control"
+                value="<%= member.emergencyContact?.phone || '' %>">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="emergencyContactRelationship" class="form-label">Relationship</label>
+              <input id="emergencyContactRelationship" name="emergencyContactRelationship" class="form-control"
+                placeholder="e.g., Grandmother, Uncle"
+                value="<%= member.emergencyContact?.relationship || '' %>">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Meta info -->
+      <div class="card mb-4 bg-light">
+        <div class="card-body">
+          <small class="text-muted">
+            <strong>Joined:</strong> <%= member.joinedAt ? new Date(member.joinedAt).toLocaleDateString() : 'Unknown' %>
+            <% if (member.updatedAt) { %>
+              | <strong>Last Updated:</strong> <%= new Date(member.updatedAt).toLocaleDateString() %>
+            <% } %>
+          </small>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="/members/<%= member._id %>" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script>
+    const emailInput = document.getElementById('email');
+    const emailRequired = document.getElementById('emailRequired');
+    const emailHelp = document.getElementById('emailHelp');
+
+    function updateFieldVisibility(memberType) {
+      const childFields = document.querySelectorAll('.child-field');
+      const adultFields = document.querySelectorAll('.adult-field');
+
+      if (memberType === 'child') {
+        childFields.forEach(field => field.style.display = 'block');
+        adultFields.forEach(field => field.style.display = 'none');
+        emailInput.required = false;
+        emailRequired.textContent = '(optional)';
+        emailHelp.textContent = 'Optional for children';
+      } else {
+        childFields.forEach(field => field.style.display = 'none');
+        adultFields.forEach(field => field.style.display = 'block');
+        emailInput.required = true;
+        emailRequired.textContent = '*';
+        emailHelp.textContent = 'Required for adults';
+      }
+    }
+
+    document.querySelectorAll('input[name="memberType"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        updateFieldVisibility(this.value);
+      });
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

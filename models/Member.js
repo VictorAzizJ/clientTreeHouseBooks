@@ -45,7 +45,17 @@ const MemberSchema = new Schema({
   },
 
   // Medical/special needs notes
-  notes:       { type: String }
+  notes:       { type: String },
+
+  // ─── Audit & Soft Delete Fields ─────────────────────────────────────────────
+  // Track who last updated this record
+  updatedBy:   { type: Schema.Types.ObjectId, ref: 'User' },
+  updatedAt:   { type: Date },
+
+  // Soft delete fields (record is hidden but not permanently deleted)
+  isDeleted:   { type: Boolean, default: false },
+  deletedAt:   { type: Date },
+  deletedBy:   { type: Schema.Types.ObjectId, ref: 'User' }
 });
 
 // ─── Indexes ─────────────────────────────────────────────────────────────────
@@ -58,5 +68,7 @@ MemberSchema.index({ joinedAt: -1 }); // -1 = descending (newest first)
 MemberSchema.index({ parent: 1 });
 // Add index for member type filtering
 MemberSchema.index({ memberType: 1 });
+// Add index for soft delete filtering
+MemberSchema.index({ isDeleted: 1 });
 
 module.exports = mongoose.model('Member', MemberSchema);

@@ -26,7 +26,14 @@ const DonationSchema = new Schema({
   notes:          { type: String },
 
   donatedAt:      { type: Date, default: Date.now },
-  recordedBy:     { type: Schema.Types.ObjectId, ref: 'User' }
+  recordedBy:     { type: Schema.Types.ObjectId, ref: 'User' },
+
+  // ─── Audit & Soft Delete Fields ─────────────────────────────────────────────
+  updatedBy:      { type: Schema.Types.ObjectId, ref: 'User' },
+  updatedAt:      { type: Date },
+  isDeleted:      { type: Boolean, default: false },
+  deletedAt:      { type: Date },
+  deletedBy:      { type: Schema.Types.ObjectId, ref: 'User' }
 });
 
 // ─── Indexes ─────────────────────────────────────────────────────────────────
@@ -34,5 +41,7 @@ const DonationSchema = new Schema({
 DonationSchema.index({ member: 1, donatedAt: -1 });
 // Index for date-based queries (used in admin analytics/charts)
 DonationSchema.index({ donatedAt: -1 });
+// Index for soft delete filtering
+DonationSchema.index({ isDeleted: 1 });
 
 module.exports = mongoose.model('Donation', DonationSchema);
