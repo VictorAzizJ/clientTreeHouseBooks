@@ -55,13 +55,13 @@
         <input id="lastName" name="lastName" class="form-control" required>
       </div>
 
-      <!-- Email (required for adults, optional for children) -->
-      <div class="mb-3">
+      <!-- Email (adults only) -->
+      <div class="mb-3 adult-field" id="emailField">
         <label for="email" class="form-label">
-          Email <span id="emailRequired">*</span>
+          Email <span id="emailRequired" class="text-muted">(optional)</span>
         </label>
-        <input id="email" name="email" type="email" class="form-control" required>
-        <small class="text-muted" id="emailHelp">Required for adults</small>
+        <input id="email" name="email" type="email" class="form-control">
+        <small class="text-muted" id="emailHelp">Optional - some members may not have email</small>
       </div>
 
       <!-- Phone (shown for adults only) -->
@@ -85,33 +85,6 @@
         </div>
       <% } %>
 
-      <!-- Additional child fields -->
-      <div class="mb-3 child-field" id="gradeField" style="display: none;">
-        <label for="grade" class="form-label">Grade</label>
-        <select id="grade" name="grade" class="form-select">
-          <option value="">Select grade...</option>
-          <option value="Pre-K">Pre-K</option>
-          <option value="K">Kindergarten</option>
-          <option value="1">1st Grade</option>
-          <option value="2">2nd Grade</option>
-          <option value="3">3rd Grade</option>
-          <option value="4">4th Grade</option>
-          <option value="5">5th Grade</option>
-          <option value="6">6th Grade</option>
-          <option value="7">7th Grade</option>
-          <option value="8">8th Grade</option>
-          <option value="9">9th Grade</option>
-          <option value="10">10th Grade</option>
-          <option value="11">11th Grade</option>
-          <option value="12">12th Grade</option>
-        </select>
-      </div>
-
-      <div class="mb-3 child-field" id="schoolField" style="display: none;">
-        <label for="school" class="form-label">School</label>
-        <input id="school" name="school" class="form-control" placeholder="School name">
-      </div>
-
       <button type="submit" class="btn btn-success">Create Member</button>
       <a href="/dashboard" class="btn btn-secondary ms-2">Back to Dashboard</a>
     </form>
@@ -120,10 +93,6 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script>
-    const emailInput = document.getElementById('email');
-    const emailRequired = document.getElementById('emailRequired');
-    const emailHelp = document.getElementById('emailHelp');
-
     // Show/hide fields based on member type
     function updateFieldVisibility(memberType) {
       const childFields = document.querySelectorAll('.child-field');
@@ -134,19 +103,11 @@
         childFields.forEach(field => field.style.display = 'block');
         // Hide adult fields
         adultFields.forEach(field => field.style.display = 'none');
-        // Make email optional
-        emailInput.required = false;
-        emailRequired.textContent = '(optional)';
-        emailHelp.textContent = 'Optional for children';
       } else {
         // Hide child fields
         childFields.forEach(field => field.style.display = 'none');
         // Show adult fields
         adultFields.forEach(field => field.style.display = 'block');
-        // Make email required
-        emailInput.required = true;
-        emailRequired.textContent = '*';
-        emailHelp.textContent = 'Required for adults';
       }
     }
 
