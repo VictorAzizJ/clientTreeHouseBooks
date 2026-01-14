@@ -549,6 +549,7 @@
           }
 
           orgSearchResults.innerHTML = orgs.map(org => {
+            const subtext = org.subtext || org.address || '';
             return `
               <div class="org-search-item"
                    data-id="${org.id}"
@@ -558,7 +559,7 @@
                    data-contactmethod="${encodeURIComponent(org.contactMethod || '')}"
                    data-howheardaboutus="${encodeURIComponent(org.howHeardAboutUs || '')}">
                 <strong>${escapeHtml(org.name)}</strong>
-                ${org.address ? `<br><small class="text-muted">${escapeHtml(org.address)}</small>` : ''}
+                ${subtext ? `<br><small class="text-muted">${escapeHtml(subtext)}</small>` : ''}
               </div>
             `;
           }).join('');
