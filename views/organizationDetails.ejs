@@ -70,11 +70,27 @@
             </p>
             <p><strong>Address:</strong> <%= organization.address || 'N/A' %></p>
             <p><strong>Zip Code:</strong> <%= organization.zipCode || 'N/A' %></p>
+            <p><strong>Created:</strong> <%= new Date(organization.createdAt).toLocaleDateString() %></p>
           </div>
           <div class="col-md-6">
-            <p><strong>Contact Method:</strong> <%= organization.contactMethod || 'N/A' %></p>
+            <h6><i class="bi bi-person-lines-fill"></i> Contact Information</h6>
+            <p><strong>Contact Person:</strong> <%= organization.contactName || 'N/A' %></p>
+            <p><strong>Phone:</strong>
+              <% if (organization.phone) { %>
+                <a href="tel:<%= organization.phone %>"><%= organization.phone %></a>
+              <% } else { %>
+                N/A
+              <% } %>
+            </p>
+            <p><strong>Email:</strong>
+              <% if (organization.email) { %>
+                <a href="mailto:<%= organization.email %>"><%= organization.email %></a>
+              <% } else { %>
+                N/A
+              <% } %>
+            </p>
+            <p><strong>Contact Notes:</strong> <%= organization.contactMethod || 'N/A' %></p>
             <p><strong>How They Heard About Us:</strong> <%= organization.howHeardAboutUs || 'N/A' %></p>
-            <p><strong>Created:</strong> <%= new Date(organization.createdAt).toLocaleDateString() %></p>
           </div>
         </div>
         <% if (organization.notes) { %>

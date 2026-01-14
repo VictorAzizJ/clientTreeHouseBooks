@@ -56,10 +56,25 @@ const organizationValidationRules = [
     .trim()
     .matches(/^\d{5}(-\d{4})?$/).withMessage('Zip code must be in format 12345 or 12345-6789'),
 
+  body('phone')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ max: 20 }).withMessage('Phone must be less than 20 characters'),
+
+  body('email')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isEmail().withMessage('Must be a valid email address'),
+
+  body('contactName')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ max: 100 }).withMessage('Contact name must be less than 100 characters'),
+
   body('contactMethod')
     .optional({ checkFalsy: true })
     .trim()
-    .isLength({ max: 500 }).withMessage('Contact method must be less than 500 characters'),
+    .isLength({ max: 500 }).withMessage('Contact notes must be less than 500 characters'),
 
   body('organizationType')
     .optional({ checkFalsy: true })
@@ -165,13 +180,16 @@ router.post('/organizations', ensureStaffOrAdmin, organizationValidationRules, a
     return res.redirect('/organizations/new');
   }
 
-  const { name, address, zipCode, contactMethod, howHeardAboutUs, organizationType, notes } = req.body;
+  const { name, address, zipCode, phone, email, contactName, contactMethod, howHeardAboutUs, organizationType, notes } = req.body;
 
   try {
     const organizationData = {
       name,
       address: address || undefined,
       zipCode: zipCode || undefined,
+      phone: phone || undefined,
+      email: email || undefined,
+      contactName: contactName || undefined,
       contactMethod: contactMethod || undefined,
       howHeardAboutUs: howHeardAboutUs || undefined,
       organizationType: organizationType || 'other',
@@ -311,13 +329,16 @@ router.post('/organizations/:id', ensureAdmin, organizationValidationRules, asyn
       return res.redirect('/organizations');
     }
 
-    const { name, address, zipCode, contactMethod, howHeardAboutUs, organizationType, notes } = req.body;
+    const { name, address, zipCode, phone, email, contactName, contactMethod, howHeardAboutUs, organizationType, notes } = req.body;
 
     // Build update data
     const updateData = {
       name,
       address: address || undefined,
       zipCode: zipCode || undefined,
+      phone: phone || undefined,
+      email: email || undefined,
+      contactName: contactName || undefined,
       contactMethod: contactMethod || undefined,
       howHeardAboutUs: howHeardAboutUs || undefined,
       organizationType: organizationType || 'other',

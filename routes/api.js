@@ -100,19 +100,31 @@ router.get('/api/organizations/search', ensureStaffOrAdmin, async (req, res) => 
         { isActive: { $exists: false } }
       ]
     })
-    .select('name address zipCode organizationType')
+    .select('name address zipCode phone email contactName organizationType')
     .limit(20)
     .lean();
 
-    res.json(organizations.map(org => ({
-      id: org._id,
-      _id: org._id,
-      text: org.name,
-      name: org.name,
-      address: org.address || '',
-      zipCode: org.zipCode || '',
-      organizationType: org.organizationType || 'other'
-    })));
+    res.json(organizations.map(org => {
+      // Build subtext with available contact info
+      const subtextParts = [];
+      if (org.email) subtextParts.push(org.email);
+      if (org.phone) subtextParts.push(org.phone);
+      if (org.contactName) subtextParts.push(`Contact: ${org.contactName}`);
+
+      return {
+        id: org._id,
+        _id: org._id,
+        text: org.name,
+        name: org.name,
+        address: org.address || '',
+        zipCode: org.zipCode || '',
+        phone: org.phone || '',
+        email: org.email || '',
+        contactName: org.contactName || '',
+        organizationType: org.organizationType || 'other',
+        subtext: subtextParts.join(' | ')
+      };
+    }));
   } catch (err) {
     console.error('Organization search error:', err);
     res.status(500).json({ error: 'Search failed' });

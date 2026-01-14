@@ -40,6 +40,35 @@ const OrganizationSchema = new Schema({
     }
   },
 
+  // Contact phone number
+  phone: {
+    type: String,
+    trim: true,
+    maxlength: [20, 'Phone cannot exceed 20 characters']
+  },
+
+  // Contact email address
+  email: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    maxlength: [100, 'Email cannot exceed 100 characters'],
+    validate: {
+      validator: function(v) {
+        if (!v) return true; // Optional field
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      },
+      message: props => `${props.value} is not a valid email address`
+    }
+  },
+
+  // Contact person name
+  contactName: {
+    type: String,
+    trim: true,
+    maxlength: [100, 'Contact name cannot exceed 100 characters']
+  },
+
   // How this organization contacts us / how we contact them
   contactMethod: {
     type: String,
