@@ -19,7 +19,8 @@ const DashboardPreferenceSchema = new Schema({
       ['donations', true],
       ['members', true],
       ['programs', true],
-      ['metrics', true]
+      ['metrics', true],
+      ['visits', true]
     ])
   },
 
@@ -35,7 +36,8 @@ const DashboardPreferenceSchema = new Schema({
       'donations',
       'members',
       'programs',
-      'metrics'
+      'metrics',
+      'visits'
     ]
   },
 

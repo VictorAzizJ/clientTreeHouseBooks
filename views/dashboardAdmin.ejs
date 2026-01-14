@@ -419,6 +419,55 @@
           </div>
         </div>
       </div>
+
+      <!-- Recent Visitor Check-ins -->
+      <div class="col-md-6 mb-4">
+        <div class="card h-100">
+          <div class="card-header" style="background-color: var(--thb-primary); color: white;">
+            <div class="d-flex justify-content-between align-items-center">
+              <h5 class="mb-0"><i class="bi bi-person-check"></i> Recent Visitor Check-ins</h5>
+              <span class="badge bg-light text-dark"><%= stats?.totalVisits?.toLocaleString() || 0 %> total</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <% if (recentVisits && recentVisits.length > 0) { %>
+              <div class="list-group list-group-flush mb-3" style="max-height: 300px; overflow-y: auto;">
+                <% recentVisits.forEach(visit => { %>
+                  <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                      <strong>
+                        <% if (visit.member) { %>
+                          <a href="/members/<%= visit.member._id %>">
+                            <%= visit.member.firstName %> <%= visit.member.lastName %>
+                          </a>
+                        <% } else { %>
+                          <span class="text-muted">Unknown</span>
+                        <% } %>
+                      </strong>
+                      <small class="text-muted"><%= new Date(visit.visitDate).toLocaleDateString() %></small>
+                    </div>
+                    <small class="text-muted">
+                      <%= new Date(visit.visitDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %>
+                      <% if (visit.purpose) { %> - <%= visit.purpose %><% } %>
+                    </small>
+                  </div>
+                <% }); %>
+              </div>
+              <% if (hasMoreVisits) { %>
+                <p class="text-muted small mb-2">Showing latest 10 check-ins</p>
+              <% } %>
+            <% } else { %>
+              <p class="text-muted mb-3">No visitor check-ins recorded yet</p>
+            <% } %>
+            <a href="/visits" class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-list-ul"></i> View All Visits
+            </a>
+            <a href="/visitor-checkin" class="btn btn-primary btn-sm ms-2">
+              <i class="bi bi-plus-circle"></i> New Check-in
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

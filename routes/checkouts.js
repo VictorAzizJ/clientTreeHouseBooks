@@ -30,15 +30,69 @@ function ensureStaffOrAdmin(req, res, next) {
   res.status(403).send('Forbidden');
 }
 
-// Redirect /checkouts to list view (backward compatibility)
+// GET /checkouts - List all checkouts with pagination
 router.get('/checkouts', ensureStaffOrAdmin, async (req, res) => {
   try {
-    const checkouts = await Checkout.find()
+    // Pagination params
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+
+    // Search/filter params
+    const search = req.query.search || '';
+    const dateFrom = req.query.dateFrom;
+    const dateTo = req.query.dateTo;
+
+    // Build query
+    let query = {};
+
+    if (dateFrom || dateTo) {
+      query.checkoutDate = {};
+      if (dateFrom) query.checkoutDate.$gte = new Date(dateFrom);
+      if (dateTo) query.checkoutDate.$lte = new Date(dateTo + 'T23:59:59');
+    }
+
+    // Get total count for pagination
+    const totalCheckouts = await Checkout.countDocuments(query);
+    const totalPages = Math.ceil(totalCheckouts / limit);
+
+    // Fetch checkouts with pagination
+    let checkouts = await Checkout.find(query)
       .populate('member', 'firstName lastName email')
       .sort({ checkoutDate: -1 })
-      .limit(100)
+      .skip(skip)
+      .limit(limit)
       .lean();
-    res.render('checkoutsList', { user: req.session.user, checkouts });
+
+    // Filter by member name if search provided (post-query for populated fields)
+    if (search) {
+      const searchLower = search.toLowerCase();
+      checkouts = checkouts.filter(c =>
+        c.member && (
+          c.member.firstName?.toLowerCase().includes(searchLower) ||
+          c.member.lastName?.toLowerCase().includes(searchLower) ||
+          c.member.email?.toLowerCase().includes(searchLower)
+        )
+      );
+    }
+
+    res.render('checkoutsList', {
+      user: req.session.user,
+      checkouts,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCheckouts,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      },
+      filters: {
+        search,
+        dateFrom,
+        dateTo
+      }
+    });
   } catch (err) {
     console.error('Error fetching checkouts:', err);
     res.status(500).send('Error loading checkouts');

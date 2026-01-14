@@ -14,11 +14,50 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h1><i class="bi bi-book"></i> Book Checkouts</h1>
-        <p class="text-muted">View all book checkouts</p>
+        <p class="text-muted">
+          <% if (pagination) { %>
+            Showing <%= ((pagination.currentPage - 1) * pagination.limit) + 1 %>-<%= Math.min(pagination.currentPage * pagination.limit, pagination.totalCheckouts) %> of <%= pagination.totalCheckouts.toLocaleString() %> checkouts
+          <% } else { %>
+            View all book checkouts
+          <% } %>
+        </p>
       </div>
-      <a href="/dashboard" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Back to Dashboard
-      </a>
+      <div>
+        <a href="/checkouts/new" class="btn btn-primary me-2">
+          <i class="bi bi-plus-circle"></i> New Checkout
+        </a>
+        <a href="/dashboard" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left"></i> Dashboard
+        </a>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <form method="GET" action="/checkouts" class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Search Member</label>
+            <input type="text" name="search" class="form-control" placeholder="Name or email..." value="<%= filters?.search || '' %>">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Date From</label>
+            <input type="date" name="dateFrom" class="form-control" value="<%= filters?.dateFrom || '' %>">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Date To</label>
+            <input type="date" name="dateTo" class="form-control" value="<%= filters?.dateTo || '' %>">
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary me-2">
+              <i class="bi bi-search"></i> Filter
+            </button>
+            <a href="/checkouts" class="btn btn-outline-secondary">
+              <i class="bi bi-x-circle"></i>
+            </a>
+          </div>
+        </form>
+      </div>
     </div>
 
     <div class="card">
@@ -82,17 +121,112 @@
                 <tr>
                   <td colspan="6" class="text-center text-muted py-4">
                     <i class="bi bi-inbox" style="font-size: 3rem;"></i>
-                    <p class="mt-2">No checkouts recorded yet</p>
+                    <p class="mt-2">No checkouts found</p>
                   </td>
                 </tr>
               <% } %>
             </tbody>
           </table>
         </div>
+
+        <!-- Pagination -->
+        <% if (pagination && pagination.totalPages > 1) { %>
+          <nav aria-label="Checkouts pagination" class="mt-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <select class="form-select form-select-sm" style="width: auto;" onchange="changeLimit(this.value)">
+                  <option value="25" <%= pagination.limit === 25 ? 'selected' : '' %>>25 per page</option>
+                  <option value="50" <%= pagination.limit === 50 ? 'selected' : '' %>>50 per page</option>
+                  <option value="100" <%= pagination.limit === 100 ? 'selected' : '' %>>100 per page</option>
+                </select>
+              </div>
+              <ul class="pagination mb-0">
+                <!-- First page -->
+                <li class="page-item <%= !pagination.hasPrevPage ? 'disabled' : '' %>">
+                  <a class="page-link" href="<%= buildPaginationUrl(1) %>" aria-label="First">
+                    <i class="bi bi-chevron-double-left"></i>
+                  </a>
+                </li>
+                <!-- Previous -->
+                <li class="page-item <%= !pagination.hasPrevPage ? 'disabled' : '' %>">
+                  <a class="page-link" href="<%= buildPaginationUrl(pagination.currentPage - 1) %>" aria-label="Previous">
+                    <i class="bi bi-chevron-left"></i>
+                  </a>
+                </li>
+
+                <!-- Page numbers -->
+                <%
+                  const maxPages = 5;
+                  let startPage = Math.max(1, pagination.currentPage - Math.floor(maxPages / 2));
+                  let endPage = Math.min(pagination.totalPages, startPage + maxPages - 1);
+                  if (endPage - startPage < maxPages - 1) {
+                    startPage = Math.max(1, endPage - maxPages + 1);
+                  }
+                %>
+
+                <% if (startPage > 1) { %>
+                  <li class="page-item disabled"><span class="page-link">...</span></li>
+                <% } %>
+
+                <% for (let i = startPage; i <= endPage; i++) { %>
+                  <li class="page-item <%= i === pagination.currentPage ? 'active' : '' %>">
+                    <a class="page-link" href="<%= buildPaginationUrl(i) %>"><%= i %></a>
+                  </li>
+                <% } %>
+
+                <% if (endPage < pagination.totalPages) { %>
+                  <li class="page-item disabled"><span class="page-link">...</span></li>
+                <% } %>
+
+                <!-- Next -->
+                <li class="page-item <%= !pagination.hasNextPage ? 'disabled' : '' %>">
+                  <a class="page-link" href="<%= buildPaginationUrl(pagination.currentPage + 1) %>" aria-label="Next">
+                    <i class="bi bi-chevron-right"></i>
+                  </a>
+                </li>
+                <!-- Last page -->
+                <li class="page-item <%= !pagination.hasNextPage ? 'disabled' : '' %>">
+                  <a class="page-link" href="<%= buildPaginationUrl(pagination.totalPages) %>" aria-label="Last">
+                    <i class="bi bi-chevron-double-right"></i>
+                  </a>
+                </li>
+              </ul>
+              <div class="text-muted small">
+                Page <%= pagination.currentPage %> of <%= pagination.totalPages %>
+              </div>
+            </div>
+          </nav>
+        <% } %>
       </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function buildPaginationUrl(page) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('page', page);
+      return url.toString();
+    }
+
+    function changeLimit(limit) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('limit', limit);
+      url.searchParams.set('page', 1); // Reset to first page
+      window.location.href = url.toString();
+    }
+  </script>
+  <%
+    // Helper function for pagination URLs in EJS
+    function buildPaginationUrl(page) {
+      const params = new URLSearchParams();
+      params.set('page', page);
+      if (pagination?.limit) params.set('limit', pagination.limit);
+      if (filters?.search) params.set('search', filters.search);
+      if (filters?.dateFrom) params.set('dateFrom', filters.dateFrom);
+      if (filters?.dateTo) params.set('dateTo', filters.dateTo);
+      return '/checkouts?' + params.toString();
+    }
+  %>
 </body>
 </html>

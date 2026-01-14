@@ -132,16 +132,69 @@ router.get('/api/visits/recent', ensureAuthenticated, async (req, res) => {
   }
 });
 
-// GET /visits - List all visits
+// GET /visits - List all visits with pagination
 router.get('/visits', ensureAuthenticated, async (req, res) => {
   try {
-    const visits = await Visit.find()
+    // Pagination params
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+
+    // Search/filter params
+    const search = req.query.search || '';
+    const dateFrom = req.query.dateFrom;
+    const dateTo = req.query.dateTo;
+
+    // Build query
+    let query = {};
+
+    if (dateFrom || dateTo) {
+      query.visitDate = {};
+      if (dateFrom) query.visitDate.$gte = new Date(dateFrom);
+      if (dateTo) query.visitDate.$lte = new Date(dateTo + 'T23:59:59');
+    }
+
+    // Get total count for pagination
+    const totalVisits = await Visit.countDocuments(query);
+    const totalPages = Math.ceil(totalVisits / limit);
+
+    // Fetch visits with pagination
+    let visits = await Visit.find(query)
       .populate('member', 'firstName lastName email')
       .sort({ visitDate: -1 })
-      .limit(100)
+      .skip(skip)
+      .limit(limit)
       .lean();
 
-    res.render('visitsList', { user: req.session.user, visits });
+    // Filter by member name if search provided (post-query for populated fields)
+    if (search) {
+      const searchLower = search.toLowerCase();
+      visits = visits.filter(v =>
+        v.member && (
+          v.member.firstName?.toLowerCase().includes(searchLower) ||
+          v.member.lastName?.toLowerCase().includes(searchLower) ||
+          v.member.email?.toLowerCase().includes(searchLower)
+        )
+      );
+    }
+
+    res.render('visitsList', {
+      user: req.session.user,
+      visits,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalVisits,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      },
+      filters: {
+        search,
+        dateFrom,
+        dateTo
+      }
+    });
   } catch (err) {
     console.error('Error fetching visits:', err);
     res.status(500).send('Error loading visits');

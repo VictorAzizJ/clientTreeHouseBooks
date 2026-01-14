@@ -11,6 +11,7 @@ const Attendee            = require('../models/Attendee');
 const DashboardPreference = require('../models/DashboardPreference');
 const MetricValue         = require('../models/MetricValue');
 const MetricDef           = require('../models/MetricDefinition');
+const Visit               = require('../models/Visit');
 
 /**
  * Only allow logged-in users to see any dashboard.
@@ -110,9 +111,20 @@ router.get('/dashboard', ensureAuthenticated, async (req, res) => {
       .lean();
   }
 
+  // 5. Get recent visits (for optional dashboard widget)
+  const visitsLimit = 10;
+  const totalVisits = await Visit.countDocuments();
+  const recentVisits = await Visit.find()
+    .sort({ visitDate: -1 })
+    .limit(visitsLimit)
+    .populate('member', 'firstName lastName email')
+    .lean();
+  const hasMoreVisits = totalVisits > visitsLimit;
+  stats.totalVisits = totalVisits;
+
   let programCount = stats.totalPrograms;
 
-  // 5. Prepare chart data (admin only)
+  // 6. Prepare chart data (admin only)
   let monthLabels = [], checkoutCounts = [], donationCounts = [], memberCounts = [], programStats = [];
   if (user.role === 'admin') {
     const now = new Date();
@@ -197,7 +209,9 @@ console.log({ monthLabels, checkoutCounts, donationCounts, memberCounts, program
     userList,
     programCount,
     recentMetrics,
-    prefs  // Dashboard preferences
+    prefs,  // Dashboard preferences
+    recentVisits,
+    hasMoreVisits
   };
 
   // Add admin-specific chart data if admin
