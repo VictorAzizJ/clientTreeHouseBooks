@@ -215,15 +215,16 @@
           }
 
           searchResults.innerHTML = members.map(member => {
-            const name = `${member.firstName} ${member.lastName}`;
+            const name = member.displayName || `${member.firstName} ${member.lastName}`;
             const email = member.email || '';
+            const subtext = member.subtext || email;
             return `
               <div class="member-search-item"
                    data-id="${member._id}"
                    data-name="${encodeURIComponent(name)}"
                    data-email="${encodeURIComponent(email)}">
                 <strong>${escapeHtml(name)}</strong>
-                ${email ? `<br><small class="text-muted">${escapeHtml(email)}</small>` : ''}
+                ${subtext ? `<br><small class="text-muted">${escapeHtml(subtext)}</small>` : ''}
               </div>
             `;
           }).join('');

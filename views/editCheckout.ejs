@@ -38,20 +38,58 @@
 
         <form method="POST" action="/checkouts/<%= checkout._id %>/edit">
           <div class="row">
-            <div class="col-md-4 mb-3">
+            <div class="col-md-6 mb-3">
               <label for="checkoutDate" class="form-label">Checkout Date</label>
               <input type="date" class="form-control" id="checkoutDate" name="checkoutDate"
                      value="<%= new Date(checkout.checkoutDate).toISOString().split('T')[0] %>">
             </div>
-            <div class="col-md-4 mb-3">
-              <label for="numberOfBooks" class="form-label">Number of Books</label>
-              <input type="number" class="form-control" id="numberOfBooks" name="numberOfBooks"
-                     value="<%= checkout.numberOfBooks || 0 %>" min="0">
-            </div>
-            <div class="col-md-4 mb-3">
-              <label for="weight" class="form-label">Weight (lbs)</label>
+            <div class="col-md-6 mb-3">
+              <label for="weight" class="form-label">Total Weight (lbs)</label>
               <input type="number" class="form-control" id="weight" name="weight"
                      value="<%= checkout.weight || checkout.totalWeight || 0 %>" min="0" step="0.1">
+            </div>
+          </div>
+
+          <!-- Book Categories -->
+          <h6 class="mb-3"><i class="bi bi-bookshelf"></i> Book Categories</h6>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="blackAuthorAdult" class="form-label">Black Author Adult</label>
+              <input type="number" class="form-control category-input" id="blackAuthorAdult"
+                     name="bookCategories[blackAuthorAdult][quantity]"
+                     value="<%= checkout.bookCategories?.blackAuthorAdult?.quantity || 0 %>" min="0">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="adult" class="form-label">Adult</label>
+              <input type="number" class="form-control category-input" id="adult"
+                     name="bookCategories[adult][quantity]"
+                     value="<%= checkout.bookCategories?.adult?.quantity || 0 %>" min="0">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="blackAuthorKids" class="form-label">Black Author Kids</label>
+              <input type="number" class="form-control category-input" id="blackAuthorKids"
+                     name="bookCategories[blackAuthorKids][quantity]"
+                     value="<%= checkout.bookCategories?.blackAuthorKids?.quantity || 0 %>" min="0">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="kids" class="form-label">Kids</label>
+              <input type="number" class="form-control category-input" id="kids"
+                     name="bookCategories[kids][quantity]"
+                     value="<%= checkout.bookCategories?.kids?.quantity || 0 %>" min="0">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="boardBooks" class="form-label">Board Books</label>
+              <input type="number" class="form-control category-input" id="boardBooks"
+                     name="bookCategories[boardBooks][quantity]"
+                     value="<%= checkout.bookCategories?.boardBooks?.quantity || 0 %>" min="0">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Total Books</label>
+              <input type="number" class="form-control" id="totalBooks" readonly
+                     value="<%= checkout.numberOfBooks || 0 %>">
+              <small class="text-muted">Auto-calculated from categories</small>
             </div>
           </div>
 
@@ -96,5 +134,24 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Auto-calculate total books from categories
+    function updateTotalBooks() {
+      const categories = ['blackAuthorAdult', 'adult', 'blackAuthorKids', 'kids', 'boardBooks'];
+      let total = 0;
+      categories.forEach(cat => {
+        const input = document.getElementById(cat);
+        if (input) {
+          total += parseInt(input.value) || 0;
+        }
+      });
+      document.getElementById('totalBooks').value = total;
+    }
+
+    // Add event listeners to all category inputs
+    document.querySelectorAll('.category-input').forEach(input => {
+      input.addEventListener('input', updateTotalBooks);
+    });
+  </script>
 </body>
 </html>

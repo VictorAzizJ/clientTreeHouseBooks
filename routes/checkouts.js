@@ -299,10 +299,27 @@ router.get('/checkouts/:id/edit', ensureAdmin, async (req, res) => {
 // POST /checkouts/:id/edit - Update checkout (Admin only)
 router.post('/checkouts/:id/edit', ensureAdmin, async (req, res) => {
   try {
-    const { numberOfBooks, weight, checkoutDate } = req.body;
+    const { weight, checkoutDate, bookCategories } = req.body;
+
+    // Build book categories from form data
+    const categories = {
+      blackAuthorAdult: { quantity: parseInt(bookCategories?.blackAuthorAdult?.quantity) || 0 },
+      adult: { quantity: parseInt(bookCategories?.adult?.quantity) || 0 },
+      blackAuthorKids: { quantity: parseInt(bookCategories?.blackAuthorKids?.quantity) || 0 },
+      kids: { quantity: parseInt(bookCategories?.kids?.quantity) || 0 },
+      boardBooks: { quantity: parseInt(bookCategories?.boardBooks?.quantity) || 0 }
+    };
+
+    // Calculate total books from categories
+    const totalBooks = categories.blackAuthorAdult.quantity +
+                       categories.adult.quantity +
+                       categories.blackAuthorKids.quantity +
+                       categories.kids.quantity +
+                       categories.boardBooks.quantity;
 
     const updateData = {
-      numberOfBooks: parseInt(numberOfBooks) || 0,
+      bookCategories: categories,
+      numberOfBooks: totalBooks,
       weight: parseFloat(weight) || 0,
       totalWeight: parseFloat(weight) || 0
     };

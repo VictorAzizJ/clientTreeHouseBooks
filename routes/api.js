@@ -55,12 +55,28 @@ router.get('/api/members/search', ensureStaffOrAdmin, async (req, res) => {
     }
 
     const members = await Member.find(searchConditions)
-      .select('firstName lastName email phone')
+      .select('firstName lastName email phone dateOfBirth')
       .sort({ lastName: 1, firstName: 1 })
       .limit(20)
       .lean();
 
-    res.json(members);
+    // Format response with additional display info
+    const formattedMembers = members.map(m => ({
+      _id: m._id,
+      firstName: m.firstName,
+      lastName: m.lastName,
+      email: m.email || '',
+      phone: m.phone || '',
+      dateOfBirth: m.dateOfBirth || null,
+      // Pre-formatted display text for UI
+      displayName: `${m.firstName} ${m.lastName}`,
+      subtext: [
+        m.email,
+        m.dateOfBirth ? `DOB: ${new Date(m.dateOfBirth).toLocaleDateString()}` : null
+      ].filter(Boolean).join(' | ')
+    }));
+
+    res.json(formattedMembers);
   } catch (err) {
     console.error('Member search error:', err);
     res.status(500).json({ error: 'Search failed' });
