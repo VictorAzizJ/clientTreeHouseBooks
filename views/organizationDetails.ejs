@@ -74,7 +74,20 @@
           </div>
           <div class="col-md-6">
             <h6><i class="bi bi-person-lines-fill"></i> Contact Information</h6>
-            <p><strong>Contact Person:</strong> <%= organization.contactName || 'N/A' %></p>
+            <p><strong>Contact Person:</strong>
+              <% if (organization.contactPerson) { %>
+                <a href="/members/<%= organization.contactPerson._id %>">
+                  <%= organization.contactPerson.firstName %> <%= organization.contactPerson.lastName %>
+                </a>
+                <% if (organization.contactPerson.email) { %>
+                  <small class="text-muted">(<%= organization.contactPerson.email %>)</small>
+                <% } %>
+              <% } else if (organization.contactName) { %>
+                <%= organization.contactName %>
+              <% } else { %>
+                N/A
+              <% } %>
+            </p>
             <p><strong>Phone:</strong>
               <% if (organization.phone) { %>
                 <a href="tel:<%= organization.phone %>"><%= organization.phone %></a>

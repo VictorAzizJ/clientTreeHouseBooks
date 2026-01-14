@@ -7,6 +7,31 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet"/>
   <link rel="stylesheet" href="/css/treehouse-brand.css">
+  <style>
+    .member-search-results {
+      position: absolute;
+      z-index: 1000;
+      width: 100%;
+      max-height: 250px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: none;
+    }
+    .member-search-item {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+    .member-search-item:hover {
+      background-color: #f8f9fa;
+    }
+    .member-search-item:last-child {
+      border-bottom: none;
+    }
+  </style>
 </head>
 <body>
   <%- include('partials/nav') %>
@@ -69,8 +94,38 @@
               <h5 class="mb-3">Contact Information</h5>
 
               <div class="mb-3">
-                <label for="contactName" class="form-label">Contact Person</label>
-                <input type="text" class="form-control" id="contactName" name="contactName" maxlength="100" value="<%= organization.contactName || '' %>" placeholder="Primary contact name">
+                <label class="form-label">Contact Person</label>
+                <div class="form-check form-check-inline mb-2">
+                  <input class="form-check-input" type="radio" name="contactType" id="contactTypeManual" value="manual" <%= !organization.contactPerson ? 'checked' : '' %> onchange="toggleContactType()">
+                  <label class="form-check-label" for="contactTypeManual">Enter name manually</label>
+                </div>
+                <div class="form-check form-check-inline mb-2">
+                  <input class="form-check-input" type="radio" name="contactType" id="contactTypeMember" value="member" <%= organization.contactPerson ? 'checked' : '' %> onchange="toggleContactType()">
+                  <label class="form-check-label" for="contactTypeMember">Link to existing member</label>
+                </div>
+
+                <!-- Manual entry -->
+                <div id="contactNameSection" style="display: <%= !organization.contactPerson ? 'block' : 'none' %>;">
+                  <input type="text" class="form-control" id="contactName" name="contactName" maxlength="100" value="<%= organization.contactName || '' %>" placeholder="Primary contact name">
+                </div>
+
+                <!-- Member search -->
+                <div id="contactPersonSection" class="position-relative" style="display: <%= organization.contactPerson ? 'block' : 'none' %>;">
+                  <div class="input-group" id="memberSearchGroup" style="display: <%= organization.contactPerson ? 'none' : 'flex' %>;">
+                    <input type="text" class="form-control" id="memberSearch" placeholder="Search members by name..." autocomplete="off">
+                    <a href="/members/new" target="_blank" class="btn btn-outline-success" title="Add New Member">
+                      <i class="bi bi-person-plus"></i>
+                    </a>
+                  </div>
+                  <div id="memberSearchResults" class="member-search-results"></div>
+                  <input type="hidden" id="contactPersonId" name="contactPerson" value="<%= organization.contactPerson?._id || organization.contactPerson || '' %>">
+                  <div id="selectedMember" class="mt-2" style="display: <%= organization.contactPerson ? 'block' : 'none' %>;">
+                    <div class="alert alert-info py-2 mb-0">
+                      <i class="bi bi-person-check"></i> <strong id="selectedMemberName"><%= organization.contactPerson ? (organization.contactPerson.firstName + ' ' + organization.contactPerson.lastName) : '' %></strong>
+                      <button type="button" class="btn btn-sm btn-outline-secondary float-end" onclick="clearMemberSelection()">Change</button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div class="row">
@@ -132,5 +187,112 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let memberDebounceTimer;
+    const memberSearchInput = document.getElementById('memberSearch');
+    const memberSearchResults = document.getElementById('memberSearchResults');
+    const memberSearchGroup = document.getElementById('memberSearchGroup');
+    const contactPersonIdInput = document.getElementById('contactPersonId');
+    const selectedMemberDiv = document.getElementById('selectedMember');
+    const selectedMemberName = document.getElementById('selectedMemberName');
+    const contactNameSection = document.getElementById('contactNameSection');
+    const contactPersonSection = document.getElementById('contactPersonSection');
+    const contactNameInput = document.getElementById('contactName');
+
+    function toggleContactType() {
+      const isManual = document.getElementById('contactTypeManual').checked;
+      if (isManual) {
+        contactNameSection.style.display = 'block';
+        contactPersonSection.style.display = 'none';
+        clearMemberSelection();
+      } else {
+        contactNameSection.style.display = 'none';
+        contactPersonSection.style.display = 'block';
+        contactNameInput.value = '';
+      }
+    }
+
+    if (memberSearchInput) {
+      memberSearchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        clearTimeout(memberDebounceTimer);
+
+        if (query.length < 2) {
+          memberSearchResults.style.display = 'none';
+          return;
+        }
+
+        memberDebounceTimer = setTimeout(async () => {
+          try {
+            const response = await fetch(`/api/members/search?q=${encodeURIComponent(query)}`);
+            const members = await response.json();
+
+            if (members.length === 0) {
+              memberSearchResults.innerHTML = '<div class="member-search-item text-muted">No members found</div>';
+              memberSearchResults.style.display = 'block';
+              return;
+            }
+
+            memberSearchResults.innerHTML = members.map(member => {
+              const name = member.displayName || `${member.firstName} ${member.lastName}`;
+              const subtext = member.subtext || member.email || '';
+              return `
+                <div class="member-search-item"
+                     data-id="${member._id}"
+                     data-name="${escapeAttr(name)}">
+                  <strong>${escapeHtml(name)}</strong>
+                  ${subtext ? `<br><small class="text-muted">${escapeHtml(subtext)}</small>` : ''}
+                </div>
+              `;
+            }).join('');
+
+            memberSearchResults.querySelectorAll('.member-search-item').forEach(item => {
+              item.addEventListener('click', function() {
+                selectMember(this.dataset.id, this.dataset.name);
+              });
+            });
+
+            memberSearchResults.style.display = 'block';
+          } catch (err) {
+            console.error('Member search failed:', err);
+          }
+        }, 300);
+      });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function escapeAttr(text) {
+      return text.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function selectMember(id, name) {
+      contactPersonIdInput.value = id;
+      selectedMemberName.textContent = name;
+      selectedMemberDiv.style.display = 'block';
+      memberSearchGroup.style.display = 'none';
+      memberSearchResults.style.display = 'none';
+    }
+
+    function clearMemberSelection() {
+      contactPersonIdInput.value = '';
+      selectedMemberDiv.style.display = 'none';
+      if (memberSearchGroup) {
+        memberSearchGroup.style.display = 'flex';
+        memberSearchInput.value = '';
+      }
+      memberSearchResults.style.display = 'none';
+    }
+
+    document.addEventListener('click', function(e) {
+      if (memberSearchInput && !memberSearchInput.contains(e.target) && !memberSearchResults.contains(e.target)) {
+        memberSearchResults.style.display = 'none';
+      }
+    });
+  </script>
 </body>
 </html>

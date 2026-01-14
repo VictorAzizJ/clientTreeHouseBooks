@@ -180,7 +180,7 @@ router.post('/organizations', ensureStaffOrAdmin, organizationValidationRules, a
     return res.redirect('/organizations/new');
   }
 
-  const { name, address, zipCode, phone, email, contactName, contactMethod, howHeardAboutUs, organizationType, notes } = req.body;
+  const { name, address, zipCode, phone, email, contactName, contactPerson, contactMethod, howHeardAboutUs, organizationType, notes } = req.body;
 
   try {
     const organizationData = {
@@ -190,6 +190,7 @@ router.post('/organizations', ensureStaffOrAdmin, organizationValidationRules, a
       phone: phone || undefined,
       email: email || undefined,
       contactName: contactName || undefined,
+      contactPerson: contactPerson || undefined,
       contactMethod: contactMethod || undefined,
       howHeardAboutUs: howHeardAboutUs || undefined,
       organizationType: organizationType || 'other',
@@ -216,6 +217,7 @@ router.get('/organizations/:id', ensureAuthenticated, async (req, res) => {
   try {
     const organization = await Organization.findById(req.params.id)
       .populate('createdBy', 'firstName lastName')
+      .populate('contactPerson', 'firstName lastName email phone')
       .lean();
 
     if (!organization) {
@@ -288,7 +290,9 @@ router.get('/organizations/search', ensureAuthenticated, async (req, res) => {
 // 6. GET /organizations/:id/edit — show edit form (admin only)
 router.get('/organizations/:id/edit', ensureAdmin, async (req, res) => {
   try {
-    const organization = await Organization.findById(req.params.id).lean();
+    const organization = await Organization.findById(req.params.id)
+      .populate('contactPerson', 'firstName lastName email')
+      .lean();
 
     if (!organization) {
       req.session.error = 'Organization not found';
@@ -329,7 +333,7 @@ router.post('/organizations/:id', ensureAdmin, organizationValidationRules, asyn
       return res.redirect('/organizations');
     }
 
-    const { name, address, zipCode, phone, email, contactName, contactMethod, howHeardAboutUs, organizationType, notes } = req.body;
+    const { name, address, zipCode, phone, email, contactName, contactPerson, contactMethod, howHeardAboutUs, organizationType, notes } = req.body;
 
     // Build update data
     const updateData = {
@@ -339,6 +343,7 @@ router.post('/organizations/:id', ensureAdmin, organizationValidationRules, asyn
       phone: phone || undefined,
       email: email || undefined,
       contactName: contactName || undefined,
+      contactPerson: contactPerson || null,
       contactMethod: contactMethod || undefined,
       howHeardAboutUs: howHeardAboutUs || undefined,
       organizationType: organizationType || 'other',

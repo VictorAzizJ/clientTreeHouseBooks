@@ -62,11 +62,17 @@ const OrganizationSchema = new Schema({
     }
   },
 
-  // Contact person name
+  // Contact person name (manual entry)
   contactName: {
     type: String,
     trim: true,
     maxlength: [100, 'Contact name cannot exceed 100 characters']
+  },
+
+  // Contact person linked to a member record (optional)
+  contactPerson: {
+    type: Schema.Types.ObjectId,
+    ref: 'Member'
   },
 
   // How this organization contacts us / how we contact them
