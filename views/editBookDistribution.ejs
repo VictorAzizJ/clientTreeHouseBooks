@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Edit Distribution - TreeHouseBooks</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/treehouse-brand.css">
+</head>
+<body>
+  <%- include('partials/nav') %>
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1><i class="bi bi-pencil-square"></i> Edit Distribution</h1>
+        <p class="text-muted">Modify distribution record</p>
+      </div>
+      <a href="/book-distribution" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </a>
+    </div>
+
+    <div class="card">
+      <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Admin Edit</h5>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-info">
+          <strong>Recipient:</strong>
+          <% if (distribution.member) { %>
+            <i class="bi bi-person"></i> <%= distribution.member.firstName %> <%= distribution.member.lastName %>
+          <% } else if (distribution.organization) { %>
+            <i class="bi bi-building"></i> <%= distribution.organization.name %>
+          <% } else { %>
+            <%= distribution.location || 'Unknown' %>
+          <% } %>
+        </div>
+
+        <form method="POST" action="/book-distribution/<%= distribution._id %>/edit">
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="eventDate" class="form-label">Event Date</label>
+              <input type="date" class="form-control" id="eventDate" name="eventDate"
+                     value="<%= new Date(distribution.eventDate).toISOString().split('T')[0] %>">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="eventName" class="form-label">Event Name</label>
+              <input type="text" class="form-control" id="eventName" name="eventName"
+                     value="<%= distribution.eventName || '' %>" placeholder="Event name (optional)">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="totalBooks" class="form-label">Total Books</label>
+              <input type="number" class="form-control" id="totalBooks" name="totalBooks"
+                     value="<%= distribution.totalBooks || 0 %>" min="0">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="notes" class="form-label">Notes</label>
+            <textarea class="form-control" id="notes" name="notes" rows="3"><%= distribution.notes || '' %></textarea>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+              <i class="bi bi-trash"></i> Delete Distribution
+            </button>
+            <div>
+              <a href="/book-distribution" class="btn btn-secondary me-2">Cancel</a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle"></i> Save Changes
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirm Delete</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to delete this distribution record?</p>
+          <p class="text-muted">This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <form method="POST" action="/book-distribution/<%= distribution._id %>/delete" style="display:inline;">
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-trash"></i> Delete
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

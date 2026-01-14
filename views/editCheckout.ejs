@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Edit Checkout - TreeHouseBooks</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/treehouse-brand.css">
+</head>
+<body>
+  <%- include('partials/nav') %>
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1><i class="bi bi-pencil-square"></i> Edit Checkout</h1>
+        <p class="text-muted">Modify checkout record</p>
+      </div>
+      <a href="/checkouts" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </a>
+    </div>
+
+    <div class="card">
+      <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Admin Edit</h5>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-info">
+          <strong>Member:</strong>
+          <% if (checkout.member) { %>
+            <%= checkout.member.firstName %> <%= checkout.member.lastName %>
+            <% if (checkout.member.email) { %>(<%= checkout.member.email %>)<% } %>
+          <% } else { %>
+            Unknown Member
+          <% } %>
+        </div>
+
+        <form method="POST" action="/checkouts/<%= checkout._id %>/edit">
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="checkoutDate" class="form-label">Checkout Date</label>
+              <input type="date" class="form-control" id="checkoutDate" name="checkoutDate"
+                     value="<%= new Date(checkout.checkoutDate).toISOString().split('T')[0] %>">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="numberOfBooks" class="form-label">Number of Books</label>
+              <input type="number" class="form-control" id="numberOfBooks" name="numberOfBooks"
+                     value="<%= checkout.numberOfBooks || 0 %>" min="0">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="weight" class="form-label">Weight (lbs)</label>
+              <input type="number" class="form-control" id="weight" name="weight"
+                     value="<%= checkout.weight || checkout.totalWeight || 0 %>" min="0" step="0.1">
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+              <i class="bi bi-trash"></i> Delete Checkout
+            </button>
+            <div>
+              <a href="/checkouts" class="btn btn-secondary me-2">Cancel</a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle"></i> Save Changes
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirm Delete</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to delete this checkout record?</p>
+          <p class="text-muted">This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <form method="POST" action="/checkouts/<%= checkout._id %>/delete" style="display:inline;">
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-trash"></i> Delete
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

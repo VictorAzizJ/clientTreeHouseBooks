@@ -30,6 +30,11 @@ function ensureStaffOrAdmin(req, res, next) {
   res.status(403).send('Forbidden');
 }
 
+function ensureAdmin(req, res, next) {
+  if (req.session.user?.role === 'admin') return next();
+  res.status(403).send('Forbidden - Admin only');
+}
+
 // GET /checkouts - List all checkouts with pagination
 router.get('/checkouts', ensureStaffOrAdmin, async (req, res) => {
   try {
@@ -37,6 +42,7 @@ router.get('/checkouts', ensureStaffOrAdmin, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
     const skip = (page - 1) * limit;
+    const format = req.query.format; // 'csv' for export
 
     // Search/filter params
     const search = req.query.search || '';
@@ -56,12 +62,17 @@ router.get('/checkouts', ensureStaffOrAdmin, async (req, res) => {
     const totalCheckouts = await Checkout.countDocuments(query);
     const totalPages = Math.ceil(totalCheckouts / limit);
 
-    // Fetch checkouts with pagination
+    // For CSV export, get all matching records (no pagination)
+    const fetchLimit = format === 'csv' ? 0 : limit;
+    const fetchSkip = format === 'csv' ? 0 : skip;
+
+    // Fetch checkouts
     let checkouts = await Checkout.find(query)
       .populate('member', 'firstName lastName email')
+      .populate('recordedBy', 'firstName lastName')
       .sort({ checkoutDate: -1 })
-      .skip(skip)
-      .limit(limit)
+      .skip(fetchSkip)
+      .limit(fetchLimit || undefined)
       .lean();
 
     // Filter by member name if search provided (post-query for populated fields)
@@ -76,9 +87,40 @@ router.get('/checkouts', ensureStaffOrAdmin, async (req, res) => {
       );
     }
 
+    // Calculate aggregate stats for filtered data
+    const stats = {
+      totalBooks: checkouts.reduce((sum, c) => sum + (c.numberOfBooks || 0), 0),
+      totalWeight: checkouts.reduce((sum, c) => sum + (c.weight || c.totalWeight || 0), 0)
+    };
+
+    // CSV Export
+    if (format === 'csv') {
+      const csvRows = [
+        ['Date', 'Member Name', 'Member Email', 'Books', 'Weight (lbs)', 'Recorded By'].join(',')
+      ];
+      checkouts.forEach(c => {
+        const memberName = c.member ? `${c.member.firstName} ${c.member.lastName}` : 'Unknown';
+        const memberEmail = c.member?.email || '';
+        const recordedBy = c.recordedBy ? `${c.recordedBy.firstName} ${c.recordedBy.lastName}` : '';
+        csvRows.push([
+          new Date(c.checkoutDate).toLocaleDateString(),
+          `"${memberName}"`,
+          memberEmail,
+          c.numberOfBooks || 0,
+          (c.weight || c.totalWeight || 0).toFixed(1),
+          `"${recordedBy}"`
+        ].join(','));
+      });
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="checkouts-${new Date().toISOString().split('T')[0]}.csv"`);
+      return res.send(csvRows.join('\n'));
+    }
+
     res.render('checkoutsList', {
       user: req.session.user,
       checkouts,
+      stats,
       pagination: {
         currentPage: page,
         totalPages,
@@ -230,5 +272,67 @@ router.post(
     }
   }
 );
+
+// GET /checkouts/:id/edit - Edit checkout form (Admin only)
+router.get('/checkouts/:id/edit', ensureAdmin, async (req, res) => {
+  try {
+    const checkout = await Checkout.findById(req.params.id)
+      .populate('member', 'firstName lastName email')
+      .lean();
+
+    if (!checkout) {
+      req.session.error = 'Checkout not found';
+      return res.redirect('/checkouts');
+    }
+
+    res.render('editCheckout', {
+      user: req.session.user,
+      checkout
+    });
+  } catch (err) {
+    console.error('Error loading checkout for edit:', err);
+    req.session.error = 'Error loading checkout';
+    res.redirect('/checkouts');
+  }
+});
+
+// POST /checkouts/:id/edit - Update checkout (Admin only)
+router.post('/checkouts/:id/edit', ensureAdmin, async (req, res) => {
+  try {
+    const { numberOfBooks, weight, checkoutDate } = req.body;
+
+    const updateData = {
+      numberOfBooks: parseInt(numberOfBooks) || 0,
+      weight: parseFloat(weight) || 0,
+      totalWeight: parseFloat(weight) || 0
+    };
+
+    if (checkoutDate) {
+      updateData.checkoutDate = new Date(checkoutDate);
+    }
+
+    await Checkout.findByIdAndUpdate(req.params.id, updateData);
+
+    req.session.success = 'Checkout updated successfully';
+    res.redirect('/checkouts');
+  } catch (err) {
+    console.error('Error updating checkout:', err);
+    req.session.error = 'Error updating checkout';
+    res.redirect('/checkouts');
+  }
+});
+
+// POST /checkouts/:id/delete - Delete checkout (Admin only)
+router.post('/checkouts/:id/delete', ensureAdmin, async (req, res) => {
+  try {
+    await Checkout.findByIdAndDelete(req.params.id);
+    req.session.success = 'Checkout deleted successfully';
+    res.redirect('/checkouts');
+  } catch (err) {
+    console.error('Error deleting checkout:', err);
+    req.session.error = 'Error deleting checkout';
+    res.redirect('/checkouts');
+  }
+});
 
 module.exports = router;

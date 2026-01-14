@@ -13,12 +13,18 @@ function ensureStaffOrAdmin(req, res, next) {
   res.status(403).send('Forbidden');
 }
 
+function ensureAdmin(req, res, next) {
+  if (req.session.user?.role === 'admin') return next();
+  res.status(403).send('Forbidden - Admin only');
+}
+
 // GET /book-distribution - List all distributions with pagination
 router.get('/book-distribution', ensureStaffOrAdmin, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
     const skip = (page - 1) * limit;
+    const format = req.query.format; // 'csv' for export
     const search = req.query.search || '';
     const dateFrom = req.query.dateFrom;
     const dateTo = req.query.dateTo;
@@ -34,13 +40,17 @@ router.get('/book-distribution', ensureStaffOrAdmin, async (req, res) => {
     const totalDistributions = await BookDistribution.countDocuments(query);
     const totalPages = Math.ceil(totalDistributions / limit);
 
+    // For CSV export, get all matching records
+    const fetchLimit = format === 'csv' ? 0 : limit;
+    const fetchSkip = format === 'csv' ? 0 : skip;
+
     let distributions = await BookDistribution.find(query)
       .populate('member', 'firstName lastName')
       .populate('organization', 'name')
       .populate('recordedBy', 'firstName lastName')
       .sort({ eventDate: -1 })
-      .skip(skip)
-      .limit(limit)
+      .skip(fetchSkip)
+      .limit(fetchLimit || undefined)
       .lean();
 
     // Post-query filtering for location/name search
@@ -60,6 +70,41 @@ router.get('/book-distribution', ensureStaffOrAdmin, async (req, res) => {
       });
     }
 
+    // Calculate stats for the current view
+    const stats = {
+      totalBooks: distributions.reduce((sum, d) => sum + (d.totalBooks || 0), 0)
+    };
+
+    // CSV Export
+    if (format === 'csv') {
+      const csvRows = [
+        ['Date', 'Event Name', 'Recipient Type', 'Recipient', 'Location', 'Books', 'Notes', 'Recorded By'].join(',')
+      ];
+      distributions.forEach(d => {
+        let recipientName = '';
+        if (d.member) {
+          recipientName = `${d.member.firstName} ${d.member.lastName}`;
+        } else if (d.organization) {
+          recipientName = d.organization.name;
+        }
+        const recordedBy = d.recordedBy ? `${d.recordedBy.firstName} ${d.recordedBy.lastName}` : '';
+        csvRows.push([
+          new Date(d.eventDate).toLocaleDateString(),
+          `"${(d.eventName || '').replace(/"/g, '""')}"`,
+          d.recipientType || 'unknown',
+          `"${recipientName}"`,
+          `"${(d.location || '').replace(/"/g, '""')}"`,
+          d.totalBooks || 0,
+          `"${(d.notes || '').replace(/"/g, '""')}"`,
+          `"${recordedBy}"`
+        ].join(','));
+      });
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="distributions-${new Date().toISOString().split('T')[0]}.csv"`);
+      return res.send(csvRows.join('\n'));
+    }
+
     // Get flash messages
     const success = req.session.success;
     const error = req.session.error;
@@ -70,6 +115,7 @@ router.get('/book-distribution', ensureStaffOrAdmin, async (req, res) => {
       user: req.session.user,
       distributions,
       totalDistributions,
+      stats,
       page,
       limit,
       totalPages,
@@ -196,5 +242,68 @@ router.post(
     }
   }
 );
+
+// GET /book-distribution/:id/edit - Edit distribution form (Admin only)
+router.get('/book-distribution/:id/edit', ensureAdmin, async (req, res) => {
+  try {
+    const distribution = await BookDistribution.findById(req.params.id)
+      .populate('member', 'firstName lastName')
+      .populate('organization', 'name')
+      .lean();
+
+    if (!distribution) {
+      req.session.error = 'Distribution not found';
+      return res.redirect('/book-distribution');
+    }
+
+    res.render('editBookDistribution', {
+      user: req.session.user,
+      distribution
+    });
+  } catch (err) {
+    console.error('Error loading distribution for edit:', err);
+    req.session.error = 'Error loading distribution';
+    res.redirect('/book-distribution');
+  }
+});
+
+// POST /book-distribution/:id/edit - Update distribution (Admin only)
+router.post('/book-distribution/:id/edit', ensureAdmin, async (req, res) => {
+  try {
+    const { eventName, eventDate, totalBooks, notes } = req.body;
+
+    const updateData = {
+      eventName: eventName || undefined,
+      totalBooks: parseInt(totalBooks) || 0,
+      notes: notes || undefined
+    };
+
+    if (eventDate) {
+      updateData.eventDate = new Date(eventDate);
+    }
+
+    await BookDistribution.findByIdAndUpdate(req.params.id, updateData);
+
+    req.session.success = 'Distribution updated successfully';
+    res.redirect('/book-distribution');
+  } catch (err) {
+    console.error('Error updating distribution:', err);
+    req.session.error = 'Error updating distribution';
+    res.redirect('/book-distribution');
+  }
+});
+
+// POST /book-distribution/:id/delete - Delete distribution (Admin only)
+router.post('/book-distribution/:id/delete', ensureAdmin, async (req, res) => {
+  try {
+    await BookDistribution.findByIdAndDelete(req.params.id);
+    req.session.success = 'Distribution deleted successfully';
+    res.redirect('/book-distribution');
+  } catch (err) {
+    console.error('Error deleting distribution:', err);
+    req.session.error = 'Error deleting distribution';
+    res.redirect('/book-distribution');
+  }
+});
 
 module.exports = router;

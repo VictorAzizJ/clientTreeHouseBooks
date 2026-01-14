@@ -56,13 +56,18 @@
             </button>
           </div>
         </form>
-        <% if (search || dateFrom || dateTo) { %>
-          <div class="mt-2">
-            <a href="/book-distribution" class="btn btn-sm btn-outline-secondary">
-              <i class="bi bi-x-circle"></i> Clear Filters
-            </a>
+        <div class="mt-2 d-flex justify-content-between">
+          <div>
+            <% if (search || dateFrom || dateTo) { %>
+              <a href="/book-distribution" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-x-circle"></i> Clear Filters
+              </a>
+            <% } %>
           </div>
-        <% } %>
+          <a href="/book-distribution?format=csv<%= search ? '&search=' + encodeURIComponent(search) : '' %><%= dateFrom ? '&dateFrom=' + dateFrom : '' %><%= dateTo ? '&dateTo=' + dateTo : '' %>" class="btn btn-sm btn-success">
+            <i class="bi bi-download"></i> Export CSV
+          </a>
+        </div>
       </div>
     </div>
 
@@ -79,6 +84,7 @@
                   <th>Total Books</th>
                   <th>Total Weight</th>
                   <th>Recorded By</th>
+                  <% if (user.role === 'admin') { %><th>Actions</th><% } %>
                 </tr>
               </thead>
               <tbody>
@@ -126,6 +132,13 @@
                         -
                       <% } %>
                     </td>
+                    <% if (user.role === 'admin') { %>
+                    <td>
+                      <a href="/book-distribution/<%= d._id %>/edit" class="btn btn-sm btn-outline-warning" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                      </a>
+                    </td>
+                    <% } %>
                   </tr>
                 <% }); %>
               </tbody>
@@ -133,46 +146,20 @@
           </div>
 
           <!-- Summary Stats -->
-          <%
-            let grandTotalBooks = 0;
-            let grandTotalWeight = 0;
-            distributions.forEach(d => {
-              grandTotalBooks += d.totalBooks || (
-                (d.bookCategories?.blackAuthorAdult?.quantity || 0) +
-                (d.bookCategories?.adult?.quantity || 0) +
-                (d.bookCategories?.blackAuthorKids?.quantity || 0) +
-                (d.bookCategories?.kids?.quantity || 0) +
-                (d.bookCategories?.boardBooks?.quantity || 0)
-              );
-              grandTotalWeight += (d.bookCategories?.blackAuthorAdult?.weight || 0) +
-                                  (d.bookCategories?.adult?.weight || 0) +
-                                  (d.bookCategories?.blackAuthorKids?.weight || 0) +
-                                  (d.bookCategories?.kids?.weight || 0) +
-                                  (d.bookCategories?.boardBooks?.weight || 0);
-            });
-          %>
           <div class="row mt-4">
-            <div class="col-md-4">
+            <div class="col-md-6">
               <div class="card text-center bg-light">
                 <div class="card-body">
-                  <h3><%= distributions.length %></h3>
-                  <p class="text-muted mb-0">Distributions on Page</p>
+                  <h3><%= totalDistributions.toLocaleString() %></h3>
+                  <p class="text-muted mb-0">Total Distributions</p>
                 </div>
               </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
               <div class="card text-center bg-light">
                 <div class="card-body">
-                  <h3><%= grandTotalBooks.toLocaleString() %></h3>
-                  <p class="text-muted mb-0">Books on Page</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="card text-center bg-light">
-                <div class="card-body">
-                  <h3><%= grandTotalWeight > 0 ? grandTotalWeight.toFixed(1) + ' lbs' : '-' %></h3>
-                  <p class="text-muted mb-0">Weight on Page</p>
+                  <h3><%= (stats?.totalBooks || 0).toLocaleString() %></h3>
+                  <p class="text-muted mb-0">Books (on page)</p>
                 </div>
               </div>
             </div>

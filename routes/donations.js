@@ -23,7 +23,7 @@ const router    = express.Router();
 const Donation  = require('../models/Donation');
 const Member    = require('../models/Member');
 const Organization = require('../models/Organization');
-const { ensureStaffOrAdmin } = require('./_middleware');
+const { ensureStaffOrAdmin, ensureAdmin } = require('./_middleware');
 const { sendDonationThankYouEmail } = require('../services/mailer');
 
 // GET /donations - List all donations with pagination
@@ -32,6 +32,7 @@ router.get('/donations', ensureStaffOrAdmin, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
     const skip = (page - 1) * limit;
+    const format = req.query.format; // 'csv' for export
     const search = req.query.search || '';
     const donationType = req.query.donationType || '';
     const donorType = req.query.donorType || '';
@@ -55,13 +56,17 @@ router.get('/donations', ensureStaffOrAdmin, async (req, res) => {
     const totalDonations = await Donation.countDocuments(query);
     const totalPages = Math.ceil(totalDonations / limit);
 
+    // For CSV export, get all matching records
+    const fetchLimit = format === 'csv' ? 0 : limit;
+    const fetchSkip = format === 'csv' ? 0 : skip;
+
     let donations = await Donation.find(query)
       .populate('member', 'firstName lastName email')
       .populate('organization', 'name')
       .populate('recordedBy', 'firstName lastName')
       .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
+      .skip(fetchSkip)
+      .limit(fetchLimit || undefined)
       .lean();
 
     // Post-query filtering for name/org search
@@ -85,6 +90,37 @@ router.get('/donations', ensureStaffOrAdmin, async (req, res) => {
       totalBooks: donations.reduce((sum, d) => sum + (d.numberOfBooks || 0), 0),
       totalValue: donations.reduce((sum, d) => sum + (d.monetaryAmount || 0), 0)
     };
+
+    // CSV Export
+    if (format === 'csv') {
+      const csvRows = [
+        ['Date', 'Type', 'Donor Type', 'Member/Organization', 'Books', 'Value ($)', 'Book Drive', 'Notes', 'Recorded By'].join(',')
+      ];
+      donations.forEach(d => {
+        let donorName = 'Undisclosed';
+        if (d.member) {
+          donorName = `${d.member.firstName} ${d.member.lastName}`;
+        } else if (d.organization) {
+          donorName = d.organization.name;
+        }
+        const recordedBy = d.recordedBy ? `${d.recordedBy.firstName} ${d.recordedBy.lastName}` : '';
+        csvRows.push([
+          new Date(d.createdAt).toLocaleDateString(),
+          d.donationType === 'new' ? 'New Books' : 'Used Books',
+          d.donorType || 'undisclosed',
+          `"${donorName}"`,
+          d.numberOfBooks || 0,
+          (d.monetaryAmount || 0).toFixed(2),
+          d.isBookDrive ? (d.bookDriveName || 'Yes') : 'No',
+          `"${(d.notes || '').replace(/"/g, '""')}"`,
+          `"${recordedBy}"`
+        ].join(','));
+      });
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="donations-${new Date().toISOString().split('T')[0]}.csv"`);
+      return res.send(csvRows.join('\n'));
+    }
 
     // Get flash messages
     const success = req.session.success;
@@ -320,5 +356,67 @@ router.post(
     }
   }
 );
+
+// GET /donations/:id/edit - Edit donation form (Admin only)
+router.get('/donations/:id/edit', ensureAdmin, async (req, res) => {
+  try {
+    const donation = await Donation.findById(req.params.id)
+      .populate('member', 'firstName lastName email')
+      .populate('organization', 'name')
+      .lean();
+
+    if (!donation) {
+      req.session.error = 'Donation not found';
+      return res.redirect('/donations');
+    }
+
+    res.render('editDonation', {
+      user: req.session.user,
+      donation
+    });
+  } catch (err) {
+    console.error('Error loading donation for edit:', err);
+    req.session.error = 'Error loading donation';
+    res.redirect('/donations');
+  }
+});
+
+// POST /donations/:id/edit - Update donation (Admin only)
+router.post('/donations/:id/edit', ensureAdmin, async (req, res) => {
+  try {
+    const { donationType, numberOfBooks, monetaryAmount, isBookDrive, bookDriveName, notes } = req.body;
+
+    const updateData = {
+      donationType,
+      numberOfBooks: parseInt(numberOfBooks) || 0,
+      monetaryAmount: parseFloat(monetaryAmount) || 0,
+      isBookDrive: isBookDrive === 'true',
+      bookDriveName: bookDriveName || undefined,
+      notes: notes || undefined
+    };
+
+    await Donation.findByIdAndUpdate(req.params.id, updateData);
+
+    req.session.success = 'Donation updated successfully';
+    res.redirect('/donations');
+  } catch (err) {
+    console.error('Error updating donation:', err);
+    req.session.error = 'Error updating donation';
+    res.redirect('/donations');
+  }
+});
+
+// POST /donations/:id/delete - Delete donation (Admin only)
+router.post('/donations/:id/delete', ensureAdmin, async (req, res) => {
+  try {
+    await Donation.findByIdAndDelete(req.params.id);
+    req.session.success = 'Donation deleted successfully';
+    res.redirect('/donations');
+  } catch (err) {
+    console.error('Error deleting donation:', err);
+    req.session.error = 'Error deleting donation';
+    res.redirect('/donations');
+  }
+});
 
 module.exports = router;

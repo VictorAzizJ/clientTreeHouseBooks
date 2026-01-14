@@ -13,6 +13,11 @@ function ensureAuthenticated(req, res, next) {
   return res.status(403).send('Forbidden');
 }
 
+function ensureAdmin(req, res, next) {
+  if (req.session.user?.role === 'admin') return next();
+  res.status(403).send('Forbidden - Admin only');
+}
+
 // GET /visitor-checkin - Show the visitor check-in form
 router.get('/visitor-checkin', ensureAuthenticated, async (req, res) => {
   // Get flash messages
@@ -139,6 +144,7 @@ router.get('/visits', ensureAuthenticated, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
     const skip = (page - 1) * limit;
+    const format = req.query.format; // 'csv' for export
 
     // Search/filter params
     const search = req.query.search || '';
@@ -158,12 +164,17 @@ router.get('/visits', ensureAuthenticated, async (req, res) => {
     const totalVisits = await Visit.countDocuments(query);
     const totalPages = Math.ceil(totalVisits / limit);
 
+    // For CSV export, get all matching records
+    const fetchLimit = format === 'csv' ? 0 : limit;
+    const fetchSkip = format === 'csv' ? 0 : skip;
+
     // Fetch visits with pagination
     let visits = await Visit.find(query)
       .populate('member', 'firstName lastName email')
+      .populate('recordedBy', 'firstName lastName')
       .sort({ visitDate: -1 })
-      .skip(skip)
-      .limit(limit)
+      .skip(fetchSkip)
+      .limit(fetchLimit || undefined)
       .lean();
 
     // Filter by member name if search provided (post-query for populated fields)
@@ -176,6 +187,29 @@ router.get('/visits', ensureAuthenticated, async (req, res) => {
           v.member.email?.toLowerCase().includes(searchLower)
         )
       );
+    }
+
+    // CSV Export
+    if (format === 'csv') {
+      const csvRows = [
+        ['Date', 'Member Name', 'Email', 'Notes', 'Recorded By'].join(',')
+      ];
+      visits.forEach(v => {
+        const memberName = v.member ? `${v.member.firstName} ${v.member.lastName}` : 'Unknown';
+        const memberEmail = v.member?.email || '';
+        const recordedBy = v.recordedBy ? `${v.recordedBy.firstName} ${v.recordedBy.lastName}` : '';
+        csvRows.push([
+          new Date(v.visitDate).toLocaleDateString(),
+          `"${memberName}"`,
+          memberEmail,
+          `"${(v.notes || '').replace(/"/g, '""')}"`,
+          `"${recordedBy}"`
+        ].join(','));
+      });
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="visits-${new Date().toISOString().split('T')[0]}.csv"`);
+      return res.send(csvRows.join('\n'));
     }
 
     res.render('visitsList', {
@@ -198,6 +232,66 @@ router.get('/visits', ensureAuthenticated, async (req, res) => {
   } catch (err) {
     console.error('Error fetching visits:', err);
     res.status(500).send('Error loading visits');
+  }
+});
+
+// GET /visits/:id/edit - Edit visit form (Admin only)
+router.get('/visits/:id/edit', ensureAdmin, async (req, res) => {
+  try {
+    const visit = await Visit.findById(req.params.id)
+      .populate('member', 'firstName lastName email')
+      .lean();
+
+    if (!visit) {
+      req.session.error = 'Visit not found';
+      return res.redirect('/visits');
+    }
+
+    res.render('editVisit', {
+      user: req.session.user,
+      visit
+    });
+  } catch (err) {
+    console.error('Error loading visit for edit:', err);
+    req.session.error = 'Error loading visit';
+    res.redirect('/visits');
+  }
+});
+
+// POST /visits/:id/edit - Update visit (Admin only)
+router.post('/visits/:id/edit', ensureAdmin, async (req, res) => {
+  try {
+    const { visitDate, notes } = req.body;
+
+    const updateData = {
+      notes: notes || undefined
+    };
+
+    if (visitDate) {
+      updateData.visitDate = new Date(visitDate);
+    }
+
+    await Visit.findByIdAndUpdate(req.params.id, updateData);
+
+    req.session.success = 'Visit updated successfully';
+    res.redirect('/visits');
+  } catch (err) {
+    console.error('Error updating visit:', err);
+    req.session.error = 'Error updating visit';
+    res.redirect('/visits');
+  }
+});
+
+// POST /visits/:id/delete - Delete visit (Admin only)
+router.post('/visits/:id/delete', ensureAdmin, async (req, res) => {
+  try {
+    await Visit.findByIdAndDelete(req.params.id);
+    req.session.success = 'Visit deleted successfully';
+    res.redirect('/visits');
+  } catch (err) {
+    console.error('Error deleting visit:', err);
+    req.session.error = 'Error deleting visit';
+    res.redirect('/visits');
   }
 });
 

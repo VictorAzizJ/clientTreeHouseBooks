@@ -16,19 +16,49 @@ router.get('/api/members/search', ensureStaffOrAdmin, async (req, res) => {
       return res.json([]);
     }
 
+    // Split query into parts for full name search
+    const queryParts = query.trim().split(/\s+/);
     const regex = new RegExp(query, 'i');
-    const members = await Member.find({
-      isDeleted: { $ne: true },
-      $or: [
-        { firstName: regex },
-        { lastName: regex },
-        { email: regex }
-      ]
-    })
-    .select('firstName lastName email phone')
-    .sort({ lastName: 1, firstName: 1 })
-    .limit(20)
-    .lean();
+
+    let searchConditions;
+
+    if (queryParts.length >= 2) {
+      // Multi-word search: try first+last name combinations
+      const firstPart = new RegExp(queryParts[0], 'i');
+      const lastPart = new RegExp(queryParts.slice(1).join(' '), 'i');
+      const lastPartAlt = new RegExp(queryParts[queryParts.length - 1], 'i');
+
+      searchConditions = {
+        isDeleted: { $ne: true },
+        $or: [
+          // First name + last name (in order)
+          { $and: [{ firstName: firstPart }, { lastName: lastPart }] },
+          { $and: [{ firstName: firstPart }, { lastName: lastPartAlt }] },
+          // Last name + first name (reversed)
+          { $and: [{ lastName: firstPart }, { firstName: lastPart }] },
+          // Single field matches
+          { firstName: regex },
+          { lastName: regex },
+          { email: regex }
+        ]
+      };
+    } else {
+      // Single word search
+      searchConditions = {
+        isDeleted: { $ne: true },
+        $or: [
+          { firstName: regex },
+          { lastName: regex },
+          { email: regex }
+        ]
+      };
+    }
+
+    const members = await Member.find(searchConditions)
+      .select('firstName lastName email phone')
+      .sort({ lastName: 1, firstName: 1 })
+      .limit(20)
+      .lean();
 
     res.json(members);
   } catch (err) {
