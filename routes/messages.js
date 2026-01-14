@@ -9,10 +9,17 @@ router.post('/messages', async (req, res) => {
   if (!user || !['admin', 'staff'].includes(user.role)) return res.status(403).send('Unauthorized');
 
   const { recipientId, body } = req.body;
-  if (!recipientId || !body) return res.status(400).send('Missing fields');
+  if (!recipientId || !body) {
+    req.session.error = 'Please select a recipient and enter a message.';
+    return res.redirect('/dashboard');
+  }
 
-  await Message.create({ senderId: user._id, recipientId, body });
-  req.session.success = 'Message sent!';
+  try {
+    await Message.create({ senderId: user._id, recipientId, body });
+    req.session.success = 'Message sent successfully!';
+  } catch (err) {
+    req.session.error = 'Failed to send message. Please try again.';
+  }
   res.redirect('/dashboard');
 });
 

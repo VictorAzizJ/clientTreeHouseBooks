@@ -8,17 +8,7 @@ const MemberSchema = new Schema({
   email:       {
     type: String,
     unique: true,
-    sparse: true,  // Allow multiple null values for children without email
-    validate: {
-      validator: function(v) {
-        // Email is required for adults, optional for children
-        if (this.memberType === 'adult') {
-          return v && v.length > 0;
-        }
-        return true; // Optional for children
-      },
-      message: 'Email is required for adult members'
-    }
+    sparse: true  // Allow multiple null values for members without email
   },
   phone:       { type: String },
   address:     { type: String },

@@ -59,8 +59,10 @@ app.use(helmet.contentSecurityPolicy({
       "'self'",
       "https://cdn.jsdelivr.net",
       "https://secure.lglforms.com",
-      "'unsafe-inline'"
+      "'unsafe-inline'",
+      "'unsafe-hashes'"
     ],
+    scriptSrcAttr: ["'unsafe-inline'"],
     styleSrc: [
       "'self'",
       "https://cdn.jsdelivr.net",

@@ -7,15 +7,25 @@ router.post('/notifications', async (req, res) => {
   const user = req.session.user;
   if (!user || !['staff', 'admin'].includes(user.role)) return res.status(403).send('Unauthorized');
 
-  const { title, body, targetRoles } = req.body;
+  const { title, body } = req.body;
+  let { targetRoles } = req.body;
+
+  // Handle targetRoles - ensure it's an array
+  if (!targetRoles) {
+    targetRoles = ['volunteer']; // default fallback
+  } else if (!Array.isArray(targetRoles)) {
+    targetRoles = [targetRoles]; // single checkbox selected
+  }
+
   await Notification.create({
     title,
     body,
     senderId: user._id,
     senderRole: user.role,
-    targetRoles: targetRoles || ['volunteer'] // default fallback
+    targetRoles
   });
 
+  req.session.success = 'Announcement sent successfully!';
   res.redirect('/dashboard');
 });
 
