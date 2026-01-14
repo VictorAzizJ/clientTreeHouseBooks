@@ -132,4 +132,20 @@ router.get('/api/visits/recent', ensureAuthenticated, async (req, res) => {
   }
 });
 
+// GET /visits - List all visits
+router.get('/visits', ensureAuthenticated, async (req, res) => {
+  try {
+    const visits = await Visit.find()
+      .populate('member', 'firstName lastName email')
+      .sort({ visitDate: -1 })
+      .limit(100)
+      .lean();
+
+    res.render('visitsList', { user: req.session.user, visits });
+  } catch (err) {
+    console.error('Error fetching visits:', err);
+    res.status(500).send('Error loading visits');
+  }
+});
+
 module.exports = router;

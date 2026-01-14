@@ -35,7 +35,7 @@ router.get('/checkouts', ensureStaffOrAdmin, async (req, res) => {
   try {
     const checkouts = await Checkout.find()
       .populate('member', 'firstName lastName email')
-      .sort({ createdAt: -1 })
+      .sort({ checkoutDate: -1 })
       .limit(100)
       .lean();
     res.render('checkoutsList', { user: req.session.user, checkouts });

@@ -31,7 +31,7 @@
                 <th>Member</th>
                 <th>Email</th>
                 <th>Books</th>
-                <th>Genres</th>
+                <th>Categories</th>
                 <th>Weight</th>
               </tr>
             </thead>
@@ -39,7 +39,7 @@
               <% if (checkouts && checkouts.length > 0) { %>
                 <% checkouts.forEach(checkout => { %>
                   <tr>
-                    <td><%= new Date(checkout.createdAt).toLocaleDateString() %></td>
+                    <td><%= new Date(checkout.checkoutDate || checkout.createdAt).toLocaleDateString() %></td>
                     <td>
                       <% if (checkout.member) { %>
                         <a href="/members/<%= checkout.member._id %>">
@@ -52,15 +52,26 @@
                     <td><%= checkout.member?.email || '-' %></td>
                     <td><span class="badge bg-primary"><%= checkout.numberOfBooks %></span></td>
                     <td>
-                      <% if (checkout.genres && checkout.genres.length > 0) { %>
+                      <% if (checkout.bookCategories) { %>
+                        <small>
+                          <% const cats = checkout.bookCategories; %>
+                          <% const parts = []; %>
+                          <% if (cats.blackAuthorAdult?.quantity) parts.push('BA Adult: ' + cats.blackAuthorAdult.quantity); %>
+                          <% if (cats.adult?.quantity) parts.push('Adult: ' + cats.adult.quantity); %>
+                          <% if (cats.blackAuthorKids?.quantity) parts.push('BA Kids: ' + cats.blackAuthorKids.quantity); %>
+                          <% if (cats.kids?.quantity) parts.push('Kids: ' + cats.kids.quantity); %>
+                          <% if (cats.boardBooks?.quantity) parts.push('Board: ' + cats.boardBooks.quantity); %>
+                          <%= parts.length > 0 ? parts.join(', ') : '-' %>
+                        </small>
+                      <% } else if (checkout.genres && checkout.genres.length > 0) { %>
                         <%= checkout.genres.join(', ') %>
                       <% } else { %>
                         <span class="text-muted">-</span>
                       <% } %>
                     </td>
                     <td>
-                      <% if (checkout.weight) { %>
-                        <%= checkout.weight %> lbs
+                      <% if (checkout.totalWeight || checkout.weight) { %>
+                        <%= checkout.totalWeight || checkout.weight %> lbs
                       <% } else { %>
                         <span class="text-muted">-</span>
                       <% } %>
