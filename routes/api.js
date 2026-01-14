@@ -16,14 +16,17 @@ router.get('/api/members/search', ensureStaffOrAdmin, async (req, res) => {
       return res.json([]);
     }
 
+    const regex = new RegExp(query, 'i');
     const members = await Member.find({
+      isDeleted: { $ne: true },
       $or: [
-        { firstName: { $regex: query, $options: 'i' } },
-        { lastName: { $regex: query, $options: 'i' } },
-        { email: { $regex: query, $options: 'i' } }
+        { firstName: regex },
+        { lastName: regex },
+        { email: regex }
       ]
     })
     .select('firstName lastName email phone')
+    .sort({ lastName: 1, firstName: 1 })
     .limit(20)
     .lean();
 
