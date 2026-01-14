@@ -13,14 +13,52 @@ function ensureStaffOrAdmin(req, res, next) {
   res.status(403).send('Forbidden');
 }
 
-// GET /book-distribution - List all distributions
+// GET /book-distribution - List all distributions with pagination
 router.get('/book-distribution', ensureStaffOrAdmin, async (req, res) => {
   try {
-    const distributions = await BookDistribution.find()
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+    const search = req.query.search || '';
+    const dateFrom = req.query.dateFrom;
+    const dateTo = req.query.dateTo;
+
+    // Build query
+    let query = {};
+    if (dateFrom || dateTo) {
+      query.eventDate = {};
+      if (dateFrom) query.eventDate.$gte = new Date(dateFrom);
+      if (dateTo) query.eventDate.$lte = new Date(dateTo + 'T23:59:59');
+    }
+
+    const totalDistributions = await BookDistribution.countDocuments(query);
+    const totalPages = Math.ceil(totalDistributions / limit);
+
+    let distributions = await BookDistribution.find(query)
+      .populate('member', 'firstName lastName')
+      .populate('organization', 'name')
       .populate('recordedBy', 'firstName lastName')
       .sort({ eventDate: -1 })
-      .limit(100)
+      .skip(skip)
+      .limit(limit)
       .lean();
+
+    // Post-query filtering for location/name search
+    if (search) {
+      const searchLower = search.toLowerCase();
+      distributions = distributions.filter(d => {
+        if (d.location && d.location.toLowerCase().includes(searchLower)) return true;
+        if (d.eventName && d.eventName.toLowerCase().includes(searchLower)) return true;
+        if (d.member) {
+          const fullName = `${d.member.firstName} ${d.member.lastName}`.toLowerCase();
+          if (fullName.includes(searchLower)) return true;
+        }
+        if (d.organization && d.organization.name && d.organization.name.toLowerCase().includes(searchLower)) {
+          return true;
+        }
+        return false;
+      });
+    }
 
     // Get flash messages
     const success = req.session.success;
@@ -31,6 +69,13 @@ router.get('/book-distribution', ensureStaffOrAdmin, async (req, res) => {
     res.render('bookDistributionList', {
       user: req.session.user,
       distributions,
+      totalDistributions,
+      page,
+      limit,
+      totalPages,
+      search,
+      dateFrom: dateFrom || '',
+      dateTo: dateTo || '',
       success,
       error
     });

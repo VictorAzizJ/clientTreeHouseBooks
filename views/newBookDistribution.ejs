@@ -72,13 +72,18 @@
           <!-- Person Search (when recipientType = member) -->
           <div class="mb-3 position-relative" id="personSearchSection" style="display: none;">
             <label for="memberSearch" class="form-label">Select Person *</label>
-            <input
-              type="text"
-              class="form-control"
-              id="memberSearch"
-              placeholder="Search by name or email..."
-              autocomplete="off"
-            >
+            <div class="input-group">
+              <input
+                type="text"
+                class="form-control"
+                id="memberSearch"
+                placeholder="Search by name or email..."
+                autocomplete="off"
+              >
+              <a href="/members/new" target="_blank" class="btn btn-outline-success" title="Add New Member">
+                <i class="bi bi-person-plus"></i> New
+              </a>
+            </div>
             <div id="memberSearchResults" class="search-results"></div>
             <input type="hidden" id="memberId" name="memberId">
             <div id="selectedMember" class="mt-2" style="display:none;">
@@ -92,13 +97,18 @@
           <!-- Organization Search (when recipientType = organization) -->
           <div class="mb-3 position-relative" id="orgSearchSection" style="display: none;">
             <label for="orgSearch" class="form-label">Select Organization *</label>
-            <input
-              type="text"
-              class="form-control"
-              id="orgSearch"
-              placeholder="Search organizations..."
-              autocomplete="off"
-            >
+            <div class="input-group">
+              <input
+                type="text"
+                class="form-control"
+                id="orgSearch"
+                placeholder="Search organizations..."
+                autocomplete="off"
+              >
+              <a href="/organizations/new" target="_blank" class="btn btn-outline-success" title="Add New Organization">
+                <i class="bi bi-building-add"></i> New
+              </a>
+            </div>
             <div id="orgSearchResults" class="search-results"></div>
             <input type="hidden" id="organizationId" name="organizationId">
             <div id="selectedOrg" class="mt-2" style="display:none;">

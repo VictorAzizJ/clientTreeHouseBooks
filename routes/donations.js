@@ -26,9 +26,92 @@ const Organization = require('../models/Organization');
 const { ensureStaffOrAdmin } = require('./_middleware');
 const { sendDonationThankYouEmail } = require('../services/mailer');
 
-// Redirect /donations to /donations/new
-router.get('/donations', ensureStaffOrAdmin, (req, res) => {
-  res.redirect('/donations/new');
+// GET /donations - List all donations with pagination
+router.get('/donations', ensureStaffOrAdmin, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+    const search = req.query.search || '';
+    const donationType = req.query.donationType || '';
+    const donorType = req.query.donorType || '';
+    const dateFrom = req.query.dateFrom;
+    const dateTo = req.query.dateTo;
+
+    // Build query
+    let query = {};
+    if (donationType) {
+      query.donationType = donationType;
+    }
+    if (donorType) {
+      query.donorType = donorType;
+    }
+    if (dateFrom || dateTo) {
+      query.createdAt = {};
+      if (dateFrom) query.createdAt.$gte = new Date(dateFrom);
+      if (dateTo) query.createdAt.$lte = new Date(dateTo + 'T23:59:59');
+    }
+
+    const totalDonations = await Donation.countDocuments(query);
+    const totalPages = Math.ceil(totalDonations / limit);
+
+    let donations = await Donation.find(query)
+      .populate('member', 'firstName lastName email')
+      .populate('organization', 'name')
+      .populate('recordedBy', 'firstName lastName')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Post-query filtering for name/org search
+    if (search) {
+      const searchLower = search.toLowerCase();
+      donations = donations.filter(d => {
+        if (d.member) {
+          const fullName = `${d.member.firstName} ${d.member.lastName}`.toLowerCase();
+          if (fullName.includes(searchLower)) return true;
+          if (d.member.email && d.member.email.toLowerCase().includes(searchLower)) return true;
+        }
+        if (d.organization && d.organization.name && d.organization.name.toLowerCase().includes(searchLower)) {
+          return true;
+        }
+        return false;
+      });
+    }
+
+    // Calculate stats for the current view
+    const stats = {
+      totalBooks: donations.reduce((sum, d) => sum + (d.numberOfBooks || 0), 0),
+      totalValue: donations.reduce((sum, d) => sum + (d.monetaryAmount || 0), 0)
+    };
+
+    // Get flash messages
+    const success = req.session.success;
+    const error = req.session.error;
+    delete req.session.success;
+    delete req.session.error;
+
+    res.render('donationsList', {
+      user: req.session.user,
+      donations,
+      totalDonations,
+      stats,
+      page,
+      limit,
+      totalPages,
+      search,
+      donationType,
+      donorType,
+      dateFrom: dateFrom || '',
+      dateTo: dateTo || '',
+      success,
+      error
+    });
+  } catch (err) {
+    console.error('Error fetching donations:', err);
+    res.status(500).send('Error loading donations');
+  }
 });
 
 // Show form to record a donation (standalone - choose member or enter donor info)

@@ -14,7 +14,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h1><i class="bi bi-truck"></i> Book Distributions</h1>
-        <p class="text-muted">Books distributed to communities</p>
+        <p class="text-muted"><%= totalDistributions.toLocaleString() %> distributions recorded</p>
       </div>
       <a href="/book-distribution/new" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> New Distribution
@@ -34,6 +34,38 @@
       </div>
     <% } %>
 
+    <!-- Filters -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <form method="GET" action="/book-distribution" class="row g-3">
+          <div class="col-md-4">
+            <label for="search" class="form-label">Search</label>
+            <input type="text" class="form-control" id="search" name="search" value="<%= search %>" placeholder="Location, event, or recipient...">
+          </div>
+          <div class="col-md-3">
+            <label for="dateFrom" class="form-label">From Date</label>
+            <input type="date" class="form-control" id="dateFrom" name="dateFrom" value="<%= dateFrom %>">
+          </div>
+          <div class="col-md-3">
+            <label for="dateTo" class="form-label">To Date</label>
+            <input type="date" class="form-control" id="dateTo" name="dateTo" value="<%= dateTo %>">
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="bi bi-search"></i> Search
+            </button>
+          </div>
+        </form>
+        <% if (search || dateFrom || dateTo) { %>
+          <div class="mt-2">
+            <a href="/book-distribution" class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-x-circle"></i> Clear Filters
+            </a>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-body">
         <% if (distributions && distributions.length > 0) { %>
@@ -51,23 +83,42 @@
               </thead>
               <tbody>
                 <% distributions.forEach(d => {
-                  const totalQty = (d.bookCategories?.blackAuthorAdult?.quantity || 0) +
-                                   (d.bookCategories?.adult?.quantity || 0) +
-                                   (d.bookCategories?.blackAuthorKids?.quantity || 0) +
-                                   (d.bookCategories?.kids?.quantity || 0) +
-                                   (d.bookCategories?.boardBooks?.quantity || 0);
+                  // Support both old bookCategories and new totalBooks field
+                  const totalQty = d.totalBooks || (
+                    (d.bookCategories?.blackAuthorAdult?.quantity || 0) +
+                    (d.bookCategories?.adult?.quantity || 0) +
+                    (d.bookCategories?.blackAuthorKids?.quantity || 0) +
+                    (d.bookCategories?.kids?.quantity || 0) +
+                    (d.bookCategories?.boardBooks?.quantity || 0)
+                  );
                   const totalWeight = (d.bookCategories?.blackAuthorAdult?.weight || 0) +
                                       (d.bookCategories?.adult?.weight || 0) +
                                       (d.bookCategories?.blackAuthorKids?.weight || 0) +
                                       (d.bookCategories?.kids?.weight || 0) +
                                       (d.bookCategories?.boardBooks?.weight || 0);
+
+                  // Get recipient name
+                  let recipientName = d.location || '-';
+                  if (d.member) {
+                    recipientName = d.member.firstName + ' ' + d.member.lastName;
+                  } else if (d.organization && d.organization.name) {
+                    recipientName = d.organization.name;
+                  }
                 %>
                   <tr>
                     <td><%= new Date(d.eventDate).toLocaleDateString() %></td>
-                    <td><%= d.location %></td>
+                    <td>
+                      <% if (d.member) { %>
+                        <a href="/members/<%= d.member._id %>"><i class="bi bi-person"></i> <%= recipientName %></a>
+                      <% } else if (d.organization) { %>
+                        <a href="/organizations/<%= d.organization._id %>"><i class="bi bi-building"></i> <%= recipientName %></a>
+                      <% } else { %>
+                        <%= recipientName %>
+                      <% } %>
+                    </td>
                     <td><%= d.eventName || '-' %></td>
-                    <td><%= totalQty %></td>
-                    <td><%= totalWeight.toFixed(1) %> lbs</td>
+                    <td><%= totalQty.toLocaleString() %></td>
+                    <td><%= totalWeight > 0 ? totalWeight.toFixed(1) + ' lbs' : '-' %></td>
                     <td>
                       <% if (d.recordedBy) { %>
                         <%= d.recordedBy.firstName %> <%= d.recordedBy.lastName %>
@@ -86,11 +137,13 @@
             let grandTotalBooks = 0;
             let grandTotalWeight = 0;
             distributions.forEach(d => {
-              grandTotalBooks += (d.bookCategories?.blackAuthorAdult?.quantity || 0) +
-                                 (d.bookCategories?.adult?.quantity || 0) +
-                                 (d.bookCategories?.blackAuthorKids?.quantity || 0) +
-                                 (d.bookCategories?.kids?.quantity || 0) +
-                                 (d.bookCategories?.boardBooks?.quantity || 0);
+              grandTotalBooks += d.totalBooks || (
+                (d.bookCategories?.blackAuthorAdult?.quantity || 0) +
+                (d.bookCategories?.adult?.quantity || 0) +
+                (d.bookCategories?.blackAuthorKids?.quantity || 0) +
+                (d.bookCategories?.kids?.quantity || 0) +
+                (d.bookCategories?.boardBooks?.quantity || 0)
+              );
               grandTotalWeight += (d.bookCategories?.blackAuthorAdult?.weight || 0) +
                                   (d.bookCategories?.adult?.weight || 0) +
                                   (d.bookCategories?.blackAuthorKids?.weight || 0) +
@@ -103,7 +156,7 @@
               <div class="card text-center bg-light">
                 <div class="card-body">
                   <h3><%= distributions.length %></h3>
-                  <p class="text-muted mb-0">Total Distributions</p>
+                  <p class="text-muted mb-0">Distributions on Page</p>
                 </div>
               </div>
             </div>
@@ -111,19 +164,74 @@
               <div class="card text-center bg-light">
                 <div class="card-body">
                   <h3><%= grandTotalBooks.toLocaleString() %></h3>
-                  <p class="text-muted mb-0">Total Books Distributed</p>
+                  <p class="text-muted mb-0">Books on Page</p>
                 </div>
               </div>
             </div>
             <div class="col-md-4">
               <div class="card text-center bg-light">
                 <div class="card-body">
-                  <h3><%= grandTotalWeight.toFixed(1) %> lbs</h3>
-                  <p class="text-muted mb-0">Total Weight</p>
+                  <h3><%= grandTotalWeight > 0 ? grandTotalWeight.toFixed(1) + ' lbs' : '-' %></h3>
+                  <p class="text-muted mb-0">Weight on Page</p>
                 </div>
               </div>
             </div>
           </div>
+
+          <!-- Pagination -->
+          <% if (totalPages > 1) { %>
+            <nav aria-label="Page navigation" class="mt-4">
+              <ul class="pagination justify-content-center">
+                <li class="page-item <%= page === 1 ? 'disabled' : '' %>">
+                  <a class="page-link" href="/book-distribution?page=<%= page - 1 %>&limit=<%= limit %>&search=<%= encodeURIComponent(search) %>&dateFrom=<%= dateFrom %>&dateTo=<%= dateTo %>">
+                    <i class="bi bi-chevron-left"></i> Previous
+                  </a>
+                </li>
+
+                <%
+                  let startPage = Math.max(1, page - 2);
+                  let endPage = Math.min(totalPages, page + 2);
+                  if (endPage - startPage < 4) {
+                    if (startPage === 1) endPage = Math.min(totalPages, startPage + 4);
+                    else startPage = Math.max(1, endPage - 4);
+                  }
+                %>
+
+                <% if (startPage > 1) { %>
+                  <li class="page-item">
+                    <a class="page-link" href="/book-distribution?page=1&limit=<%= limit %>&search=<%= encodeURIComponent(search) %>&dateFrom=<%= dateFrom %>&dateTo=<%= dateTo %>">1</a>
+                  </li>
+                  <% if (startPage > 2) { %>
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                  <% } %>
+                <% } %>
+
+                <% for (let i = startPage; i <= endPage; i++) { %>
+                  <li class="page-item <%= i === page ? 'active' : '' %>">
+                    <a class="page-link" href="/book-distribution?page=<%= i %>&limit=<%= limit %>&search=<%= encodeURIComponent(search) %>&dateFrom=<%= dateFrom %>&dateTo=<%= dateTo %>"><%= i %></a>
+                  </li>
+                <% } %>
+
+                <% if (endPage < totalPages) { %>
+                  <% if (endPage < totalPages - 1) { %>
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                  <% } %>
+                  <li class="page-item">
+                    <a class="page-link" href="/book-distribution?page=<%= totalPages %>&limit=<%= limit %>&search=<%= encodeURIComponent(search) %>&dateFrom=<%= dateFrom %>&dateTo=<%= dateTo %>"><%= totalPages %></a>
+                  </li>
+                <% } %>
+
+                <li class="page-item <%= page === totalPages ? 'disabled' : '' %>">
+                  <a class="page-link" href="/book-distribution?page=<%= page + 1 %>&limit=<%= limit %>&search=<%= encodeURIComponent(search) %>&dateFrom=<%= dateFrom %>&dateTo=<%= dateTo %>">
+                    Next <i class="bi bi-chevron-right"></i>
+                  </a>
+                </li>
+              </ul>
+            </nav>
+            <p class="text-center text-muted">
+              Page <%= page %> of <%= totalPages %> (<%= totalDistributions.toLocaleString() %> total distributions)
+            </p>
+          <% } %>
         <% } else { %>
           <div class="text-center py-5">
             <i class="bi bi-truck" style="font-size: 3rem; color: #ccc;"></i>
