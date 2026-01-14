@@ -62,7 +62,7 @@
           <!-- Recipient Type -->
           <div class="mb-3">
             <label class="form-label">Recipient Type *</label>
-            <select class="form-select" id="recipientType" name="recipientType" required onchange="toggleRecipientFields()">
+            <select class="form-select" id="recipientType" name="recipientType" required>
               <option value="">Select recipient type...</option>
               <option value="member">Individual Person</option>
               <option value="organization">Organization</option>
@@ -348,6 +348,12 @@
         orgSearchResults.style.display = 'none';
       }
     });
+
+    // Add event listener for recipient type change
+    const recipientTypeSelect = document.getElementById('recipientType');
+    if (recipientTypeSelect) {
+      recipientTypeSelect.addEventListener('change', toggleRecipientFields);
+    }
   </script>
 </body>
 </html>
