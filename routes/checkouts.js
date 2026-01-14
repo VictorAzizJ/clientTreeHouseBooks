@@ -62,6 +62,19 @@ router.get('/checkouts', ensureStaffOrAdmin, async (req, res) => {
     const totalCheckouts = await Checkout.countDocuments(query);
     const totalPages = Math.ceil(totalCheckouts / limit);
 
+    // Calculate aggregate stats for ALL matching records (not just current page)
+    const statsAggregation = await Checkout.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: null,
+          totalBooks: { $sum: { $ifNull: ['$numberOfBooks', 0] } },
+          totalWeight: { $sum: { $ifNull: [{ $ifNull: ['$weight', '$totalWeight'] }, 0] } }
+        }
+      }
+    ]);
+    const stats = statsAggregation[0] || { totalBooks: 0, totalWeight: 0 };
+
     // For CSV export, get all matching records (no pagination)
     const fetchLimit = format === 'csv' ? 0 : limit;
     const fetchSkip = format === 'csv' ? 0 : skip;
@@ -86,12 +99,6 @@ router.get('/checkouts', ensureStaffOrAdmin, async (req, res) => {
         )
       );
     }
-
-    // Calculate aggregate stats for filtered data
-    const stats = {
-      totalBooks: checkouts.reduce((sum, c) => sum + (c.numberOfBooks || 0), 0),
-      totalWeight: checkouts.reduce((sum, c) => sum + (c.weight || c.totalWeight || 0), 0)
-    };
 
     // CSV Export
     if (format === 'csv') {
