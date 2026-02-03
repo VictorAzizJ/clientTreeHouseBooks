@@ -5,6 +5,7 @@ const router   = express.Router();
 const Member   = require('../models/Member');
 const Checkout = require('../models/Checkout');
 const Donation = require('../models/Donation');
+const Visit    = require('../models/Visit');
 const auditLogger = require('../utils/auditLogger');
 
 /**
@@ -136,8 +137,25 @@ router.post(
         }
       }
 
-      await Member.create(memberData);
-      req.session.success = 'Member created';
+      const newMember = await Member.create(memberData);
+
+      // If in front desk mode, auto-create a visitor check-in record
+      if (req.session.frontDeskMode) {
+        try {
+          await Visit.create({
+            member: newMember._id,
+            visitDate: new Date(),
+            purpose: 'New member registration',
+            notes: 'Auto-created during front desk registration',
+            recordedBy: req.session.user._id
+          });
+        } catch (visitErr) {
+          console.error('Error auto-creating visit record:', visitErr);
+          // Don't fail the member creation if visit creation fails
+        }
+      }
+
+      req.session.success = 'Member created' + (req.session.frontDeskMode ? ' and checked in as visitor' : '');
       res.redirect('/members');
     } catch (err) {
       console.error('Error creating member:', err);

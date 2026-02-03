@@ -164,6 +164,17 @@ app.use(session({
   }
 }));
 
+// ─── 6b. Front Desk Mode Middleware ─────────────────────────────────────────
+// Make frontDeskMode available to all views via res.locals
+app.use((req, res, next) => {
+  res.locals.frontDeskMode = req.session?.frontDeskMode || false;
+  next();
+});
+
+// Apply front desk route restrictions
+const { ensureFrontDeskAllowed } = require('./routes/_middleware');
+app.use(ensureFrontDeskAllowed);
+
 // ─── 7. Views & Static Assets ───────────────────────────────────────────────
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));

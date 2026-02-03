@@ -118,6 +118,40 @@
     border-color: white;
   }
 
+  /* Front Desk Mode Badge */
+  .front-desk-badge {
+    background-color: #f59e0b;
+    color: white;
+    padding: 0.35rem 0.75rem;
+    border-radius: 2rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .front-desk-badge:hover {
+    background-color: #d97706;
+    color: white;
+    text-decoration: none;
+  }
+
+  .front-desk-badge .pulse {
+    width: 8px;
+    height: 8px;
+    background-color: white;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+  }
+
   /* Mobile responsive */
   @media (max-width: 768px) {
     .thb-navbar .navbar-collapse {
@@ -151,6 +185,16 @@
     <!-- Main navigation -->
     <div class="collapse navbar-collapse" id="navbarMain">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+        <!-- Front Desk Mode Badge -->
+        <% if (typeof frontDeskMode !== 'undefined' && frontDeskMode) { %>
+          <li class="nav-item me-2">
+            <a class="front-desk-badge" href="/front-desk/exit" title="Click to exit Front Desk Mode">
+              <span class="pulse"></span>
+              <i class="bi bi-display"></i> Front Desk Mode
+            </a>
+          </li>
+        <% } %>
 
         <!-- Dashboard -->
         <li class="nav-item">
@@ -259,8 +303,8 @@
           </ul>
         </li>
 
-        <!-- Programs Dropdown (Staff & Admin only) -->
-        <% if (user && (user.role === 'admin' || user.role === 'staff')) { %>
+        <!-- Programs Dropdown (Staff & Admin only, hidden in front desk mode) -->
+        <% if (user && (user.role === 'admin' || user.role === 'staff') && !(typeof frontDeskMode !== 'undefined' && frontDeskMode)) { %>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
               <i class="bi bi-calendar-event"></i> Programs
@@ -295,7 +339,7 @@
             </ul>
           </li>
 
-          <!-- Traveling Tree House Dropdown (Staff & Admin only) -->
+          <!-- Traveling Tree House Dropdown (Staff & Admin only, hidden in front desk mode) -->
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
               <i class="bi bi-truck"></i> Traveling
@@ -324,8 +368,8 @@
           </li>
         <% } %>
 
-        <!-- Data & Tools Dropdown (Staff & Admin only) -->
-        <% if (user && (user.role === 'admin' || user.role === 'staff')) { %>
+        <!-- Data & Tools Dropdown (Staff & Admin only, hidden in front desk mode) -->
+        <% if (user && (user.role === 'admin' || user.role === 'staff') && !(typeof frontDeskMode !== 'undefined' && frontDeskMode)) { %>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
               <i class="bi bi-tools"></i> Tools
@@ -363,8 +407,8 @@
           </li>
         <% } %>
 
-        <!-- Admin Tools (Admin only) -->
-        <% if (user && user.role === 'admin') { %>
+        <!-- Admin Tools (Admin only, hidden in front desk mode) -->
+        <% if (user && user.role === 'admin' && !(typeof frontDeskMode !== 'undefined' && frontDeskMode)) { %>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
               <i class="bi bi-shield-lock"></i> Admin

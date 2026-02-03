@@ -12,6 +12,7 @@ const DashboardPreference = require('../models/DashboardPreference');
 const MetricValue         = require('../models/MetricValue');
 const MetricDef           = require('../models/MetricDefinition');
 const Visit               = require('../models/Visit');
+const User                = require('../models/User');
 
 /**
  * Only allow logged-in users to see any dashboard.
@@ -184,7 +185,10 @@ console.log({ monthLabels, checkoutCounts, donationCounts, memberCounts, program
   let templateName;
   const requestedView = req.query.view;
 
-  if (user.role === 'admin' && requestedView) {
+  // Check if front desk mode is active
+  if (req.session.frontDeskMode) {
+    templateName = 'dashboardFrontDesk';
+  } else if (user.role === 'admin' && requestedView) {
     // Admins can view any dashboard
     templateName = requestedView === 'admin' ? 'dashboardAdmin'
                  : requestedView === 'staff' ? 'dashboardStaff'
@@ -197,10 +201,15 @@ console.log({ monthLabels, checkoutCounts, donationCounts, memberCounts, program
                  : 'dashboardVolunteer';
   }
 
+  // Get error message if any
+  const error = req.session.error;
+  delete req.session.error;
+
   // Prepare common data
   const dashboardData = {
     user,
     success,
+    error,
     stats,  // Stats object for role-specific dashboards
     notifications,
     hasMoreNotifications,
@@ -211,7 +220,8 @@ console.log({ monthLabels, checkoutCounts, donationCounts, memberCounts, program
     recentMetrics,
     prefs,  // Dashboard preferences
     recentVisits,
-    hasMoreVisits
+    hasMoreVisits,
+    frontDeskMode: req.session.frontDeskMode || false
   };
 
   // Add admin-specific chart data if admin
@@ -224,6 +234,85 @@ console.log({ monthLabels, checkoutCounts, donationCounts, memberCounts, program
   }
 
   return res.render(templateName, dashboardData);
+});
+
+// ─── Front Desk Mode Routes ─────────────────────────────────────────────────
+
+/**
+ * POST /front-desk/enter - Enable front desk mode
+ * Only staff and admin can enter front desk mode
+ */
+router.post('/front-desk/enter', ensureAuthenticated, (req, res) => {
+  const role = req.session.user?.role;
+
+  if (role !== 'staff' && role !== 'admin') {
+    req.session.error = 'Only staff members can enter front desk mode.';
+    return res.redirect('/dashboard');
+  }
+
+  req.session.frontDeskMode = true;
+  req.session.success = 'Front desk mode activated. Access is now limited to essential functions.';
+  res.redirect('/dashboard');
+});
+
+/**
+ * GET /front-desk/exit - Show password form to exit front desk mode
+ */
+router.get('/front-desk/exit', ensureAuthenticated, (req, res) => {
+  if (!req.session.frontDeskMode) {
+    return res.redirect('/dashboard');
+  }
+
+  const error = req.session.error;
+  delete req.session.error;
+
+  res.render('frontDeskExit', {
+    user: req.session.user,
+    error
+  });
+});
+
+/**
+ * POST /front-desk/exit - Verify password and exit front desk mode
+ */
+router.post('/front-desk/exit', ensureAuthenticated, async (req, res) => {
+  if (!req.session.frontDeskMode) {
+    return res.redirect('/dashboard');
+  }
+
+  const { password } = req.body;
+
+  if (!password) {
+    req.session.error = 'Password is required to exit front desk mode.';
+    return res.redirect('/front-desk/exit');
+  }
+
+  try {
+    // Find the current user and verify password
+    const user = await User.findById(req.session.user._id);
+
+    if (!user) {
+      req.session.error = 'User not found. Please log in again.';
+      return res.redirect('/logout');
+    }
+
+    const isPasswordValid = await user.comparePassword(password);
+
+    if (!isPasswordValid) {
+      req.session.error = 'Incorrect password. Please try again.';
+      return res.redirect('/front-desk/exit');
+    }
+
+    // Password verified - exit front desk mode
+    req.session.frontDeskMode = false;
+    req.session.success = 'Front desk mode deactivated. Full access restored.';
+    res.redirect('/dashboard');
+
+  } catch (err) {
+    console.error('Error exiting front desk mode:', err);
+    req.session.error = 'An error occurred. Please try again.';
+    res.redirect('/front-desk/exit');
+  }
 });
 
 module.exports = router;

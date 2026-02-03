@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Exit Front Desk Mode - TreeHouseBooks</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/treehouse-brand.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .exit-card {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      max-width: 400px;
+      width: 100%;
+      padding: 2rem;
+    }
+
+    .exit-card .icon {
+      font-size: 4rem;
+      color: #d97706;
+      margin-bottom: 1rem;
+    }
+
+    .exit-card h2 {
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+    }
+
+    .exit-card .subtitle {
+      color: #6b7280;
+      margin-bottom: 1.5rem;
+    }
+
+    .exit-card .form-control {
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border-radius: 0.5rem;
+    }
+
+    .exit-card .btn-primary {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 0.5rem;
+      background-color: #d97706;
+      border-color: #d97706;
+    }
+
+    .exit-card .btn-primary:hover {
+      background-color: #b45309;
+      border-color: #b45309;
+    }
+
+    .exit-card .btn-outline-secondary {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 0.5rem;
+    }
+
+    .user-info {
+      background: #f3f4f6;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .user-info .name {
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .user-info .email {
+      color: #6b7280;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="exit-card">
+    <div class="text-center">
+      <i class="bi bi-shield-lock icon"></i>
+      <h2>Exit Front Desk Mode</h2>
+      <p class="subtitle">Enter your password to restore full access</p>
+    </div>
+
+    <!-- Error Message -->
+    <% if (error) { %>
+      <div class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> <%= error %>
+      </div>
+    <% } %>
+
+    <!-- User Info -->
+    <div class="user-info">
+      <div class="name"><%= user.firstName %> <%= user.lastName %></div>
+      <div class="email"><%= user.email %></div>
+    </div>
+
+    <!-- Password Form -->
+    <form action="/front-desk/exit" method="POST">
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input
+          type="password"
+          class="form-control"
+          id="password"
+          name="password"
+          placeholder="Enter your password"
+          autofocus
+          required
+        >
+      </div>
+
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-unlock"></i> Exit Front Desk Mode
+        </button>
+        <a href="/dashboard" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left"></i> Stay in Front Desk Mode
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
