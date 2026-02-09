@@ -276,14 +276,17 @@
 
           searchResults.innerHTML = members.map(member => {
             const name = member.displayName || `${member.firstName} ${member.lastName}`;
-            const email = member.email || '';
-            const subtext = member.subtext || email;
+            const subtext = member.subtext || '';
+            const isChild = member.isChild || member.memberType === 'child';
+            const typeLabel = isChild ? '<span class="badge bg-info ms-1">Child</span>' : '';
+
             return `
               <div class="member-search-item"
                    data-id="${member._id}"
                    data-name="${encodeURIComponent(name)}"
-                   data-email="${encodeURIComponent(email)}">
-                <strong>${escapeHtml(name)}</strong>
+                   data-subtext="${encodeURIComponent(subtext)}"
+                   data-is-child="${isChild}">
+                <strong>${escapeHtml(name)}</strong>${typeLabel}
                 ${subtext ? `<br><small class="text-muted">${escapeHtml(subtext)}</small>` : ''}
               </div>
             `;
@@ -294,7 +297,8 @@
               selectMember(
                 this.dataset.id,
                 decodeURIComponent(this.dataset.name),
-                decodeURIComponent(this.dataset.email)
+                decodeURIComponent(this.dataset.subtext || ''),
+                this.dataset.isChild === 'true'
               );
             });
           });
@@ -312,10 +316,11 @@
       return div.innerHTML;
     }
 
-    function selectMember(id, name, email) {
+    function selectMember(id, name, subtext, isChild) {
       memberIdInput.value = id;
       selectedMemberName.textContent = name;
-      selectedMemberEmail.textContent = email || 'No email on file';
+      // Show subtext (DOB for children, email for adults)
+      selectedMemberEmail.textContent = subtext || (isChild ? 'Child member' : 'No email on file');
       selectedMemberDiv.style.display = 'block';
       searchInput.style.display = 'none';
       searchResults.style.display = 'none';

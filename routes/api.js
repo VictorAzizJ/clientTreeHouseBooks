@@ -68,23 +68,52 @@ router.get('/api/members/search', ensureStaffOrAdmin, async (req, res) => {
 
     // Format response with additional display info
     // Includes both id/text (for Select2) and _id/displayName (for general use)
-    const formattedMembers = members.map(m => ({
-      id: m._id,  // For Select2 compatibility
-      _id: m._id,
-      text: `${m.firstName} ${m.lastName}${m.email ? ` <${m.email}>` : ''}`,  // For Select2
-      firstName: m.firstName,
-      lastName: m.lastName,
-      email: m.email || '',
-      phone: m.phone || '',
-      dateOfBirth: m.dateOfBirth || null,
-      memberType: m.memberType || 'adult',
-      // Pre-formatted display text for UI
-      displayName: `${m.firstName} ${m.lastName}`,
-      subtext: [
-        m.email,
-        m.dateOfBirth ? `DOB: ${new Date(m.dateOfBirth).toLocaleDateString()}` : null
-      ].filter(Boolean).join(' | ')
-    }));
+    const formattedMembers = members.map(m => {
+      const isChild = m.memberType === 'child';
+
+      // Format DOB as MM/DD/YYYY for children
+      let formattedDOB = null;
+      if (m.dateOfBirth) {
+        const dob = new Date(m.dateOfBirth);
+        formattedDOB = `${String(dob.getMonth() + 1).padStart(2, '0')}/${String(dob.getDate()).padStart(2, '0')}/${dob.getFullYear()}`;
+      }
+
+      // Build display text: children show DOB, adults show email
+      let secondaryIdentifier = '';
+      if (isChild) {
+        secondaryIdentifier = formattedDOB ? ` (DOB: ${formattedDOB})` : ' (Child)';
+      } else {
+        secondaryIdentifier = m.email ? ` <${m.email}>` : '';
+      }
+
+      // Build subtext: children prioritize DOB, adults prioritize email
+      let subtext;
+      if (isChild) {
+        subtext = formattedDOB ? `DOB: ${formattedDOB}` : 'Child member';
+      } else {
+        subtext = [
+          m.email,
+          formattedDOB ? `DOB: ${formattedDOB}` : null
+        ].filter(Boolean).join(' | ');
+      }
+
+      return {
+        id: m._id,  // For Select2 compatibility
+        _id: m._id,
+        text: `${m.firstName} ${m.lastName}${secondaryIdentifier}`,  // For Select2
+        firstName: m.firstName,
+        lastName: m.lastName,
+        email: m.email || '',
+        phone: m.phone || '',
+        dateOfBirth: m.dateOfBirth || null,
+        formattedDOB: formattedDOB,  // Pre-formatted MM/DD/YYYY
+        memberType: m.memberType || 'adult',
+        isChild: isChild,
+        // Pre-formatted display text for UI
+        displayName: `${m.firstName} ${m.lastName}`,
+        subtext: subtext
+      };
+    });
 
     res.json(formattedMembers);
   } catch (err) {
