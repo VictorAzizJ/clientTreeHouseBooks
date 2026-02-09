@@ -64,14 +64,15 @@
       <thead class="table-light">
         <tr>
           <th>Name</th>
-          <th>Email</th>
+          <th>Type</th>
+          <th>Email / DOB</th>
           <th>Joined</th>
         </tr>
       </thead>
       <tbody>
         <% if (members.length === 0) { %>
           <tr>
-            <td colspan="3" class="text-center text-muted py-4">
+            <td colspan="4" class="text-center text-muted py-4">
               <% if (search) { %>
                 No members found matching "<%= search %>"
               <% } else { %>
@@ -81,12 +82,38 @@
           </tr>
         <% } else { %>
           <% members.forEach(m => { %>
+            <%
+              const isChild = m.memberType === 'child';
+              // Format DOB as MM/DD/YYYY for children
+              let formattedDOB = '';
+              if (m.dateOfBirth) {
+                const dob = new Date(m.dateOfBirth);
+                formattedDOB = `${String(dob.getMonth() + 1).padStart(2, '0')}/${String(dob.getDate()).padStart(2, '0')}/${dob.getFullYear()}`;
+              }
+            %>
             <tr
               class="clickable-row"
               data-href="/members/<%= m._id %>"
             >
               <td><%= m.firstName %> <%= m.lastName %></td>
-              <td><%= m.email %></td>
+              <td>
+                <% if (isChild) { %>
+                  <span class="badge bg-info">Child</span>
+                <% } else { %>
+                  <span class="badge bg-secondary">Adult</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (isChild) { %>
+                  <% if (formattedDOB) { %>
+                    <strong>DOB:</strong> <%= formattedDOB %>
+                  <% } else { %>
+                    <span class="text-muted">No DOB</span>
+                  <% } %>
+                <% } else { %>
+                  <%= m.email || '<span class="text-muted">No email</span>' %>
+                <% } %>
+              </td>
               <td><%= m.joinedAt.toLocaleDateString() %></td>
             </tr>
           <% }) %>

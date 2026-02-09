@@ -53,7 +53,14 @@
             <div class="row mb-3">
               <div class="col-md-6">
                 <label class="text-muted">Date of Birth</label>
-                <p><%= attendee.dateOfBirth ? new Date(attendee.dateOfBirth).toLocaleDateString() : 'Not provided' %></p>
+                <%
+                  let attendeeDOB = '';
+                  if (attendee.dateOfBirth) {
+                    const dob = new Date(attendee.dateOfBirth);
+                    attendeeDOB = `${String(dob.getMonth() + 1).padStart(2, '0')}/${String(dob.getDate()).padStart(2, '0')}/${dob.getFullYear()}`;
+                  }
+                %>
+                <p><%= attendeeDOB || 'Not provided' %></p>
               </div>
               <div class="col-md-6">
                 <label class="text-muted">Grade</label>

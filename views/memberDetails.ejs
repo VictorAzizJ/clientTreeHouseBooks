@@ -69,7 +69,14 @@
               <p><strong>Parent/Guardian:</strong> <a href="/members/<%= member.parent._id %>"><%= member.parent.firstName %> <%= member.parent.lastName %></a></p>
             <% } %>
             <% if (member.memberType === 'child') { %>
-              <% if (member.dateOfBirth) { %><p><strong>Date of Birth:</strong> <%= new Date(member.dateOfBirth).toLocaleDateString() %></p><% } %>
+              <%
+                let formattedDOB = '';
+                if (member.dateOfBirth) {
+                  const dob = new Date(member.dateOfBirth);
+                  formattedDOB = `${String(dob.getMonth() + 1).padStart(2, '0')}/${String(dob.getDate()).padStart(2, '0')}/${dob.getFullYear()}`;
+                }
+              %>
+              <% if (formattedDOB) { %><p><strong>Date of Birth:</strong> <%= formattedDOB %></p><% } %>
               <% if (member.grade) { %><p><strong>Grade:</strong> <%= member.grade %></p><% } %>
               <% if (member.school) { %><p><strong>School:</strong> <%= member.school %></p><% } %>
             <% } %>
