@@ -7,6 +7,7 @@
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
     rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <link rel="stylesheet" href="/css/treehouse-brand.css">
   <style>
     .clickable-row { cursor: pointer; }
@@ -36,20 +37,111 @@
       <a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
     </div>
 
-    <!-- Search Form (server-side search) -->
-    <form method="GET" action="/members" class="mb-3">
-      <div class="input-group" style="max-width: 500px;">
-        <input
-          type="text"
-          name="search"
-          class="form-control"
-          placeholder="Search by name or email…"
-          value="<%= search || '' %>"
-        />
-        <button class="btn btn-outline-primary" type="submit">Search</button>
-        <% if (search) { %>
-          <a href="/members" class="btn btn-outline-secondary">Clear</a>
-        <% } %>
+    <!-- Search & Filter Form -->
+    <form method="GET" action="/members" class="mb-4" id="filterForm">
+      <!-- Search Input -->
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <div class="input-group">
+            <input
+              type="text"
+              name="search"
+              class="form-control"
+              placeholder="Search by name or email…"
+              value="<%= search || '' %>"
+            />
+            <button class="btn btn-outline-primary" type="submit">Search</button>
+          </div>
+        </div>
+        <div class="col-md-6 d-flex align-items-center">
+          <%
+            const hasFilters = search || memberTypeFilter !== 'all' || agePreset || maxAge || minAge;
+          %>
+          <% if (hasFilters) { %>
+            <a href="/members" class="btn btn-outline-secondary">
+              <i class="bi bi-x-circle"></i> Clear All Filters
+            </a>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Filter Controls -->
+      <div class="card mb-3">
+        <div class="card-header py-2 d-flex justify-content-between align-items-center" style="background-color: #f8f9fa;">
+          <span><strong>Filters</strong></span>
+          <button type="button" class="btn btn-sm btn-link text-decoration-none" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+            Show/Hide
+          </button>
+        </div>
+        <div class="collapse <%= hasFilters ? 'show' : '' %>" id="filterCollapse">
+          <div class="card-body">
+            <div class="row g-3">
+              <!-- Member Type Filter -->
+              <div class="col-md-3">
+                <label class="form-label fw-bold">Member Type</label>
+                <select name="memberType" class="form-select" onchange="this.form.submit()">
+                  <option value="all" <%= memberTypeFilter === 'all' ? 'selected' : '' %>>All Members</option>
+                  <option value="adult" <%= memberTypeFilter === 'adult' ? 'selected' : '' %>>Adults Only</option>
+                  <option value="child" <%= memberTypeFilter === 'child' ? 'selected' : '' %>>Children Only</option>
+                </select>
+              </div>
+
+              <!-- Quick Age Filters -->
+              <div class="col-md-5">
+                <label class="form-label fw-bold">Quick Age Filters</label>
+                <div class="btn-group w-100" role="group">
+                  <input type="radio" class="btn-check" name="agePreset" id="ageAll" value="" <%= !agePreset ? 'checked' : '' %> onchange="this.form.submit()">
+                  <label class="btn btn-outline-secondary" for="ageAll">All Ages</label>
+
+                  <input type="radio" class="btn-check" name="agePreset" id="ageUnder10" value="under10" <%= agePreset === 'under10' ? 'checked' : '' %> onchange="this.form.submit()">
+                  <label class="btn btn-outline-info" for="ageUnder10">Under 10</label>
+
+                  <input type="radio" class="btn-check" name="agePreset" id="ageUnder13" value="under13" <%= agePreset === 'under13' ? 'checked' : '' %> onchange="this.form.submit()">
+                  <label class="btn btn-outline-info" for="ageUnder13">Under 13</label>
+
+                  <input type="radio" class="btn-check" name="agePreset" id="ageUnder18" value="under18" <%= agePreset === 'under18' ? 'checked' : '' %> onchange="this.form.submit()">
+                  <label class="btn btn-outline-info" for="ageUnder18">Under 18</label>
+                </div>
+              </div>
+
+              <!-- Custom Age Range -->
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Custom Age Range</label>
+                <div class="input-group">
+                  <input type="number" name="minAge" class="form-control" placeholder="Min" min="0" max="120" value="<%= minAge || '' %>" <%= agePreset ? 'disabled' : '' %>>
+                  <span class="input-group-text">to</span>
+                  <input type="number" name="maxAge" class="form-control" placeholder="Max" min="0" max="120" value="<%= maxAge || '' %>" <%= agePreset ? 'disabled' : '' %>>
+                  <button type="submit" class="btn btn-outline-primary" <%= agePreset ? 'disabled' : '' %>>Apply</button>
+                </div>
+                <small class="text-muted">Leave empty for no limit</small>
+              </div>
+            </div>
+
+            <!-- Active Filters Summary -->
+            <% if (hasFilters) { %>
+              <div class="mt-3 pt-3 border-top">
+                <strong>Active Filters:</strong>
+                <% if (memberTypeFilter !== 'all') { %>
+                  <span class="badge bg-primary me-1"><%= memberTypeFilter === 'child' ? 'Children' : 'Adults' %></span>
+                <% } %>
+                <% if (agePreset === 'under10') { %>
+                  <span class="badge bg-info me-1">Under 10 years old</span>
+                <% } else if (agePreset === 'under13') { %>
+                  <span class="badge bg-info me-1">Under 13 years old</span>
+                <% } else if (agePreset === 'under18') { %>
+                  <span class="badge bg-info me-1">Under 18 years old</span>
+                <% } else if (minAge || maxAge) { %>
+                  <span class="badge bg-info me-1">
+                    Age: <%= minAge || '0' %> - <%= maxAge || '∞' %>
+                  </span>
+                <% } %>
+                <% if (search) { %>
+                  <span class="badge bg-secondary me-1">Search: "<%= search %>"</span>
+                <% } %>
+              </div>
+            <% } %>
+          </div>
+        </div>
       </div>
     </form>
 
@@ -65,6 +157,7 @@
         <tr>
           <th>Name</th>
           <th>Type</th>
+          <th>Age</th>
           <th>Email / DOB</th>
           <th>Joined</th>
         </tr>
@@ -72,9 +165,13 @@
       <tbody>
         <% if (members.length === 0) { %>
           <tr>
-            <td colspan="4" class="text-center text-muted py-4">
-              <% if (search) { %>
-                No members found matching "<%= search %>"
+            <td colspan="5" class="text-center text-muted py-4">
+              <%
+                const hasActiveFilters = search || memberTypeFilter !== 'all' || agePreset || maxAge || minAge;
+              %>
+              <% if (hasActiveFilters) { %>
+                <i class="bi bi-filter-circle"></i> No members found matching your filters
+                <br><a href="/members" class="btn btn-sm btn-outline-secondary mt-2">Clear Filters</a>
               <% } else { %>
                 No members yet
               <% } %>
@@ -104,9 +201,19 @@
                 <% } %>
               </td>
               <td>
+                <% if (m.age !== null && m.age !== undefined) { %>
+                  <strong><%= m.age %></strong>
+                  <% if (m.age < 10) { %>
+                    <span class="badge bg-warning text-dark ms-1" title="Under 10">U10</span>
+                  <% } %>
+                <% } else { %>
+                  <span class="text-muted">—</span>
+                <% } %>
+              </td>
+              <td>
                 <% if (isChild) { %>
                   <% if (formattedDOB) { %>
-                    <strong>DOB:</strong> <%= formattedDOB %>
+                    <small class="text-muted">DOB:</small> <%= formattedDOB %>
                   <% } else { %>
                     <span class="text-muted">No DOB</span>
                   <% } %>
@@ -123,24 +230,32 @@
 
     <!-- Pagination Controls -->
     <% if (pagination.totalPages > 1) { %>
+      <%
+        // Build query string with all current filters (excluding page)
+        function buildFilterQuery(pageNum) {
+          const params = [`page=${pageNum}`];
+          if (search) params.push(`search=${encodeURIComponent(search)}`);
+          if (memberTypeFilter && memberTypeFilter !== 'all') params.push(`memberType=${memberTypeFilter}`);
+          if (agePreset) params.push(`agePreset=${agePreset}`);
+          if (minAge) params.push(`minAge=${minAge}`);
+          if (maxAge) params.push(`maxAge=${maxAge}`);
+          return '/members?' + params.join('&');
+        }
+        const startPage = Math.max(1, pagination.currentPage - 2);
+        const endPage = Math.min(pagination.totalPages, pagination.currentPage + 2);
+      %>
       <nav aria-label="Members pagination">
         <ul class="pagination justify-content-center">
           <!-- Previous Button -->
           <li class="page-item <%= !pagination.hasPrevPage ? 'disabled' : '' %>">
-            <a class="page-link" href="/members?page=<%= pagination.currentPage - 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %>">
+            <a class="page-link" href="<%= buildFilterQuery(pagination.currentPage - 1) %>">
               Previous
             </a>
           </li>
 
-          <!-- Page Numbers -->
-          <%
-            const startPage = Math.max(1, pagination.currentPage - 2);
-            const endPage = Math.min(pagination.totalPages, pagination.currentPage + 2);
-          %>
-
           <% if (startPage > 1) { %>
             <li class="page-item">
-              <a class="page-link" href="/members?page=1<%= search ? '&search=' + encodeURIComponent(search) : '' %>">1</a>
+              <a class="page-link" href="<%= buildFilterQuery(1) %>">1</a>
             </li>
             <% if (startPage > 2) { %>
               <li class="page-item disabled"><span class="page-link">...</span></li>
@@ -149,7 +264,7 @@
 
           <% for (let p = startPage; p <= endPage; p++) { %>
             <li class="page-item <%= p === pagination.currentPage ? 'active' : '' %>">
-              <a class="page-link" href="/members?page=<%= p %><%= search ? '&search=' + encodeURIComponent(search) : '' %>">
+              <a class="page-link" href="<%= buildFilterQuery(p) %>">
                 <%= p %>
               </a>
             </li>
@@ -160,7 +275,7 @@
               <li class="page-item disabled"><span class="page-link">...</span></li>
             <% } %>
             <li class="page-item">
-              <a class="page-link" href="/members?page=<%= pagination.totalPages %><%= search ? '&search=' + encodeURIComponent(search) : '' %>">
+              <a class="page-link" href="<%= buildFilterQuery(pagination.totalPages) %>">
                 <%= pagination.totalPages %>
               </a>
             </li>
@@ -168,7 +283,7 @@
 
           <!-- Next Button -->
           <li class="page-item <%= !pagination.hasNextPage ? 'disabled' : '' %>">
-            <a class="page-link" href="/members?page=<%= pagination.currentPage + 1 %><%= search ? '&search=' + encodeURIComponent(search) : '' %>">
+            <a class="page-link" href="<%= buildFilterQuery(pagination.currentPage + 1) %>">
               Next
             </a>
           </li>
@@ -183,6 +298,48 @@
     document.querySelectorAll('.clickable-row').forEach(row => {
       row.addEventListener('click', () => {
         window.location = row.dataset.href;
+      });
+    });
+
+    // Handle age preset / custom range interaction
+    document.querySelectorAll('input[name="agePreset"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const minAgeInput = document.querySelector('input[name="minAge"]');
+        const maxAgeInput = document.querySelector('input[name="maxAge"]');
+        const applyBtn = minAgeInput?.parentElement?.querySelector('button');
+
+        if (this.value) {
+          // Preset selected - disable custom inputs and clear them
+          if (minAgeInput) {
+            minAgeInput.disabled = true;
+            minAgeInput.value = '';
+          }
+          if (maxAgeInput) {
+            maxAgeInput.disabled = true;
+            maxAgeInput.value = '';
+          }
+          if (applyBtn) applyBtn.disabled = true;
+        } else {
+          // "All Ages" selected - enable custom inputs
+          if (minAgeInput) minAgeInput.disabled = false;
+          if (maxAgeInput) maxAgeInput.disabled = false;
+          if (applyBtn) applyBtn.disabled = false;
+        }
+      });
+    });
+
+    // Clear presets when custom age inputs are focused
+    document.querySelectorAll('input[name="minAge"], input[name="maxAge"]').forEach(input => {
+      input.addEventListener('focus', function() {
+        const allAgesRadio = document.getElementById('ageAll');
+        if (allAgesRadio && !allAgesRadio.checked) {
+          allAgesRadio.checked = true;
+          // Enable custom inputs
+          document.querySelector('input[name="minAge"]').disabled = false;
+          document.querySelector('input[name="maxAge"]').disabled = false;
+          const applyBtn = this.parentElement?.querySelector('button');
+          if (applyBtn) applyBtn.disabled = false;
+        }
       });
     });
   </script>

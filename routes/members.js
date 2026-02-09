@@ -176,31 +176,102 @@ router.get('/members', ensureAuthenticated, async (req, res) => {
   const search = req.query.search || '';
   const showDeleted = req.query.showDeleted === 'true' && req.session.user?.role === 'admin';
 
-  // Base filter: exclude soft-deleted records (unless admin wants to see them)
-  const baseFilter = showDeleted ? {} : { isDeleted: { $ne: true } };
+  // Member type filter: 'all', 'adult', 'child'
+  const memberTypeFilter = req.query.memberType || 'all';
 
-  const searchFilter = search
-    ? {
-        ...baseFilter,
-        $or: [
-          { firstName: new RegExp(search, 'i') },
-          { lastName: new RegExp(search, 'i') },
-          { email: new RegExp(search, 'i') }
-        ]
+  // Age filter parameters
+  const maxAge = req.query.maxAge ? parseInt(req.query.maxAge) : null;
+  const minAge = req.query.minAge ? parseInt(req.query.minAge) : null;
+
+  // Quick filter presets
+  const agePreset = req.query.agePreset || '';
+
+  // Base filter: exclude soft-deleted records (unless admin wants to see them)
+  let filter = showDeleted ? {} : { isDeleted: { $ne: true } };
+
+  // Apply member type filter
+  if (memberTypeFilter === 'adult') {
+    filter.memberType = { $ne: 'child' }; // adults or undefined (legacy records)
+  } else if (memberTypeFilter === 'child') {
+    filter.memberType = 'child';
+  }
+
+  // Apply age-based filters (dynamically calculated from current date)
+  const today = new Date();
+
+  // Handle age preset shortcuts
+  if (agePreset === 'under10') {
+    // Children under 10: DOB must be after (today - 10 years)
+    const cutoffDate = new Date(today);
+    cutoffDate.setFullYear(cutoffDate.getFullYear() - 10);
+    filter.memberType = 'child';
+    filter.dateOfBirth = { $gt: cutoffDate };
+  } else if (agePreset === 'under13') {
+    const cutoffDate = new Date(today);
+    cutoffDate.setFullYear(cutoffDate.getFullYear() - 13);
+    filter.memberType = 'child';
+    filter.dateOfBirth = { $gt: cutoffDate };
+  } else if (agePreset === 'under18') {
+    const cutoffDate = new Date(today);
+    cutoffDate.setFullYear(cutoffDate.getFullYear() - 18);
+    filter.memberType = 'child';
+    filter.dateOfBirth = { $gt: cutoffDate };
+  } else {
+    // Apply custom min/max age filters
+    if (maxAge !== null || minAge !== null) {
+      filter.dateOfBirth = filter.dateOfBirth || {};
+
+      if (maxAge !== null) {
+        // Under maxAge: DOB must be after (today - maxAge years)
+        const maxAgeCutoff = new Date(today);
+        maxAgeCutoff.setFullYear(maxAgeCutoff.getFullYear() - maxAge);
+        filter.dateOfBirth.$gt = maxAgeCutoff;
       }
-    : baseFilter;
+
+      if (minAge !== null) {
+        // At least minAge: DOB must be on or before (today - minAge years)
+        const minAgeCutoff = new Date(today);
+        minAgeCutoff.setFullYear(minAgeCutoff.getFullYear() - minAge);
+        filter.dateOfBirth.$lte = minAgeCutoff;
+      }
+    }
+  }
+
+  // Apply text search on top of other filters
+  if (search) {
+    filter.$or = [
+      { firstName: new RegExp(search, 'i') },
+      { lastName: new RegExp(search, 'i') },
+      { email: new RegExp(search, 'i') }
+    ];
+  }
 
   try {
     // Get total count for pagination
-    const totalMembers = await Member.countDocuments(searchFilter);
+    const totalMembers = await Member.countDocuments(filter);
     const totalPages = Math.ceil(totalMembers / limit);
 
     // Get paginated members
-    const members = await Member.find(searchFilter)
+    const members = await Member.find(filter)
       .sort('lastName')
       .skip(skip)
       .limit(limit)
       .lean();
+
+    // Calculate age for each member (since lean() doesn't include virtuals)
+    members.forEach(m => {
+      if (m.dateOfBirth) {
+        const dob = new Date(m.dateOfBirth);
+        let age = today.getFullYear() - dob.getFullYear();
+        const monthDiff = today.getMonth() - dob.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+          age--;
+        }
+        m.age = age;
+      } else {
+        m.age = null;
+      }
+    });
 
     // Get flash messages
     const success = req.session.success;
@@ -221,6 +292,10 @@ router.get('/members', ensureAuthenticated, async (req, res) => {
       },
       search,
       showDeleted,
+      memberTypeFilter,
+      maxAge,
+      minAge,
+      agePreset,
       success,
       error
     });

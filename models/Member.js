@@ -60,5 +60,33 @@ MemberSchema.index({ parent: 1 });
 MemberSchema.index({ memberType: 1 });
 // Add index for soft delete filtering
 MemberSchema.index({ isDeleted: 1 });
+// Add index for dateOfBirth (used for age-based filtering)
+MemberSchema.index({ dateOfBirth: 1 });
+// Compound index for efficient child age queries
+MemberSchema.index({ memberType: 1, dateOfBirth: 1 });
+
+// ─── Virtual: Calculate Age ─────────────────────────────────────────────────
+MemberSchema.virtual('age').get(function() {
+  if (!this.dateOfBirth) return null;
+  const today = new Date();
+  const dob = new Date(this.dateOfBirth);
+  let age = today.getFullYear() - dob.getFullYear();
+  const monthDiff = today.getMonth() - dob.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+    age--;
+  }
+  return age;
+});
+
+// Ensure virtuals are included in JSON and object output
+MemberSchema.set('toJSON', { virtuals: true });
+MemberSchema.set('toObject', { virtuals: true });
+
+// ─── Static: Get date cutoff for age filter ─────────────────────────────────
+MemberSchema.statics.getDateCutoffForAge = function(maxAge) {
+  const cutoff = new Date();
+  cutoff.setFullYear(cutoff.getFullYear() - maxAge);
+  return cutoff;
+};
 
 module.exports = mongoose.model('Member', MemberSchema);
