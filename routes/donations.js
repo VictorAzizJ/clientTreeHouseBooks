@@ -238,18 +238,26 @@ router.post(
         recordedBy: req.session.user._id
       };
 
-      await Donation.create(donationData);
+      const donation = await Donation.create(donationData);
 
-      // Send thank-you email
+      // Send thank-you email (event-driven trigger)
       let emailSent = false;
 
       // If person donor with member record
       if (memberId) {
         const member = await Member.findById(memberId).lean();
         if (member && member.email) {
+          // Fire-and-forget email - don't block the response
           sendDonationThankYouEmail(member.email, member.firstName, {
             numberOfBooks: donationData.numberOfBooks,
-            donationType
+            donationType,
+            donationId: donation._id.toString()
+          }).then(result => {
+            if (result.success) {
+              console.log(`✅ Donation thank-you email sent for donation ${donation._id}`);
+            } else {
+              console.log(`ℹ️ Donation thank-you email not sent: ${result.error}`);
+            }
           }).catch(err => {
             console.error('Email sending failed (non-critical):', err.message);
           });
@@ -257,11 +265,19 @@ router.post(
         }
       }
 
-      // If organization donor (check if org has contact email - future enhancement)
+      // If organization donor (check if org has contact email)
       if (organizationId && !emailSent) {
         const org = await Organization.findById(organizationId).lean();
-        if (org) {
-          console.log(`Donation recorded for organization: ${org.name} (no email automation for orgs yet)`);
+        if (org && org.contactEmail) {
+          sendDonationThankYouEmail(org.contactEmail, org.contactName || org.name, {
+            numberOfBooks: donationData.numberOfBooks,
+            donationType,
+            donationId: donation._id.toString()
+          }).catch(err => {
+            console.error('Org email sending failed (non-critical):', err.message);
+          });
+        } else if (org) {
+          console.log(`ℹ️ Donation recorded for org: ${org.name} (no contact email)`);
         }
       }
 
@@ -331,16 +347,23 @@ router.post(
         recordedBy: req.session.user._id
       };
 
-      await Donation.create(donationData);
+      const donation = await Donation.create(donationData);
 
       // Fetch member details for email
       const member = await Member.findById(req.params.memberId).lean();
 
-      // Send thank-you email
+      // Send thank-you email (event-driven trigger)
       if (member && member.email) {
         sendDonationThankYouEmail(member.email, member.firstName, {
           numberOfBooks: donationData.numberOfBooks,
-          donationType
+          donationType,
+          donationId: donation._id.toString()
+        }).then(result => {
+          if (result.success) {
+            console.log(`✅ Donation thank-you email sent for donation ${donation._id}`);
+          } else {
+            console.log(`ℹ️ Donation thank-you email not sent: ${result.error}`);
+          }
         }).catch(err => {
           console.error('Email sending failed (non-critical):', err.message);
         });

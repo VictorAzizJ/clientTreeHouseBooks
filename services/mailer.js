@@ -48,6 +48,22 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const nodemailer = require('nodemailer');
+const mongoose = require('mongoose');
+
+// ─── Email Log Model (inline to avoid circular dependencies) ────────────────
+const emailLogSchema = new mongoose.Schema({
+  templateKey: String,
+  recipient: { type: String, required: true },
+  subject: String,
+  status: { type: String, enum: ['sent', 'failed', 'skipped'], required: true },
+  messageId: String,
+  error: String,
+  metadata: mongoose.Schema.Types.Mixed, // Additional context (donationId, memberId, etc.)
+  sentAt: { type: Date, default: Date.now }
+});
+
+// Only create the model if it doesn't already exist
+const EmailLog = mongoose.models.EmailLog || mongoose.model('EmailLog', emailLogSchema);
 
 // ─── Create Transporter ──────────────────────────────────────────────────────
 // This is the email client that connects to your SMTP server
@@ -253,9 +269,146 @@ Building community through books
   }
 }
 
+// ─── Helper: Replace Placeholders in Template ──────────────────────────────
+/**
+ * Replace {{placeholder}} tokens in a template string with actual values
+ * @param {string} template - Template string with {{placeholders}}
+ * @param {object} data - Key-value pairs for replacement
+ * @returns {string} - Template with placeholders replaced
+ */
+function replacePlaceholders(template, data) {
+  if (!template) return '';
+
+  let result = template;
+
+  for (const [key, value] of Object.entries(data)) {
+    const placeholder = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+    result = result.replace(placeholder, value || '');
+  }
+
+  // Handle conditional blocks {{#if field}}...{{/if}}
+  result = result.replace(/\{\{#if (\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (match, field, content) => {
+    return data[field] ? content : '';
+  });
+
+  return result;
+}
+
+// ─── Log Email Send Attempt ─────────────────────────────────────────────────
+/**
+ * Log email send attempt to database
+ * @param {object} logData - Log data
+ */
+async function logEmailSend(logData) {
+  try {
+    await EmailLog.create(logData);
+  } catch (err) {
+    console.error('Failed to log email send:', err.message);
+  }
+}
+
+// ─── Send Email Using Database Template ─────────────────────────────────────
+/**
+ * Send an email using a database-stored template
+ * Falls back to provided defaults if template not found or inactive
+ *
+ * @param {string} templateKey - Template identifier (e.g., 'donation_thank_you')
+ * @param {string} recipientEmail - Recipient email address
+ * @param {object} placeholderData - Data to replace placeholders
+ * @param {object} metadata - Additional context for logging (e.g., donationId)
+ * @param {object} fallback - Fallback template if database template not found
+ * @returns {Promise<{success: boolean, messageId?: string, error?: string}>}
+ */
+async function sendTemplatedEmail(templateKey, recipientEmail, placeholderData, metadata = {}, fallback = null) {
+  // Check if email service is configured
+  if (!transporter) {
+    console.warn(`⚠️  Email service not configured. ${templateKey} email not sent to ${recipientEmail}`);
+    await logEmailSend({
+      templateKey,
+      recipient: recipientEmail,
+      status: 'skipped',
+      error: 'Email service not configured',
+      metadata
+    });
+    return { success: false, error: 'Email service not configured' };
+  }
+
+  let template = null;
+  let subject, htmlBody, textBody;
+
+  // Try to get template from database
+  try {
+    const EmailTemplate = require('../models/EmailTemplate');
+    template = await EmailTemplate.getByKey(templateKey);
+  } catch (err) {
+    console.warn(`⚠️  Could not fetch email template "${templateKey}":`, err.message);
+  }
+
+  if (template) {
+    // Use database template
+    subject = replacePlaceholders(template.subject, placeholderData);
+    htmlBody = replacePlaceholders(template.htmlBody, placeholderData);
+    textBody = replacePlaceholders(template.textBody, placeholderData);
+  } else if (fallback) {
+    // Use provided fallback template
+    subject = replacePlaceholders(fallback.subject, placeholderData);
+    htmlBody = replacePlaceholders(fallback.htmlBody, placeholderData);
+    textBody = replacePlaceholders(fallback.textBody, placeholderData);
+    console.log(`ℹ️  Using fallback template for "${templateKey}"`);
+  } else {
+    console.warn(`⚠️  No template found for "${templateKey}" and no fallback provided. Email not sent.`);
+    await logEmailSend({
+      templateKey,
+      recipient: recipientEmail,
+      status: 'skipped',
+      error: 'No template available',
+      metadata
+    });
+    return { success: false, error: 'No template available' };
+  }
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM || '"TreeHouse Books" <noreply@treehousebooks.org>',
+    to: recipientEmail,
+    subject,
+    html: htmlBody,
+    text: textBody
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ ${templateKey} email sent to ${recipientEmail}: ${info.messageId}`);
+
+    await logEmailSend({
+      templateKey,
+      recipient: recipientEmail,
+      subject,
+      status: 'sent',
+      messageId: info.messageId,
+      metadata
+    });
+
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error(`❌ Error sending ${templateKey} email to ${recipientEmail}:`, error.message);
+
+    await logEmailSend({
+      templateKey,
+      recipient: recipientEmail,
+      subject,
+      status: 'failed',
+      error: error.message,
+      metadata
+    });
+
+    return { success: false, error: error.message };
+  }
+}
+
 // ─── Send Donation Thank You Email ──────────────────────────────────────────
 /**
  * Send a thank-you email after book donation
+ * Uses database template if available, falls back to hardcoded template
  *
  * @param {string} email - Member email address
  * @param {string} firstName - Member's first name
@@ -263,30 +416,40 @@ Building community through books
  * @param {number} details.numberOfBooks - Number of books donated
  * @param {string[]} details.genres - Array of genres (optional)
  * @param {number} details.weight - Total weight in lbs (optional)
- * @returns {Promise<void>}
+ * @param {string} details.donationId - Donation record ID (optional, for logging)
+ * @returns {Promise<{success: boolean, messageId?: string, error?: string}>}
  */
 async function sendDonationThankYouEmail(email, firstName, details) {
-  if (!transporter) {
-    console.warn('⚠️  Email service not configured. Thank-you email not sent.');
-    return; // Fail silently for thank-you emails (non-critical)
-  }
-
-  const { numberOfBooks, genres, weight } = details;
+  const { numberOfBooks, genres, weight, donationId } = details;
   const genreList = genres && genres.length > 0
     ? genres.join(', ')
     : 'various genres';
 
-  const mailOptions = {
-    from: process.env.EMAIL_FROM || '"TreeHouse Books" <noreply@treehousebooks.org>',
-    to: email,
+  // Placeholder data for template
+  const placeholderData = {
+    donorName: firstName,
+    bookCount: numberOfBooks,
+    donationDate: new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }),
+    genres: genreList,
+    weight: weight || '',
+    notes: details.notes || ''
+  };
+
+  // Fallback template (hardcoded)
+  const fallbackTemplate = {
     subject: 'Thank You for Your Generous Donation!',
-    html: `
+    htmlBody: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #2c5f2d; margin: 0;">💚 Thank You for Your Generosity!</h1>
+          <h1 style="color: #2c5f2d; margin: 0;">Thank You for Your Generosity!</h1>
         </div>
 
-        <p style="font-size: 16px;">Hi ${firstName},</p>
+        <p style="font-size: 16px;">Hi {{donorName}},</p>
 
         <p style="font-size: 16px;">
           Thank you so much for your generous donation to TreeHouse Books!
@@ -296,9 +459,7 @@ async function sendDonationThankYouEmail(email, firstName, details) {
         <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="color: #2c5f2d; margin-top: 0;">Your Donation Summary:</h3>
           <ul style="font-size: 15px; line-height: 1.8;">
-            <li><strong>Books donated:</strong> ${numberOfBooks}</li>
-            ${genres && genres.length > 0 ? `<li><strong>Genres:</strong> ${genreList}</li>` : ''}
-            ${weight ? `<li><strong>Weight:</strong> ${weight} lbs</li>` : ''}
+            <li><strong>Books donated:</strong> {{bookCount}}</li>
           </ul>
         </div>
 
@@ -307,36 +468,26 @@ async function sendDonationThankYouEmail(email, firstName, details) {
           treasure them. Thank you for helping us spread the joy of reading!
         </p>
 
-        <p style="font-size: 16px;">
-          We deeply appreciate your support and generosity.
-          Together, we're making a difference one book at a time.
-        </p>
-
         <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
 
         <p style="color: #666; font-size: 13px; text-align: center;">
           <strong>TreeHouse Books</strong><br>
-          Building community through books 📖<br>
+          Building community through books<br>
           <em>This is an automated message. Please do not reply.</em>
         </p>
       </div>
     `,
-    text: `
-Hi ${firstName},
+    textBody: `
+Hi {{donorName}},
 
 Thank you so much for your generous donation to TreeHouse Books!
 Your contribution helps us continue our mission of building community through books.
 
 Your Donation Summary:
-- Books donated: ${numberOfBooks}
-${genres && genres.length > 0 ? `- Genres: ${genreList}` : ''}
-${weight ? `- Weight: ${weight} lbs` : ''}
+- Books donated: {{bookCount}}
 
 Your donated books will find new homes with readers in our community who will
 treasure them. Thank you for helping us spread the joy of reading!
-
-We deeply appreciate your support and generosity.
-Together, we're making a difference one book at a time.
 
 ---
 TreeHouse Books
@@ -344,13 +495,50 @@ Building community through books
     `
   };
 
+  return sendTemplatedEmail(
+    'donation_thank_you',
+    email,
+    placeholderData,
+    { donationId, firstName, numberOfBooks },
+    fallbackTemplate
+  );
+}
+
+// ─── Get Email Logs ─────────────────────────────────────────────────────────
+/**
+ * Get recent email logs for admin review
+ * @param {object} options - Query options
+ * @param {number} options.limit - Max records to return (default 100)
+ * @param {string} options.status - Filter by status ('sent', 'failed', 'skipped')
+ * @param {string} options.templateKey - Filter by template
+ * @returns {Promise<Array>} - Array of email log records
+ */
+async function getEmailLogs(options = {}) {
+  const { limit = 100, status, templateKey } = options;
+
+  const query = {};
+  if (status) query.status = status;
+  if (templateKey) query.templateKey = templateKey;
+
+  return EmailLog.find(query)
+    .sort({ sentAt: -1 })
+    .limit(limit)
+    .lean();
+}
+
+// ─── Seed Default Templates ─────────────────────────────────────────────────
+/**
+ * Seed default email templates to database
+ * Called on server startup or manually by admin
+ */
+async function seedEmailTemplates() {
   try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Donation thank-you email sent to ${email}: ${info.messageId}`);
-    return info;
-  } catch (error) {
-    console.error('❌ Error sending donation thank-you email:', error);
-    // Don't throw - thank-you emails are non-critical
+    const EmailTemplate = require('../models/EmailTemplate');
+    await EmailTemplate.seedDefaults();
+    return { success: true };
+  } catch (err) {
+    console.error('Failed to seed email templates:', err.message);
+    return { success: false, error: err.message };
   }
 }
 
@@ -359,7 +547,11 @@ Building community through books
 module.exports = {
   sendPasswordResetEmail,
   sendCheckoutThankYouEmail,
-  sendDonationThankYouEmail
+  sendDonationThankYouEmail,
+  sendTemplatedEmail,
+  getEmailLogs,
+  seedEmailTemplates,
+  EmailLog
 };
 
 // ─── Test Function (uncomment to test email configuration) ───────────────────

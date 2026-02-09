@@ -35,6 +35,7 @@ require('./models/BookDistribution');     // ← Book distribution to communitie
 require('./models/SidewalkBooksWeek');    // ← Sidewalk Books weekly inventory (legacy)
 require('./models/SidewalkInventory');   // ← Unified sidewalk inventory (Carts, Stacks, Readers, Little Tree House)
 require('./models/AuditLog');            // ← Audit trail for record changes
+require('./models/EmailTemplate');       // ← Admin-editable email templates
 // (Program, Member, Checkout, Donation, etc. are pulled in by their routes)
 
 

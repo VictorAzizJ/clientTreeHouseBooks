@@ -3,7 +3,8 @@ const express = require('express');
 const crypto  = require('crypto');
 const router  = express.Router();
 const User    = require('../models/User');
-const { sendPasswordResetEmail } = require('../services/mailer');
+const EmailTemplate = require('../models/EmailTemplate');
+const { sendPasswordResetEmail, getEmailLogs, seedEmailTemplates } = require('../services/mailer');
 
 // Middleware to ensure only admins can hit these routes
 function ensureAdmin(req, res, next) {
@@ -118,6 +119,145 @@ router.post('/admin/users/:id/reset-password', ensureAdmin, async (req, res, nex
 
     res.redirect('/admin/users');
 
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EMAIL TEMPLATE MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// GET /admin/email-templates - List all email templates
+router.get('/admin/email-templates', ensureAdmin, async (req, res, next) => {
+  try {
+    const templates = await EmailTemplate.getAllTemplates();
+
+    // Get flash messages
+    const success = req.session.success;
+    const error = req.session.error;
+    delete req.session.success;
+    delete req.session.error;
+
+    res.render('adminEmailTemplates', {
+      user: req.session.user,
+      templates,
+      success,
+      error
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /admin/email-templates/seed - Seed default templates
+router.get('/admin/email-templates/seed', ensureAdmin, async (req, res) => {
+  const result = await seedEmailTemplates();
+
+  if (result.success) {
+    req.session.success = 'Default email templates seeded successfully';
+  } else {
+    req.session.error = `Failed to seed templates: ${result.error}`;
+  }
+
+  res.redirect('/admin/email-templates');
+});
+
+// GET /admin/email-templates/:id/edit - Edit template form
+router.get('/admin/email-templates/:id/edit', ensureAdmin, async (req, res, next) => {
+  try {
+    const template = await EmailTemplate.findById(req.params.id).lean();
+
+    if (!template) {
+      req.session.error = 'Template not found';
+      return res.redirect('/admin/email-templates');
+    }
+
+    // Get flash messages
+    const error = req.session.error;
+    delete req.session.error;
+
+    res.render('adminEmailTemplateEdit', {
+      user: req.session.user,
+      template,
+      error
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/email-templates/:id - Update template
+router.post('/admin/email-templates/:id', ensureAdmin, async (req, res, next) => {
+  try {
+    const { name, subject, htmlBody, textBody, isActive } = req.body;
+
+    const template = await EmailTemplate.findById(req.params.id);
+
+    if (!template) {
+      req.session.error = 'Template not found';
+      return res.redirect('/admin/email-templates');
+    }
+
+    // Update fields
+    template.name = name;
+    template.subject = subject;
+    template.htmlBody = htmlBody;
+    template.textBody = textBody || '';
+    template.isActive = isActive === 'true' || isActive === true;
+    template.lastModifiedBy = req.session.user._id;
+
+    await template.save();
+
+    req.session.success = `"${template.name}" template updated successfully`;
+    res.redirect('/admin/email-templates');
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /admin/email-templates/:id/toggle - Toggle template active status
+router.post('/admin/email-templates/:id/toggle', ensureAdmin, async (req, res, next) => {
+  try {
+    const template = await EmailTemplate.findById(req.params.id);
+
+    if (!template) {
+      req.session.error = 'Template not found';
+      return res.redirect('/admin/email-templates');
+    }
+
+    template.isActive = !template.isActive;
+    template.lastModifiedBy = req.session.user._id;
+    await template.save();
+
+    const status = template.isActive ? 'enabled' : 'disabled';
+    req.session.success = `"${template.name}" has been ${status}`;
+    res.redirect('/admin/email-templates');
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /admin/email-logs - View email send logs
+router.get('/admin/email-logs', ensureAdmin, async (req, res, next) => {
+  try {
+    const { status, templateKey, limit } = req.query;
+
+    const logs = await getEmailLogs({
+      status,
+      templateKey,
+      limit: parseInt(limit) || 100
+    });
+
+    // Get unique template keys for filter dropdown
+    const templates = await EmailTemplate.getAllTemplates();
+
+    res.render('adminEmailLogs', {
+      user: req.session.user,
+      logs,
+      templates,
+      filters: { status, templateKey, limit }
+    });
   } catch (err) {
     next(err);
   }
