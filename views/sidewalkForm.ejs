@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= record ? 'Edit' : 'Add' %> <%= category.name %> Record</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/treehouse-brand.css">
+  <style>
+    .category-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 2rem;
+      color: white;
+      font-weight: 600;
+    }
+    .formula-display {
+      background: #f8f9fa;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    .formula-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .formula-row:last-child {
+      border-bottom: none;
+    }
+    .formula-value {
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <%- include('partials/nav') %>
+  <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <div class="mb-2">
+          <span class="category-badge" style="background-color: <%= category.color %>;">
+            <i class="bi <%= category.icon %>"></i> <%= category.name %>
+          </span>
+        </div>
+        <h1><i class="bi <%= category.icon %>"></i> <%= record ? 'Edit' : 'Add' %> Weekly Record</h1>
+        <p class="text-muted"><%= category.description %></p>
+      </div>
+      <a href="/sidewalk/<%= category.id %>" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to List
+      </a>
+    </div>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle"></i> <%= error %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    <% } %>
+
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header" style="background-color: <%= category.color %>; color: white;">
+            <h5 class="mb-0">
+              <i class="bi bi-calendar-week"></i> Weekly Inventory
+            </h5>
+          </div>
+          <div class="card-body">
+            <form method="POST" action="<%= record ? '/sidewalk/' + category.id + '/' + record._id : '/sidewalk/' + category.id %>">
+              <!-- Week Dates -->
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label for="weekStart" class="form-label">Week Start (Monday) *</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="weekStart"
+                    name="weekStart"
+                    value="<%= record ? new Date(record.weekStart).toISOString().split('T')[0] : defaultWeekStart %>"
+                    required
+                    onchange="updateWeekEnd()"
+                  >
+                </div>
+                <div class="col-md-6">
+                  <label for="weekEnd" class="form-label">Week End (Sunday) *</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="weekEnd"
+                    name="weekEnd"
+                    value="<%= record ? new Date(record.weekEnd).toISOString().split('T')[0] : defaultWeekEnd %>"
+                    required
+                  >
+                </div>
+              </div>
+
+              <!-- Book Counts -->
+              <div class="row mb-3">
+                <div class="col-md-4">
+                  <label for="startCount" class="form-label">Start of Week Count *</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="startCount"
+                    name="startCount"
+                    min="0"
+                    max="100000"
+                    value="<%= record ? record.startCount : '' %>"
+                    required
+                    oninput="calculateFormulas()"
+                  >
+                  <small class="text-muted">Books at start of week</small>
+                </div>
+                <div class="col-md-4">
+                  <label for="endCount" class="form-label">End of Week Count *</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="endCount"
+                    name="endCount"
+                    min="0"
+                    max="100000"
+                    value="<%= record ? record.endCount : '' %>"
+                    required
+                    oninput="calculateFormulas()"
+                  >
+                  <small class="text-muted">Books at end of week</small>
+                </div>
+                <div class="col-md-4">
+                  <label for="targetCount" class="form-label">Target Count</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="targetCount"
+                    name="targetCount"
+                    min="0"
+                    max="100000"
+                    value="<%= record && record.targetCount ? record.targetCount : 50 %>"
+                    oninput="calculateFormulas()"
+                  >
+                  <small class="text-muted">Ideal inventory level</small>
+                </div>
+              </div>
+
+              <!-- Calculated Values Display -->
+              <div class="formula-display mb-3">
+                <h6><i class="bi bi-calculator"></i> Calculated Values (Live Preview)</h6>
+                <div class="formula-row">
+                  <span>Change:</span>
+                  <span id="calcChange" class="formula-value">-</span>
+                </div>
+                <div class="formula-row">
+                  <span>Percentage Change:</span>
+                  <span id="calcPercent" class="formula-value">-</span>
+                </div>
+                <div class="formula-row">
+                  <span>Distribution Rate:</span>
+                  <span id="calcRate" class="formula-value">-</span>
+                </div>
+                <div class="formula-row">
+                  <span>Restock Needed:</span>
+                  <span id="calcRestock" class="formula-value">-</span>
+                </div>
+                <div class="formula-row">
+                  <span>Trend:</span>
+                  <span id="calcTrend" class="formula-value">-</span>
+                </div>
+              </div>
+
+              <!-- Location (optional) -->
+              <div class="mb-3">
+                <label for="location" class="form-label">Location</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="location"
+                  name="location"
+                  maxlength="200"
+                  value="<%= record && record.location ? record.location : '' %>"
+                  placeholder="e.g., Corner of Main St and Oak Ave"
+                >
+                <small class="text-muted">Optional: Specific location for this <%= category.name.toLowerCase() %></small>
+              </div>
+
+              <!-- Notes -->
+              <div class="mb-3">
+                <label for="notes" class="form-label">Notes</label>
+                <textarea
+                  class="form-control"
+                  id="notes"
+                  name="notes"
+                  rows="3"
+                  placeholder="Any notes about this week..."
+                  maxlength="1000"
+                ><%= record && record.notes ? record.notes : '' %></textarea>
+              </div>
+
+              <div class="text-end">
+                <a href="/sidewalk/<%= category.id %>" class="btn btn-secondary me-2">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-circle"></i> <%= record ? 'Update' : 'Save' %> Record
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formula Reference Sidebar -->
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header bg-light">
+            <h6 class="mb-0"><i class="bi bi-info-circle"></i> Formula Reference</h6>
+          </div>
+          <div class="card-body">
+            <p class="small text-muted">These formulas are shared across all sidewalk categories for consistency:</p>
+
+            <div class="mb-3">
+              <strong>Change</strong>
+              <p class="small mb-1"><code>endCount - startCount</code></p>
+              <small class="text-muted">Positive = added, Negative = distributed</small>
+            </div>
+
+            <div class="mb-3">
+              <strong>% Change</strong>
+              <p class="small mb-1"><code>((end - start) / start) × 100</code></p>
+              <small class="text-muted">Shows relative change</small>
+            </div>
+
+            <div class="mb-3">
+              <strong>Distribution Rate</strong>
+              <p class="small mb-1"><code>|change| / 7 days</code></p>
+              <small class="text-muted">Books distributed per day</small>
+            </div>
+
+            <div class="mb-3">
+              <strong>Restock Needed</strong>
+              <p class="small mb-1"><code>target - endCount</code></p>
+              <small class="text-muted">Books needed to reach target</small>
+            </div>
+
+            <hr>
+            <p class="small text-muted mb-0">
+              <i class="bi bi-lightbulb"></i> All values are editable. Formulas recalculate automatically when you change the counts.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function updateWeekEnd() {
+      const weekStart = document.getElementById('weekStart').value;
+      if (weekStart) {
+        const startDate = new Date(weekStart);
+        const endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        document.getElementById('weekEnd').value = endDate.toISOString().split('T')[0];
+      }
+    }
+
+    function calculateFormulas() {
+      const startCount = parseInt(document.getElementById('startCount').value) || 0;
+      const endCount = parseInt(document.getElementById('endCount').value) || 0;
+      const targetCount = parseInt(document.getElementById('targetCount').value) || 50;
+
+      // Change
+      const change = endCount - startCount;
+      document.getElementById('calcChange').textContent =
+        change > 0 ? `+${change} (added)` :
+        change < 0 ? `${change} (distributed)` : '0 (no change)';
+      document.getElementById('calcChange').className = 'formula-value ' +
+        (change > 0 ? 'text-success' : change < 0 ? 'text-warning' : 'text-muted');
+
+      // Percent Change
+      if (startCount > 0) {
+        const percent = ((endCount - startCount) / startCount) * 100;
+        document.getElementById('calcPercent').textContent =
+          (percent > 0 ? '+' : '') + percent.toFixed(1) + '%';
+        document.getElementById('calcPercent').className = 'formula-value ' +
+          (percent > 0 ? 'text-success' : percent < 0 ? 'text-warning' : 'text-muted');
+      } else {
+        document.getElementById('calcPercent').textContent = 'N/A (start is 0)';
+        document.getElementById('calcPercent').className = 'formula-value text-muted';
+      }
+
+      // Distribution Rate (only if books were taken)
+      if (change < 0) {
+        const rate = (Math.abs(change) / 7).toFixed(1);
+        document.getElementById('calcRate').textContent = `${rate} books/day`;
+        document.getElementById('calcRate').className = 'formula-value text-info';
+      } else {
+        document.getElementById('calcRate').textContent = 'N/A (no distribution)';
+        document.getElementById('calcRate').className = 'formula-value text-muted';
+      }
+
+      // Restock Needed
+      const restock = targetCount - endCount;
+      if (restock > 0) {
+        document.getElementById('calcRestock').textContent = `${restock} books`;
+        document.getElementById('calcRestock').className = 'formula-value text-danger';
+      } else {
+        document.getElementById('calcRestock').textContent = 'None (at or above target)';
+        document.getElementById('calcRestock').className = 'formula-value text-success';
+      }
+
+      // Trend
+      let trendText, trendClass;
+      if (change > 0) {
+        trendText = '↑ Increasing';
+        trendClass = 'text-success';
+      } else if (change < 0) {
+        trendText = '↓ Decreasing';
+        trendClass = 'text-warning';
+      } else {
+        trendText = '→ Stable';
+        trendClass = 'text-muted';
+      }
+      document.getElementById('calcTrend').textContent = trendText;
+      document.getElementById('calcTrend').className = 'formula-value ' + trendClass;
+    }
+
+    // Initialize calculations on page load
+    document.addEventListener('DOMContentLoaded', calculateFormulas);
+  </script>
+</body>
+</html>

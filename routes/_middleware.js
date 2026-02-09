@@ -49,6 +49,10 @@ const FRONT_DESK_ALLOWED_ROUTES = [
   '/organizations',
   '/organizations/new',
 
+  // Sidewalk inventory (view and create only)
+  '/sidewalk',
+  '/sidewalk-books',
+
   // Static assets and health check
   '/css',
   '/js',

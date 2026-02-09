@@ -32,7 +32,8 @@ require('./models/TravelingStop');        // ← Traveling Tree House Program
 require('./models/Organization');         // ← Organization catalog for Traveling Tree House
 require('./models/Visit');                // ← Visitor check-in tracking
 require('./models/BookDistribution');     // ← Book distribution to communities
-require('./models/SidewalkBooksWeek');    // ← Sidewalk Books weekly inventory
+require('./models/SidewalkBooksWeek');    // ← Sidewalk Books weekly inventory (legacy)
+require('./models/SidewalkInventory');   // ← Unified sidewalk inventory (Carts, Stacks, Readers, Little Tree House)
 require('./models/AuditLog');            // ← Audit trail for record changes
 // (Program, Member, Checkout, Donation, etc. are pulled in by their routes)
 
