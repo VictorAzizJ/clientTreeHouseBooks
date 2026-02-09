@@ -11,6 +11,7 @@ const { ensureStaffOrAdmin } = require('./_middleware');
 router.get('/api/members/search', ensureStaffOrAdmin, async (req, res) => {
   try {
     const query = req.query.q || '';
+    const memberType = req.query.memberType; // Optional filter: 'adult' or 'child'
 
     if (query.length < 2) {
       return res.json([]);
@@ -54,20 +55,29 @@ router.get('/api/members/search', ensureStaffOrAdmin, async (req, res) => {
       };
     }
 
+    // Apply memberType filter if specified
+    if (memberType) {
+      searchConditions.memberType = memberType;
+    }
+
     const members = await Member.find(searchConditions)
-      .select('firstName lastName email phone dateOfBirth')
+      .select('firstName lastName email phone dateOfBirth memberType')
       .sort({ lastName: 1, firstName: 1 })
       .limit(20)
       .lean();
 
     // Format response with additional display info
+    // Includes both id/text (for Select2) and _id/displayName (for general use)
     const formattedMembers = members.map(m => ({
+      id: m._id,  // For Select2 compatibility
       _id: m._id,
+      text: `${m.firstName} ${m.lastName}${m.email ? ` <${m.email}>` : ''}`,  // For Select2
       firstName: m.firstName,
       lastName: m.lastName,
       email: m.email || '',
       phone: m.phone || '',
       dateOfBirth: m.dateOfBirth || null,
+      memberType: m.memberType || 'adult',
       // Pre-formatted display text for UI
       displayName: `${m.firstName} ${m.lastName}`,
       subtext: [

@@ -6,6 +6,7 @@
   <title>Visitor Check-In - TreeHouseBooks</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
   <link rel="stylesheet" href="/css/treehouse-brand.css">
   <style>
     .member-search-results {
@@ -133,27 +134,84 @@
           <h5 class="mb-0"><i class="bi bi-person-plus"></i> Register New Visitor</h5>
         </div>
         <div class="card-body">
-          <form method="POST" action="/visitor-checkin">
+          <form method="POST" action="/visitor-checkin" id="newVisitorForm">
+            <!-- Member Type Selection -->
+            <div class="mb-3">
+              <label class="form-label">Member Type</label>
+              <div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="memberType" id="newTypeAdult" value="adult" checked>
+                  <label class="form-check-label" for="newTypeAdult">Adult</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="memberType" id="newTypeChild" value="child">
+                  <label class="form-check-label" for="newTypeChild">Child</label>
+                </div>
+              </div>
+              <small class="text-muted">Select "Child" for students who need to be linked to a parent/guardian</small>
+            </div>
+
+            <!-- Parent Selection (shown only for children) -->
+            <div class="mb-3 new-child-field" id="newParentField" style="display: none;">
+              <label for="newParent" class="form-label">Parent/Guardian (Optional)</label>
+              <select id="newParent" name="parent" class="form-control">
+                <option value="">Select a parent/guardian...</option>
+              </select>
+              <small class="text-muted">Optionally link this child to an existing adult member</small>
+            </div>
+
+            <!-- Date of Birth (shown only for children) -->
+            <div class="mb-3 new-child-field" id="newDobField" style="display: none;">
+              <label for="newDateOfBirth" class="form-label">Date of Birth</label>
+              <input id="newDateOfBirth" name="dateOfBirth" type="date" class="form-control">
+            </div>
+
+            <!-- Name Fields -->
             <div class="row">
               <div class="col-md-6 mb-3">
-                <label for="firstName" class="form-label">First Name *</label>
-                <input type="text" class="form-control" id="firstName" name="firstName" required>
+                <label for="newFirstName" class="form-label">First Name *</label>
+                <input type="text" class="form-control" id="newFirstName" name="firstName" required>
               </div>
               <div class="col-md-6 mb-3">
-                <label for="lastName" class="form-label">Last Name *</label>
-                <input type="text" class="form-control" id="lastName" name="lastName" required>
+                <label for="newLastName" class="form-label">Last Name *</label>
+                <input type="text" class="form-control" id="newLastName" name="lastName" required>
               </div>
             </div>
 
-            <div class="mb-3">
-              <label for="email" class="form-label">Email (Optional)</label>
-              <input type="email" class="form-control" id="email" name="email" placeholder="email@example.com">
+            <!-- Email (adults only) -->
+            <div class="mb-3 new-adult-field" id="newEmailField">
+              <label for="newEmail" class="form-label">
+                Email <span class="text-muted">(optional)</span>
+              </label>
+              <input type="email" class="form-control" id="newEmail" name="email" placeholder="email@example.com">
               <small class="text-muted">If provided, we can look up their record on future visits</small>
             </div>
 
+            <!-- Phone (adults only) -->
+            <div class="mb-3 new-adult-field" id="newPhoneField">
+              <label for="newPhone" class="form-label">Phone</label>
+              <input type="tel" class="form-control" id="newPhone" name="phone" placeholder="(123) 456-7890">
+            </div>
+
+            <!-- Zip Code (shown for all) -->
             <div class="mb-3">
-              <label for="newNotes" class="form-label">Notes (Optional)</label>
-              <textarea class="form-control" id="newNotes" name="notes" rows="2" placeholder="Any additional notes..."></textarea>
+              <label for="newZipCode" class="form-label">Zip Code</label>
+              <input type="text" class="form-control" id="newZipCode" name="zipCode" placeholder="12345 or 12345-6789">
+            </div>
+
+            <!-- Full Address (Staff/Admin only, for adults) -->
+            <% if (user.role === 'staff' || user.role === 'admin') { %>
+              <div class="mb-3 new-adult-field" id="newAddressField">
+                <label for="newAddress" class="form-label">Full Address (Staff/Admin Only)</label>
+                <textarea id="newAddress" name="address" class="form-control" rows="2" placeholder="Street, City, State"></textarea>
+                <small class="text-muted">Only staff and admin can enter full addresses</small>
+              </div>
+            <% } %>
+
+            <!-- Notes -->
+            <div class="mb-3">
+              <label for="newNotes" class="form-label">Visit Notes (Optional)</label>
+              <textarea class="form-control" id="newNotes" name="notes" rows="2" placeholder="Any additional notes about this visit..."></textarea>
             </div>
 
             <div class="d-grid">
@@ -167,7 +225,9 @@
     </div>
   </div>
 
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script>
     let debounceTimer;
     const searchInput = document.getElementById('memberSearch');
@@ -273,6 +333,57 @@
       if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
         searchResults.style.display = 'none';
       }
+    });
+
+    // ─── New Visitor Form: Member Type Toggle ─────────────────────────────────
+    function updateNewVisitorFieldVisibility(memberType) {
+      const childFields = document.querySelectorAll('.new-child-field');
+      const adultFields = document.querySelectorAll('.new-adult-field');
+
+      if (memberType === 'child') {
+        // Show child fields
+        childFields.forEach(field => field.style.display = 'block');
+        // Hide adult fields
+        adultFields.forEach(field => field.style.display = 'none');
+      } else {
+        // Hide child fields
+        childFields.forEach(field => field.style.display = 'none');
+        // Show adult fields
+        adultFields.forEach(field => field.style.display = 'block');
+      }
+    }
+
+    // Listen for member type changes in new visitor form
+    document.querySelectorAll('#newVisitorForm input[name="memberType"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        updateNewVisitorFieldVisibility(this.value);
+      });
+    });
+
+    // Initialize Select2 for parent selection with AJAX search
+    $(document).ready(function() {
+      $('#newParent').select2({
+        placeholder: 'Search for parent/guardian...',
+        allowClear: true,
+        ajax: {
+          url: '/api/members/search',
+          dataType: 'json',
+          delay: 250,
+          data: function(params) {
+            return {
+              q: params.term,
+              memberType: 'adult'  // Only search adult members
+            };
+          },
+          processResults: function(data) {
+            return {
+              results: data
+            };
+          },
+          cache: true
+        },
+        minimumInputLength: 2
+      });
     });
   </script>
 </body>

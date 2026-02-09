@@ -38,32 +38,68 @@ router.post(
   '/visitor-checkin',
   ensureAuthenticated,
   [
-    // For existing member
+    // For existing member check-in
     body('memberId')
       .optional({ checkFalsy: true })
       .isMongoId().withMessage('Invalid member ID'),
 
-    // For new visitor
+    // ─── New Visitor Validation (mirrors member form) ────────────────────────
+    // First Name
     body('firstName')
       .if((value, { req }) => !req.body.memberId)
       .trim()
-      .notEmpty().withMessage('First name is required for new visitors'),
+      .notEmpty().withMessage('First name is required')
+      .isLength({ min: 1, max: 50 }).withMessage('First name must be 1-50 characters')
+      .matches(/^[a-zA-Z\s'-]+$/).withMessage('First name can only contain letters, spaces, hyphens, and apostrophes'),
 
+    // Last Name
     body('lastName')
       .if((value, { req }) => !req.body.memberId)
       .trim()
-      .notEmpty().withMessage('Last name is required for new visitors'),
+      .notEmpty().withMessage('Last name is required')
+      .isLength({ min: 1, max: 50 }).withMessage('Last name must be 1-50 characters')
+      .matches(/^[a-zA-Z\s'-]+$/).withMessage('Last name can only contain letters, spaces, hyphens, and apostrophes'),
 
+    // Email - optional for all (matches member form behavior)
     body('email')
       .optional({ checkFalsy: true })
       .trim()
       .isEmail().withMessage('Must be a valid email address')
       .normalizeEmail(),
 
+    // Phone
+    body('phone')
+      .optional({ checkFalsy: true })
+      .trim()
+      .matches(/^[\d\s\-()+]+$/).withMessage('Phone must contain only numbers, spaces, hyphens, parentheses, and plus signs'),
+
+    // Zip Code
+    body('zipCode')
+      .optional({ checkFalsy: true })
+      .trim()
+      .matches(/^\d{5}(-\d{4})?$/).withMessage('Zip code must be in format 12345 or 12345-6789'),
+
+    // Address
+    body('address')
+      .optional({ checkFalsy: true })
+      .trim()
+      .isLength({ max: 200 }).withMessage('Address must be less than 200 characters'),
+
+    // Parent (for child members)
+    body('parent')
+      .optional({ checkFalsy: true })
+      .isMongoId().withMessage('Invalid parent/guardian ID'),
+
+    // Date of Birth (for child members)
+    body('dateOfBirth')
+      .optional({ checkFalsy: true })
+      .isISO8601().withMessage('Invalid date format'),
+
+    // Notes
     body('notes')
       .optional({ checkFalsy: true })
       .trim()
-      .isLength({ max: 1000 })
+      .isLength({ max: 1000 }).withMessage('Notes must be less than 1000 characters')
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -73,7 +109,10 @@ router.post(
       return res.redirect('/visitor-checkin');
     }
 
-    const { memberId, firstName, lastName, email, notes } = req.body;
+    const {
+      memberId, firstName, lastName, email, phone, address, zipCode,
+      memberType, parent, dateOfBirth, notes
+    } = req.body;
 
     try {
       let member;
@@ -92,13 +131,33 @@ router.post(
         }
 
         if (!member) {
-          // Create new member
-          member = await Member.create({
+          // Build member data (mirrors member creation logic)
+          const memberData = {
             firstName,
             lastName,
             email: email || undefined,
-            memberType: 'adult'
-          });
+            phone: phone || undefined,
+            zipCode: zipCode || undefined,
+            memberType: memberType || 'adult'
+          };
+
+          // Only staff/admin can set full address
+          if (req.session.user.role === 'staff' || req.session.user.role === 'admin') {
+            memberData.address = address || undefined;
+          }
+
+          // If it's a child member
+          if (memberType === 'child') {
+            if (parent) {
+              memberData.parent = parent;
+            }
+            if (dateOfBirth) {
+              memberData.dateOfBirth = new Date(dateOfBirth);
+            }
+          }
+
+          // Create new member
+          member = await Member.create(memberData);
         }
       }
 
