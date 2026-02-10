@@ -63,16 +63,8 @@ router.post(
       .isLength({ min: 1, max: 50 }).withMessage('Last name must be 1-50 characters')
       .matches(/^[a-zA-Z\s'-]+$/).withMessage('Last name can only contain letters, spaces, hyphens, and apostrophes'),
 
-    // Email is required for adults, optional for children
+    // Email is optional for all members
     body('email')
-      .if((value, { req }) => req.body.memberType !== 'child')
-      .trim()
-      .notEmpty().withMessage('Email is required for adult members')
-      .isEmail().withMessage('Must be a valid email address')
-      .normalizeEmail(),
-
-    body('email')
-      .if((value, { req }) => req.body.memberType === 'child')
       .optional({ checkFalsy: true })
       .trim()
       .isEmail().withMessage('Must be a valid email address')
@@ -108,27 +100,29 @@ router.post(
       const memberData = {
         firstName,
         lastName,
-        email: email || undefined,  // Allow empty email for children
+        email: email || undefined,  // Allow empty email
         phone,
         zipCode,
         memberType: memberType || 'adult'
       };
+
+      // Date of Birth - save for ALL members (used for age calculation)
+      if (dateOfBirth) {
+        memberData.dateOfBirth = new Date(dateOfBirth);
+      }
 
       // Only staff/admin can set full address
       if (req.session.user.role === 'staff' || req.session.user.role === 'admin') {
         memberData.address = address;
       }
 
-      // If it's a child member
+      // If it's a child member - add child-specific fields
       if (memberType === 'child') {
-        // Parent is now optional
+        // Parent is optional
         if (parent) {
           memberData.parent = parent;
         }
         // Additional child fields
-        if (dateOfBirth) {
-          memberData.dateOfBirth = new Date(dateOfBirth);
-        }
         if (grade) {
           memberData.grade = grade;
         }
@@ -489,16 +483,17 @@ router.post('/members/:id', ensureAdmin, memberValidationRules, async (req, res)
       updatedAt: new Date()
     };
 
+    // Date of Birth - save for ALL members (used for age calculation)
+    updateData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : undefined;
+
     // Handle child-specific fields
     if (memberType === 'child') {
       updateData.parent = parent || undefined;
-      updateData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : undefined;
       updateData.grade = grade || undefined;
       updateData.school = school || undefined;
     } else {
-      // Clear child fields if switching to adult
+      // Clear child-specific fields if switching to adult
       updateData.parent = undefined;
-      updateData.dateOfBirth = undefined;
       updateData.grade = undefined;
       updateData.school = undefined;
     }

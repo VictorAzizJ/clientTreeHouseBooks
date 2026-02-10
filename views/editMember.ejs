@@ -50,7 +50,27 @@
         </div>
       </div>
 
-      <!-- Parent Selection (for children) -->
+      <!-- Name Fields -->
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="firstName" class="form-label">First Name *</label>
+          <input id="firstName" name="firstName" class="form-control" required value="<%= member.firstName %>">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="lastName" class="form-label">Last Name *</label>
+          <input id="lastName" name="lastName" class="form-control" required value="<%= member.lastName %>">
+        </div>
+      </div>
+
+      <!-- Date of Birth (for ALL members) -->
+      <div class="mb-3">
+        <label for="dateOfBirth" class="form-label">Date of Birth</label>
+        <input id="dateOfBirth" name="dateOfBirth" type="date" class="form-control"
+          value="<%= member.dateOfBirth ? new Date(member.dateOfBirth).toISOString().split('T')[0] : '' %>">
+        <small class="text-muted">Used to calculate age for filtering and reports</small>
+      </div>
+
+      <!-- Parent Selection (for children only) -->
       <div class="mb-3 child-field" id="parentField" style="display: <%= member.memberType === 'child' ? 'block' : 'none' %>;">
         <label for="parent" class="form-label">Parent/Guardian (Optional)</label>
         <select id="parent" name="parent" class="form-control">
@@ -63,37 +83,18 @@
         </select>
       </div>
 
-      <!-- Date of Birth (for children) -->
-      <div class="mb-3 child-field" id="dobField" style="display: <%= member.memberType === 'child' ? 'block' : 'none' %>;">
-        <label for="dateOfBirth" class="form-label">Date of Birth</label>
-        <input id="dateOfBirth" name="dateOfBirth" type="date" class="form-control"
-          value="<%= member.dateOfBirth ? new Date(member.dateOfBirth).toISOString().split('T')[0] : '' %>">
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label for="firstName" class="form-label">First Name *</label>
-          <input id="firstName" name="firstName" class="form-control" required value="<%= member.firstName %>">
-        </div>
-        <div class="col-md-6 mb-3">
-          <label for="lastName" class="form-label">Last Name *</label>
-          <input id="lastName" name="lastName" class="form-control" required value="<%= member.lastName %>">
-        </div>
-      </div>
-
       <!-- Email -->
       <div class="mb-3">
         <label for="email" class="form-label">
-          Email <span id="emailRequired"><%= member.memberType === 'child' ? '(optional)' : '*' %></span>
+          Email <span class="text-muted">(optional)</span>
         </label>
         <input id="email" name="email" type="email" class="form-control"
-          value="<%= member.email || '' %>"
-          <%= member.memberType !== 'child' ? 'required' : '' %>>
-        <small class="text-muted" id="emailHelp"><%= member.memberType === 'child' ? 'Optional for children' : 'Required for adults' %></small>
+          value="<%= member.email || '' %>">
+        <small class="text-muted">Helps identify returning members</small>
       </div>
 
       <!-- Phone -->
-      <div class="mb-3 adult-field" id="phoneField" style="display: <%= member.memberType !== 'child' ? 'block' : 'none' %>;">
+      <div class="mb-3">
         <label for="phone" class="form-label">Phone</label>
         <input id="phone" name="phone" class="form-control" value="<%= member.phone || '' %>">
       </div>
@@ -180,26 +181,15 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script>
-    const emailInput = document.getElementById('email');
-    const emailRequired = document.getElementById('emailRequired');
-    const emailHelp = document.getElementById('emailHelp');
-
     function updateFieldVisibility(memberType) {
       const childFields = document.querySelectorAll('.child-field');
-      const adultFields = document.querySelectorAll('.adult-field');
 
       if (memberType === 'child') {
+        // Show child-specific fields (parent, grade, school)
         childFields.forEach(field => field.style.display = 'block');
-        adultFields.forEach(field => field.style.display = 'none');
-        emailInput.required = false;
-        emailRequired.textContent = '(optional)';
-        emailHelp.textContent = 'Optional for children';
       } else {
+        // Hide child-specific fields
         childFields.forEach(field => field.style.display = 'none');
-        adultFields.forEach(field => field.style.display = 'block');
-        emailInput.required = true;
-        emailRequired.textContent = '*';
-        emailHelp.textContent = 'Required for adults';
       }
     }
 

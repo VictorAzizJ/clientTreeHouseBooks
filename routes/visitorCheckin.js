@@ -141,18 +141,20 @@ router.post(
             memberType: memberType || 'adult'
           };
 
+          // Date of Birth - save for ALL members (used for age calculation)
+          if (dateOfBirth) {
+            memberData.dateOfBirth = new Date(dateOfBirth);
+          }
+
           // Only staff/admin can set full address
           if (req.session.user.role === 'staff' || req.session.user.role === 'admin') {
             memberData.address = address || undefined;
           }
 
-          // If it's a child member
+          // If it's a child member - add child-specific fields
           if (memberType === 'child') {
             if (parent) {
               memberData.parent = parent;
-            }
-            if (dateOfBirth) {
-              memberData.dateOfBirth = new Date(dateOfBirth);
             }
           }
 

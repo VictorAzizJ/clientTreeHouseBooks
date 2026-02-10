@@ -151,21 +151,6 @@
               <small class="text-muted">Select "Child" for students who need to be linked to a parent/guardian</small>
             </div>
 
-            <!-- Parent Selection (shown only for children) -->
-            <div class="mb-3 new-child-field" id="newParentField" style="display: none;">
-              <label for="newParent" class="form-label">Parent/Guardian (Optional)</label>
-              <select id="newParent" name="parent" class="form-control">
-                <option value="">Select a parent/guardian...</option>
-              </select>
-              <small class="text-muted">Optionally link this child to an existing adult member</small>
-            </div>
-
-            <!-- Date of Birth (shown only for children) -->
-            <div class="mb-3 new-child-field" id="newDobField" style="display: none;">
-              <label for="newDateOfBirth" class="form-label">Date of Birth</label>
-              <input id="newDateOfBirth" name="dateOfBirth" type="date" class="form-control">
-            </div>
-
             <!-- Name Fields -->
             <div class="row">
               <div class="col-md-6 mb-3">
@@ -178,17 +163,33 @@
               </div>
             </div>
 
-            <!-- Email (adults only) -->
-            <div class="mb-3 new-adult-field" id="newEmailField">
+            <!-- Date of Birth (shown for ALL members) -->
+            <div class="mb-3">
+              <label for="newDateOfBirth" class="form-label">Date of Birth</label>
+              <input id="newDateOfBirth" name="dateOfBirth" type="date" class="form-control">
+              <small class="text-muted">Used to calculate age for filtering and reports</small>
+            </div>
+
+            <!-- Parent Selection (shown only for children) -->
+            <div class="mb-3 new-child-field" id="newParentField" style="display: none;">
+              <label for="newParent" class="form-label">Parent/Guardian (Optional)</label>
+              <select id="newParent" name="parent" class="form-control">
+                <option value="">Select a parent/guardian...</option>
+              </select>
+              <small class="text-muted">Optionally link this child to an existing adult member</small>
+            </div>
+
+            <!-- Email -->
+            <div class="mb-3">
               <label for="newEmail" class="form-label">
                 Email <span class="text-muted">(optional)</span>
               </label>
               <input type="email" class="form-control" id="newEmail" name="email" placeholder="email@example.com">
-              <small class="text-muted">If provided, we can look up their record on future visits</small>
+              <small class="text-muted">Helps identify returning members</small>
             </div>
 
-            <!-- Phone (adults only) -->
-            <div class="mb-3 new-adult-field" id="newPhoneField">
+            <!-- Phone -->
+            <div class="mb-3">
               <label for="newPhone" class="form-label">Phone</label>
               <input type="tel" class="form-control" id="newPhone" name="phone" placeholder="(123) 456-7890">
             </div>
@@ -199,9 +200,9 @@
               <input type="text" class="form-control" id="newZipCode" name="zipCode" placeholder="12345 or 12345-6789">
             </div>
 
-            <!-- Full Address (Staff/Admin only, for adults) -->
+            <!-- Full Address (Staff/Admin only) -->
             <% if (user.role === 'staff' || user.role === 'admin') { %>
-              <div class="mb-3 new-adult-field" id="newAddressField">
+              <div class="mb-3">
                 <label for="newAddress" class="form-label">Full Address (Staff/Admin Only)</label>
                 <textarea id="newAddress" name="address" class="form-control" rows="2" placeholder="Street, City, State"></textarea>
                 <small class="text-muted">Only staff and admin can enter full addresses</small>
@@ -343,18 +344,13 @@
     // ─── New Visitor Form: Member Type Toggle ─────────────────────────────────
     function updateNewVisitorFieldVisibility(memberType) {
       const childFields = document.querySelectorAll('.new-child-field');
-      const adultFields = document.querySelectorAll('.new-adult-field');
 
       if (memberType === 'child') {
-        // Show child fields
+        // Show child-specific fields (parent selector)
         childFields.forEach(field => field.style.display = 'block');
-        // Hide adult fields
-        adultFields.forEach(field => field.style.display = 'none');
       } else {
-        // Hide child fields
+        // Hide child-specific fields
         childFields.forEach(field => field.style.display = 'none');
-        // Show adult fields
-        adultFields.forEach(field => field.style.display = 'block');
       }
     }
 
