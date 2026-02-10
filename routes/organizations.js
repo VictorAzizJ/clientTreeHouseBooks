@@ -6,38 +6,7 @@ const Organization = require('../models/Organization');
 const TravelingStop = require('../models/TravelingStop');
 const Donation = require('../models/Donation');
 const auditLogger = require('../utils/auditLogger');
-
-/**
- * Middleware: only admin may proceed.
- */
-function ensureAdmin(req, res, next) {
-  const role = req.session.user?.role;
-  if (role === 'admin') {
-    return next();
-  }
-  return res.status(403).send('Forbidden: Admin access required');
-}
-
-/**
- * Middleware: only staff or admin may proceed.
- */
-function ensureStaffOrAdmin(req, res, next) {
-  const role = req.session.user?.role;
-  if (role === 'staff' || role === 'admin') {
-    return next();
-  }
-  return res.status(403).send('Forbidden');
-}
-
-/**
- * Middleware: authenticated users (volunteer, staff, or admin)
- */
-function ensureAuthenticated(req, res, next) {
-  if (req.session?.user) {
-    return next();
-  }
-  return res.status(403).send('Forbidden');
-}
+const { ensureVolunteerOrHigher, ensureAdmin } = require('./_middleware');
 
 // Validation rules for organizations
 const organizationValidationRules = [
@@ -87,7 +56,7 @@ const organizationValidationRules = [
 ];
 
 // 1. GET /organizations — list all organizations (with pagination)
-router.get('/organizations', ensureAuthenticated, async (req, res) => {
+router.get('/organizations', ensureVolunteerOrHigher, async (req, res) => {
   // Pagination parameters
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 25;
@@ -160,7 +129,7 @@ router.get('/organizations', ensureAuthenticated, async (req, res) => {
 });
 
 // 2. GET /organizations/new — form to add a new organization
-router.get('/organizations/new', ensureStaffOrAdmin, (req, res) => {
+router.get('/organizations/new', ensureVolunteerOrHigher, (req, res) => {
   const error = req.session.error;
   delete req.session.error;
 
@@ -172,7 +141,7 @@ router.get('/organizations/new', ensureStaffOrAdmin, (req, res) => {
 });
 
 // 3. POST /organizations — create the organization
-router.post('/organizations', ensureStaffOrAdmin, organizationValidationRules, async (req, res) => {
+router.post('/organizations', ensureVolunteerOrHigher, organizationValidationRules, async (req, res) => {
   // Check for validation errors
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -213,7 +182,7 @@ router.post('/organizations', ensureStaffOrAdmin, organizationValidationRules, a
 });
 
 // 4. GET /organizations/:id — show organization details
-router.get('/organizations/:id', ensureAuthenticated, async (req, res) => {
+router.get('/organizations/:id', ensureVolunteerOrHigher, async (req, res) => {
   try {
     const organization = await Organization.findById(req.params.id)
       .populate('createdBy', 'firstName lastName')
@@ -266,7 +235,7 @@ router.get('/organizations/:id', ensureAuthenticated, async (req, res) => {
 });
 
 // 5. GET /organizations/search — JSON endpoint for autocomplete widgets
-router.get('/organizations/search', ensureAuthenticated, async (req, res) => {
+router.get('/organizations/search', ensureVolunteerOrHigher, async (req, res) => {
   const q = req.query.q || '';
   const regex = new RegExp(q, 'i');
 

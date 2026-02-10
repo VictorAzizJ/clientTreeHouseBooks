@@ -1,4 +1,21 @@
 /**
+ * Any authenticated user allowed (volunteer, staff, admin).
+ */
+function ensureAuthenticated(req, res, next) {
+  if (req.session?.user) return next();
+  return res.redirect('/custom-login');
+}
+
+/**
+ * Volunteer, staff, or admin allowed.
+ */
+function ensureVolunteerOrHigher(req, res, next) {
+  const role = req.session.user?.role;
+  if (role === 'volunteer' || role === 'staff' || role === 'admin') return next();
+  return res.status(403).send('Forbidden');
+}
+
+/**
  * Only staff or admin allowed.
  */
 function ensureStaffOrAdmin(req, res, next) {
@@ -107,6 +124,8 @@ function ensureFrontDeskAllowed(req, res, next) {
 }
 
 module.exports = {
+  ensureAuthenticated,
+  ensureVolunteerOrHigher,
   ensureStaffOrAdmin,
   ensureAdmin,
   ensureFrontDeskAllowed,

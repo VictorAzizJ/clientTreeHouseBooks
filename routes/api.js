@@ -5,10 +5,10 @@ const express = require('express');
 const router = express.Router();
 const Member = require('../models/Member');
 const Organization = require('../models/Organization');
-const { ensureStaffOrAdmin } = require('./_middleware');
+const { ensureVolunteerOrHigher } = require('./_middleware');
 
 // Search members by name or email (for autocomplete)
-router.get('/api/members/search', ensureStaffOrAdmin, async (req, res) => {
+router.get('/api/members/search', ensureVolunteerOrHigher, async (req, res) => {
   try {
     const query = req.query.q || '';
     const memberType = req.query.memberType; // Optional filter: 'adult' or 'child'
@@ -130,7 +130,7 @@ router.get('/api/members/search', ensureStaffOrAdmin, async (req, res) => {
 });
 
 // Search organizations by name (for autocomplete)
-router.get('/api/organizations/search', ensureStaffOrAdmin, async (req, res) => {
+router.get('/api/organizations/search', ensureVolunteerOrHigher, async (req, res) => {
   try {
     const query = req.query.q || '';
 

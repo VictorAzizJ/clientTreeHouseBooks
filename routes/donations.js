@@ -23,11 +23,11 @@ const router    = express.Router();
 const Donation  = require('../models/Donation');
 const Member    = require('../models/Member');
 const Organization = require('../models/Organization');
-const { ensureStaffOrAdmin, ensureAdmin } = require('./_middleware');
+const { ensureVolunteerOrHigher, ensureAdmin } = require('./_middleware');
 const { sendDonationThankYouEmail } = require('../services/mailer');
 
 // GET /donations - List all donations with pagination
-router.get('/donations', ensureStaffOrAdmin, async (req, res) => {
+router.get('/donations', ensureVolunteerOrHigher, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
@@ -151,7 +151,7 @@ router.get('/donations', ensureStaffOrAdmin, async (req, res) => {
 });
 
 // Show form to record a donation (standalone - choose member or enter donor info)
-router.get('/donations/new', ensureStaffOrAdmin, async (req, res) => {
+router.get('/donations/new', ensureVolunteerOrHigher, async (req, res) => {
   try {
     const donationType = req.query.type || 'used'; // 'used' or 'new'
     res.render('newDonationStandalone', { user: req.session.user, donationType });
@@ -162,7 +162,7 @@ router.get('/donations/new', ensureStaffOrAdmin, async (req, res) => {
 });
 
 // Show form to record a donation for a specific member
-router.get('/members/:memberId/donations/new', ensureStaffOrAdmin, async (req, res) => {
+router.get('/members/:memberId/donations/new', ensureVolunteerOrHigher, async (req, res) => {
   const member = await Member.findById(req.params.memberId).lean();
   if (!member) return res.status(404).send('Member not found');
   const donationType = req.query.type || 'used';
@@ -172,7 +172,7 @@ router.get('/members/:memberId/donations/new', ensureStaffOrAdmin, async (req, r
 // Handle standalone donation submission (without pre-selected member)
 router.post(
   '/donations',
-  ensureStaffOrAdmin,
+  ensureVolunteerOrHigher,
   [
     // Validation rules
     body('donationType')
@@ -295,7 +295,7 @@ router.post(
 // Handle donation submission for a specific member
 router.post(
   '/members/:memberId/donations',
-  ensureStaffOrAdmin,
+  ensureVolunteerOrHigher,
   [
     body('donationType')
       .trim()

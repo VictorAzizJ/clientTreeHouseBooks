@@ -23,20 +23,10 @@ const router   = express.Router();
 const Member   = require('../models/Member');
 const Checkout = require('../models/Checkout');
 const { sendCheckoutThankYouEmail } = require('../services/mailer');
-
-function ensureStaffOrAdmin(req, res, next) {
-  const role = req.session.user?.role;
-  if (role === 'staff' || role === 'admin') return next();
-  res.status(403).send('Forbidden');
-}
-
-function ensureAdmin(req, res, next) {
-  if (req.session.user?.role === 'admin') return next();
-  res.status(403).send('Forbidden - Admin only');
-}
+const { ensureVolunteerOrHigher, ensureAdmin } = require('./_middleware');
 
 // GET /checkouts - List all checkouts with pagination
-router.get('/checkouts', ensureStaffOrAdmin, async (req, res) => {
+router.get('/checkouts', ensureVolunteerOrHigher, async (req, res) => {
   try {
     // Pagination params
     const page = parseInt(req.query.page) || 1;
@@ -149,7 +139,7 @@ router.get('/checkouts', ensureStaffOrAdmin, async (req, res) => {
 });
 
 // GET form to create new checkout
-router.get('/checkouts/new', ensureStaffOrAdmin, async (req, res) => {
+router.get('/checkouts/new', ensureVolunteerOrHigher, async (req, res) => {
   try {
     // Don't load all members - use search instead
     res.render('newCheckout', { user: req.session.user });
@@ -162,7 +152,7 @@ router.get('/checkouts/new', ensureStaffOrAdmin, async (req, res) => {
 // POST create a checkout
 router.post(
   '/checkouts',
-  ensureStaffOrAdmin,
+  ensureVolunteerOrHigher,
   [
     // Validation rules
     body('memberId')
