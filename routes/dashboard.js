@@ -240,13 +240,13 @@ console.log({ monthLabels, checkoutCounts, donationCounts, memberCounts, program
 
 /**
  * POST /front-desk/enter - Enable front desk mode
- * Only staff and admin can enter front desk mode
+ * Volunteers, staff, and admin can enter front desk mode
  */
 router.post('/front-desk/enter', ensureAuthenticated, (req, res) => {
   const role = req.session.user?.role;
 
-  if (role !== 'staff' && role !== 'admin') {
-    req.session.error = 'Only staff members can enter front desk mode.';
+  if (role !== 'volunteer' && role !== 'staff' && role !== 'admin') {
+    req.session.error = 'You do not have permission to enter front desk mode.';
     return res.redirect('/dashboard');
   }
 
