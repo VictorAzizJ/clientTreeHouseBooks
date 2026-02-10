@@ -68,33 +68,39 @@ router.get('/api/members/search', ensureStaffOrAdmin, async (req, res) => {
 
     // Format response with additional display info
     // Includes both id/text (for Select2) and _id/displayName (for general use)
+    const today = new Date();
     const formattedMembers = members.map(m => {
       const isChild = m.memberType === 'child';
 
-      // Format DOB as MM/DD/YYYY for children
+      // Calculate age from DOB
+      let age = null;
       let formattedDOB = null;
       if (m.dateOfBirth) {
         const dob = new Date(m.dateOfBirth);
         formattedDOB = `${String(dob.getMonth() + 1).padStart(2, '0')}/${String(dob.getDate()).padStart(2, '0')}/${dob.getFullYear()}`;
+
+        // Calculate age
+        age = today.getFullYear() - dob.getFullYear();
+        const monthDiff = today.getMonth() - dob.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+          age--;
+        }
       }
 
-      // Build display text: children show DOB, adults show email
+      // Build display text: children show AGE, adults show email
       let secondaryIdentifier = '';
       if (isChild) {
-        secondaryIdentifier = formattedDOB ? ` (DOB: ${formattedDOB})` : ' (Child)';
+        secondaryIdentifier = age !== null ? ` (Age: ${age})` : ' (Child)';
       } else {
         secondaryIdentifier = m.email ? ` <${m.email}>` : '';
       }
 
-      // Build subtext: children prioritize DOB, adults prioritize email
+      // Build subtext: children show age, adults show email
       let subtext;
       if (isChild) {
-        subtext = formattedDOB ? `DOB: ${formattedDOB}` : 'Child member';
+        subtext = age !== null ? `Age: ${age}` : 'Child member';
       } else {
-        subtext = [
-          m.email,
-          formattedDOB ? `DOB: ${formattedDOB}` : null
-        ].filter(Boolean).join(' | ');
+        subtext = m.email || '';
       }
 
       return {
@@ -107,6 +113,7 @@ router.get('/api/members/search', ensureStaffOrAdmin, async (req, res) => {
         phone: m.phone || '',
         dateOfBirth: m.dateOfBirth || null,
         formattedDOB: formattedDOB,  // Pre-formatted MM/DD/YYYY
+        age: age,  // Calculated age
         memberType: m.memberType || 'adult',
         isChild: isChild,
         // Pre-formatted display text for UI
