@@ -29,6 +29,12 @@ const emailTemplateSchema = new mongoose.Schema({
     trim: true
   },
 
+  // Human-readable trigger event description (e.g., "When someone donates books")
+  triggerEvent: {
+    type: String,
+    trim: true
+  },
+
   // Email subject line (supports placeholders like {{donorName}})
   subject: {
     type: String,
@@ -81,10 +87,12 @@ emailTemplateSchema.statics.getAllTemplates = async function() {
 // Static method to seed default templates
 emailTemplateSchema.statics.seedDefaults = async function() {
   const defaults = [
+    // ─── DONATION THANK YOU ─────────────────────────────────────────────────────
     {
       templateKey: 'donation_thank_you',
       name: 'Donation Thank You',
       description: 'Sent automatically when a book donation is recorded',
+      triggerEvent: 'When someone donates books',
       subject: 'Thank you for your book donation to TreeHouse Books!',
       htmlBody: `<!DOCTYPE html>
 <html>
@@ -114,7 +122,6 @@ emailTemplateSchema.statics.seedDefaults = async function() {
       <ul>
         <li>Date: {{donationDate}}</li>
         <li>Books Donated: {{bookCount}}</li>
-        {{#if notes}}<li>Notes: {{notes}}</li>{{/if}}
       </ul>
 
       <p>Every book you donate makes a difference. Thank you for being part of our TreeHouse Books family!</p>
@@ -143,18 +150,20 @@ Every book you donate makes a difference. Thank you for being part of our TreeHo
 With gratitude,
 The TreeHouse Books Team`,
       availablePlaceholders: [
-        { placeholder: '{{donorName}}', description: 'Name of the donor' },
-        { placeholder: '{{bookCount}}', description: 'Number of books donated' },
-        { placeholder: '{{donationDate}}', description: 'Date of the donation' },
-        { placeholder: '{{notes}}', description: 'Any notes about the donation' }
+        { placeholder: '{{donorName}}', description: 'Full name of the person donating' },
+        { placeholder: '{{bookCount}}', description: 'Total number of books donated' },
+        { placeholder: '{{donationDate}}', description: 'Date the donation was made' }
       ],
       isActive: true
     },
+
+    // ─── WELCOME NEW MEMBER ─────────────────────────────────────────────────────
     {
       templateKey: 'welcome_member',
       name: 'Welcome New Member',
-      description: 'Sent to new members when they register (optional)',
-      subject: 'Welcome to TreeHouse Books!',
+      description: 'Sent to new members when they sign up',
+      triggerEvent: 'When a new member registers',
+      subject: 'Welcome to TreeHouse Books, {{memberName}}!',
       htmlBody: `<!DOCTYPE html>
 <html>
 <head>
@@ -209,10 +218,149 @@ We look forward to seeing you at TreeHouse Books!
 Happy reading,
 The TreeHouse Books Team`,
       availablePlaceholders: [
-        { placeholder: '{{memberName}}', description: 'Name of the new member' },
-        { placeholder: '{{memberEmail}}', description: 'Email of the new member' }
+        { placeholder: '{{memberName}}', description: 'Full name of the new member' },
+        { placeholder: '{{memberEmail}}', description: 'Email address of the member' },
+        { placeholder: '{{joinDate}}', description: 'Date they became a member' }
       ],
-      isActive: false // Disabled by default, admin can enable
+      isActive: false
+    },
+
+    // ─── VISITOR CHECK-IN CONFIRMATION ──────────────────────────────────────────
+    {
+      templateKey: 'visitor_checkin',
+      name: 'Visitor Check-In Confirmation',
+      description: 'Sent when a visitor checks in at TreeHouse Books',
+      triggerEvent: 'When someone checks in as a visitor',
+      subject: 'Thanks for visiting TreeHouse Books!',
+      htmlBody: `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #2d5a27; color: white; padding: 20px; text-align: center; }
+    .content { padding: 20px; background-color: #f9f9f9; }
+    .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
+    .highlight { color: #2d5a27; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Thanks for Visiting!</h1>
+    </div>
+    <div class="content">
+      <p>Hi <span class="highlight">{{visitorName}}</span>,</p>
+
+      <p>Thank you for visiting TreeHouse Books today! We hope you had a great experience.</p>
+
+      <p><strong>Visit Details:</strong></p>
+      <ul>
+        <li>Date: {{visitDate}}</li>
+        <li>Time: {{visitTime}}</li>
+      </ul>
+
+      <p>We'd love to see you again soon! Check out our programs and events.</p>
+
+      <p>Best,<br>
+      <strong>The TreeHouse Books Team</strong></p>
+    </div>
+    <div class="footer">
+      <p>TreeHouse Books | Spreading the joy of reading</p>
+    </div>
+  </div>
+</body>
+</html>`,
+      textBody: `Hi {{visitorName}},
+
+Thank you for visiting TreeHouse Books today! We hope you had a great experience.
+
+Visit Details:
+- Date: {{visitDate}}
+- Time: {{visitTime}}
+
+We'd love to see you again soon! Check out our programs and events.
+
+Best,
+The TreeHouse Books Team`,
+      availablePlaceholders: [
+        { placeholder: '{{visitorName}}', description: 'Name of the visitor' },
+        { placeholder: '{{visitDate}}', description: 'Date of the visit' },
+        { placeholder: '{{visitTime}}', description: 'Time of check-in' }
+      ],
+      isActive: false
+    },
+
+    // ─── BOOK CHECKOUT RECEIPT ──────────────────────────────────────────────────
+    {
+      templateKey: 'checkout_receipt',
+      name: 'Book Checkout Receipt',
+      description: 'Sent when a member checks out books',
+      triggerEvent: 'When books are checked out to a member',
+      subject: 'Your TreeHouse Books Checkout - {{bookCount}} book(s)',
+      htmlBody: `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #2d5a27; color: white; padding: 20px; text-align: center; }
+    .content { padding: 20px; background-color: #f9f9f9; }
+    .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
+    .highlight { color: #2d5a27; font-weight: bold; }
+    .book-list { background: white; padding: 15px; border-radius: 5px; margin: 15px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Checkout Receipt</h1>
+    </div>
+    <div class="content">
+      <p>Hi <span class="highlight">{{memberName}}</span>,</p>
+
+      <p>Here's a summary of your book checkout today.</p>
+
+      <div class="book-list">
+        <p><strong>Checkout Details:</strong></p>
+        <ul>
+          <li>Date: {{checkoutDate}}</li>
+          <li>Number of Books: {{bookCount}}</li>
+          <li>Categories: {{categories}}</li>
+        </ul>
+      </div>
+
+      <p>Enjoy your reading! There are no due dates at TreeHouse Books - keep the books as long as you'd like, or return them when you're done so others can enjoy them too.</p>
+
+      <p>Happy reading,<br>
+      <strong>The TreeHouse Books Team</strong></p>
+    </div>
+    <div class="footer">
+      <p>TreeHouse Books | Spreading the joy of reading</p>
+    </div>
+  </div>
+</body>
+</html>`,
+      textBody: `Hi {{memberName}},
+
+Here's a summary of your book checkout today.
+
+Checkout Details:
+- Date: {{checkoutDate}}
+- Number of Books: {{bookCount}}
+- Categories: {{categories}}
+
+Enjoy your reading! There are no due dates at TreeHouse Books - keep the books as long as you'd like, or return them when you're done so others can enjoy them too.
+
+Happy reading,
+The TreeHouse Books Team`,
+      availablePlaceholders: [
+        { placeholder: '{{memberName}}', description: 'Name of the member checking out' },
+        { placeholder: '{{bookCount}}', description: 'Total number of books checked out' },
+        { placeholder: '{{checkoutDate}}', description: 'Date of the checkout' },
+        { placeholder: '{{categories}}', description: 'Book categories checked out' }
+      ],
+      isActive: false
     }
   ];
 

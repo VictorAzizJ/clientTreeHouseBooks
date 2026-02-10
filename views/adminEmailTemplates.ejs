@@ -4,10 +4,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Email Templates - Admin - TreeHouseBooks</title>
+  <title>Email Templates - TreeHouseBooks</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="/css/treehouse-brand.css">
+  <style>
+    .trigger-badge {
+      background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+      color: #0369a1;
+      border: 1px solid #7dd3fc;
+      font-weight: 500;
+    }
+    .template-card {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .template-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .placeholder-pill {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+    }
+  </style>
 </head>
 <body>
   <%- include('partials/nav') %>
@@ -16,17 +35,28 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h1><i class="bi bi-envelope-paper"></i> Email Templates</h1>
-        <p class="text-muted">Manage automated email templates sent to members and donors</p>
+        <p class="text-muted mb-0">Customize the automated emails sent to members and donors</p>
       </div>
       <div>
         <a href="/admin/email-logs" class="btn btn-outline-secondary me-2">
           <i class="bi bi-list-ul"></i> View Send Logs
         </a>
         <a href="/admin/email-templates/seed" class="btn btn-outline-primary"
-           onclick="return confirm('This will reset templates to defaults. Continue?')">
+           onclick="return confirm('This will reset all templates to their defaults. Any customizations will be lost. Continue?')">
           <i class="bi bi-arrow-repeat"></i> Reset to Defaults
         </a>
       </div>
+    </div>
+
+    <!-- Help Card -->
+    <div class="alert alert-info mb-4">
+      <h6 class="alert-heading"><i class="bi bi-info-circle"></i> How Email Templates Work</h6>
+      <p class="mb-2">Each template is automatically sent when its <strong>trigger event</strong> happens (e.g., when someone donates books).</p>
+      <ul class="mb-0 small">
+        <li><strong>Active templates</strong> will send emails automatically. <strong>Disabled templates</strong> won't send anything.</li>
+        <li>Use <strong>placeholders</strong> like <code>{{donorName}}</code> to personalize emails - they'll be replaced with real data.</li>
+        <li>Click <strong>Edit</strong> to customize the subject, content, and toggle templates on/off.</li>
+      </ul>
     </div>
 
     <% if (typeof success !== 'undefined' && success) { %>
@@ -58,23 +88,28 @@
       <div class="row">
         <% templates.forEach(function(template) { %>
           <div class="col-md-6 mb-4">
-            <div class="card h-100 <%= template.isActive ? '' : 'border-secondary' %>">
-              <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="card h-100 template-card <%= template.isActive ? '' : 'border-secondary opacity-75' %>">
+              <div class="card-header d-flex justify-content-between align-items-start">
                 <div>
-                  <h5 class="mb-0">
+                  <div class="d-flex align-items-center gap-2 mb-1">
                     <% if (template.isActive) { %>
-                      <span class="badge bg-success me-2">Active</span>
+                      <span class="badge bg-success"><i class="bi bi-check-circle"></i> Active</span>
                     <% } else { %>
-                      <span class="badge bg-secondary me-2">Disabled</span>
+                      <span class="badge bg-secondary"><i class="bi bi-pause-circle"></i> Disabled</span>
                     <% } %>
-                    <%= template.name %>
-                  </h5>
+                    <h5 class="mb-0"><%= template.name %></h5>
+                  </div>
+                  <% if (template.triggerEvent) { %>
+                    <span class="badge trigger-badge">
+                      <i class="bi bi-lightning"></i> <%= template.triggerEvent %>
+                    </span>
+                  <% } %>
                 </div>
-                <div>
+                <div class="btn-group">
                   <form action="/admin/email-templates/<%= template._id %>/toggle" method="POST" style="display:inline;">
                     <button type="submit" class="btn btn-sm <%= template.isActive ? 'btn-outline-secondary' : 'btn-outline-success' %>"
-                            title="<%= template.isActive ? 'Disable' : 'Enable' %> this template">
-                      <i class="bi <%= template.isActive ? 'bi-toggle-on' : 'bi-toggle-off' %>"></i>
+                            title="<%= template.isActive ? 'Disable this email' : 'Enable this email' %>">
+                      <i class="bi <%= template.isActive ? 'bi-pause' : 'bi-play' %>"></i>
                     </button>
                   </form>
                   <a href="/admin/email-templates/<%= template._id %>/edit" class="btn btn-sm btn-primary">
@@ -83,26 +118,22 @@
                 </div>
               </div>
               <div class="card-body">
-                <p class="text-muted small mb-2"><%= template.description %></p>
+                <p class="text-muted small mb-3"><%= template.description %></p>
 
                 <div class="mb-3">
-                  <strong>Template Key:</strong>
-                  <code><%= template.templateKey %></code>
-                </div>
-
-                <div class="mb-3">
-                  <strong>Subject:</strong>
-                  <div class="border rounded p-2 bg-light">
+                  <strong class="small text-uppercase text-muted">Subject Line:</strong>
+                  <div class="border rounded p-2 bg-light small">
                     <%= template.subject %>
                   </div>
                 </div>
 
                 <% if (template.availablePlaceholders && template.availablePlaceholders.length > 0) { %>
                   <div>
-                    <strong>Available Placeholders:</strong>
+                    <strong class="small text-uppercase text-muted">Available Placeholders:</strong>
                     <div class="mt-1">
                       <% template.availablePlaceholders.forEach(function(ph) { %>
-                        <span class="badge bg-info text-dark me-1 mb-1" title="<%= ph.description %>">
+                        <span class="badge bg-light text-dark border placeholder-pill me-1 mb-1"
+                              title="<%= ph.description %>" data-bs-toggle="tooltip">
                           <%= ph.placeholder %>
                         </span>
                       <% }); %>
@@ -110,9 +141,10 @@
                   </div>
                 <% } %>
               </div>
-              <div class="card-footer text-muted small">
+              <div class="card-footer bg-transparent text-muted small d-flex justify-content-between">
+                <span><code class="small"><%= template.templateKey %></code></span>
                 <% if (template.updatedAt) { %>
-                  Last modified: <%= new Date(template.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
+                  <span>Updated: <%= new Date(template.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></span>
                 <% } %>
               </div>
             </div>
@@ -122,12 +154,21 @@
     <% } %>
 
     <div class="mt-4">
-      <a href="/admin" class="btn btn-secondary">
-        <i class="bi bi-arrow-left"></i> Back to Admin
+      <a href="/dashboard" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
       </a>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.forEach(function(el) {
+        new bootstrap.Tooltip(el);
+      });
+    });
+  </script>
 </body>
 </html>

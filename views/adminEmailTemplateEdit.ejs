@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Edit Email Template - Admin - TreeHouseBooks</title>
+  <title>Edit Email Template - TreeHouseBooks</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="/css/treehouse-brand.css">
@@ -19,6 +19,32 @@
       font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
       font-size: 13px;
     }
+    .trigger-badge {
+      background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+      color: #0369a1;
+      border: 1px solid #7dd3fc;
+      font-weight: 500;
+    }
+    .insert-btn {
+      font-size: 0.8rem;
+      padding: 0.35rem 0.65rem;
+      white-space: nowrap;
+    }
+    .placeholder-row:hover {
+      background-color: #f8f9fa;
+    }
+    .sticky-placeholders {
+      position: sticky;
+      top: 1rem;
+    }
+    .field-target-btn {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.4rem;
+    }
+    .field-target-btn.active {
+      background-color: var(--bs-primary);
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -31,8 +57,22 @@
       </a>
     </div>
 
-    <h1><i class="bi bi-pencil-square"></i> Edit Email Template</h1>
-    <p class="text-muted">Editing: <strong><%= template.name %></strong> (<code><%= template.templateKey %></code>)</p>
+    <div class="d-flex justify-content-between align-items-start mb-4">
+      <div>
+        <h1><i class="bi bi-pencil-square"></i> Edit: <%= template.name %></h1>
+        <% if (template.triggerEvent) { %>
+          <span class="badge trigger-badge fs-6">
+            <i class="bi bi-lightning"></i> <%= template.triggerEvent %>
+          </span>
+        <% } %>
+        <p class="text-muted mt-2 mb-0"><%= template.description %></p>
+      </div>
+      <div>
+        <button type="button" class="btn btn-outline-primary" onclick="togglePreview()">
+          <i class="bi bi-eye"></i> Preview Email
+        </button>
+      </div>
+    </div>
 
     <% if (typeof error !== 'undefined' && error) { %>
       <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -44,111 +84,155 @@
     <form action="/admin/email-templates/<%= template._id %>" method="POST">
       <div class="row">
         <!-- Left column: Form fields -->
-        <div class="col-lg-6">
+        <div class="col-lg-8">
           <div class="card mb-4">
-            <div class="card-header">
-              <h5 class="mb-0">Template Settings</h5>
+            <div class="card-header bg-light">
+              <h5 class="mb-0"><i class="bi bi-gear"></i> Template Settings</h5>
             </div>
             <div class="card-body">
-              <div class="mb-3">
-                <label for="name" class="form-label">Template Name</label>
-                <input type="text" class="form-control" id="name" name="name"
-                       value="<%= template.name %>" required>
+              <div class="row">
+                <div class="col-md-8">
+                  <div class="mb-3">
+                    <label for="name" class="form-label fw-bold">Template Name</label>
+                    <input type="text" class="form-control" id="name" name="name"
+                           value="<%= template.name %>" required>
+                    <div class="form-text">Internal name for this template (staff will see this)</div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label fw-bold">Status</label>
+                    <div class="form-check form-switch mt-2">
+                      <input class="form-check-input" type="checkbox" id="isActive" name="isActive"
+                             value="true" <%= template.isActive ? 'checked' : '' %> style="transform: scale(1.3);">
+                      <label class="form-check-label ms-2" for="isActive">
+                        <span id="statusLabel" class="<%= template.isActive ? 'text-success' : 'text-secondary' %>">
+                          <%= template.isActive ? 'Active - Emails will be sent' : 'Disabled - No emails sent' %>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div class="mb-3">
-                <label for="subject" class="form-label">Email Subject</label>
-                <input type="text" class="form-control" id="subject" name="subject"
-                       value="<%= template.subject %>" required>
-                <div class="form-text">You can use placeholders like {{donorName}} in the subject</div>
-              </div>
-
-              <div class="mb-3">
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="isActive" name="isActive"
-                         value="true" <%= template.isActive ? 'checked' : '' %>>
-                  <label class="form-check-label" for="isActive">
-                    <strong>Template Active</strong> - Emails will be sent when triggered
-                  </label>
+                <label for="subject" class="form-label fw-bold">Email Subject Line</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="subject" name="subject"
+                         value="<%= template.subject %>" required>
+                </div>
+                <div class="form-text">
+                  <i class="bi bi-lightbulb"></i> Tip: Use placeholders to personalize (e.g., "Thank you, {{donorName}}!")
                 </div>
               </div>
             </div>
           </div>
 
-          <% if (template.availablePlaceholders && template.availablePlaceholders.length > 0) { %>
-            <div class="card mb-4">
-              <div class="card-header">
-                <h5 class="mb-0">Available Placeholders</h5>
-              </div>
-              <div class="card-body">
-                <p class="small text-muted">Click to copy. Use these in your subject and body.</p>
-                <table class="table table-sm">
-                  <thead>
-                    <tr>
-                      <th>Placeholder</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <% template.availablePlaceholders.forEach(function(ph) { %>
-                      <tr>
-                        <td>
-                          <code class="placeholder-copy" style="cursor: pointer;"
-                                onclick="copyPlaceholder('<%= ph.placeholder %>')">
-                            <%= ph.placeholder %>
-                          </code>
-                        </td>
-                        <td class="small"><%= ph.description %></td>
-                      </tr>
-                    <% }); %>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          <% } %>
-        </div>
-
-        <!-- Right column: HTML Body -->
-        <div class="col-lg-6">
           <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <h5 class="mb-0">HTML Body</h5>
-              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="togglePreview()">
-                <i class="bi bi-eye"></i> Preview
-              </button>
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+              <h5 class="mb-0"><i class="bi bi-code-slash"></i> Email Content (HTML)</h5>
+              <span class="badge bg-secondary">Advanced editing</span>
             </div>
             <div class="card-body">
+              <div class="alert alert-warning small mb-3">
+                <i class="bi bi-exclamation-triangle"></i> <strong>Be careful:</strong> This is HTML code.
+                Only edit the text between <code>&gt;</code> and <code>&lt;</code> tags.
+                Use the <strong>Preview</strong> button to check your changes before saving.
+              </div>
               <textarea class="form-control code-textarea" id="htmlBody" name="htmlBody"
                         rows="20" required><%= template.htmlBody %></textarea>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Plain Text Body (collapsible) -->
-      <div class="card mb-4">
-        <div class="card-header">
-          <button class="btn btn-link text-decoration-none p-0" type="button"
-                  data-bs-toggle="collapse" data-bs-target="#textBodyCollapse">
-            <i class="bi bi-chevron-down"></i> Plain Text Body (optional fallback)
-          </button>
-        </div>
-        <div class="collapse" id="textBodyCollapse">
-          <div class="card-body">
-            <textarea class="form-control code-textarea" id="textBody" name="textBody"
-                      rows="10"><%= template.textBody || '' %></textarea>
-            <div class="form-text">
-              Plain text version shown when HTML is not supported. If empty, email clients may auto-generate from HTML.
+          <!-- Plain Text Body (collapsible) -->
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <button class="btn btn-link text-decoration-none p-0" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#textBodyCollapse">
+                <i class="bi bi-chevron-down"></i> Plain Text Version (optional)
+              </button>
+            </div>
+            <div class="collapse" id="textBodyCollapse">
+              <div class="card-body">
+                <p class="small text-muted mb-2">
+                  This plain text version is shown to people whose email doesn't support HTML (rare nowadays).
+                  If left empty, email clients will automatically generate one from the HTML.
+                </p>
+                <textarea class="form-control code-textarea" id="textBody" name="textBody"
+                          rows="10"><%= template.textBody || '' %></textarea>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div class="d-flex justify-content-between">
-        <a href="/admin/email-templates" class="btn btn-secondary">Cancel</a>
-        <button type="submit" class="btn btn-primary">
-          <i class="bi bi-check-lg"></i> Save Template
-        </button>
+          <div class="d-flex justify-content-between mb-4">
+            <a href="/admin/email-templates" class="btn btn-secondary">
+              <i class="bi bi-x"></i> Cancel
+            </a>
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="bi bi-check-lg"></i> Save Changes
+            </button>
+          </div>
+        </div>
+
+        <!-- Right column: Placeholders (sticky) -->
+        <div class="col-lg-4">
+          <% if (template.availablePlaceholders && template.availablePlaceholders.length > 0) { %>
+            <div class="card sticky-placeholders">
+              <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-braces"></i> Insert Placeholders</h5>
+              </div>
+              <div class="card-body p-0">
+                <p class="small text-muted p-3 pb-0 mb-0">
+                  Click a button to insert that placeholder at your cursor position in the email content.
+                </p>
+
+                <!-- Target field selector -->
+                <div class="px-3 py-2 border-bottom bg-light">
+                  <small class="text-muted d-block mb-1">Insert into:</small>
+                  <div class="btn-group btn-group-sm w-100" role="group">
+                    <button type="button" class="btn btn-outline-primary field-target-btn active" data-target="subject">
+                      Subject
+                    </button>
+                    <button type="button" class="btn btn-outline-primary field-target-btn" data-target="htmlBody">
+                      HTML Body
+                    </button>
+                    <button type="button" class="btn btn-outline-primary field-target-btn" data-target="textBody">
+                      Text Body
+                    </button>
+                  </div>
+                </div>
+
+                <ul class="list-group list-group-flush">
+                  <% template.availablePlaceholders.forEach(function(ph) { %>
+                    <li class="list-group-item placeholder-row d-flex justify-content-between align-items-center">
+                      <div>
+                        <code class="text-primary"><%= ph.placeholder %></code>
+                        <br>
+                        <small class="text-muted"><%= ph.description %></small>
+                      </div>
+                      <button type="button" class="btn btn-outline-primary btn-sm insert-btn"
+                              onclick="insertPlaceholder('<%= ph.placeholder %>')">
+                        <i class="bi bi-plus-circle"></i> Insert
+                      </button>
+                    </li>
+                  <% }); %>
+                </ul>
+              </div>
+              <div class="card-footer bg-light">
+                <small class="text-muted">
+                  <i class="bi bi-info-circle"></i> Placeholders are replaced with real data when the email is sent.
+                </small>
+              </div>
+            </div>
+          <% } else { %>
+            <div class="card">
+              <div class="card-body text-center text-muted">
+                <i class="bi bi-info-circle display-4"></i>
+                <p class="mt-2">No placeholders available for this template.</p>
+              </div>
+            </div>
+          <% } %>
+        </div>
       </div>
     </form>
 
@@ -156,15 +240,24 @@
     <div class="modal fade" id="previewModal" tabindex="-1">
       <div class="modal-dialog modal-xl">
         <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Email Preview</h5>
+          <div class="modal-header bg-light">
+            <h5 class="modal-title"><i class="bi bi-eye"></i> Email Preview</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <div class="mb-3">
-              <strong>Subject:</strong> <span id="previewSubject"></span>
+            <div class="alert alert-info small">
+              <i class="bi bi-info-circle"></i> This preview shows sample data in place of placeholders.
+              The actual email will use real member/donor information.
             </div>
-            <iframe id="previewFrame" class="preview-frame w-100" style="height: 500px;"></iframe>
+            <div class="mb-3 p-3 bg-light rounded">
+              <strong>Subject:</strong> <span id="previewSubject" class="ms-2"></span>
+            </div>
+            <div class="border rounded">
+              <iframe id="previewFrame" class="preview-frame w-100" style="height: 500px;"></iframe>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           </div>
         </div>
       </div>
@@ -173,42 +266,99 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    function copyPlaceholder(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        // Brief visual feedback
-        const el = event.target;
-        const original = el.textContent;
-        el.textContent = 'Copied!';
-        setTimeout(() => { el.textContent = original; }, 1000);
+    // Track which field to insert into
+    let targetField = 'subject';
+
+    // Field target button handlers
+    document.querySelectorAll('.field-target-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.field-target-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        targetField = this.dataset.target;
+
+        // Focus the target field
+        document.getElementById(targetField).focus();
       });
+    });
+
+    // Insert placeholder at cursor position
+    function insertPlaceholder(placeholder) {
+      const field = document.getElementById(targetField);
+
+      // If text body is targeted but collapsed, expand it
+      if (targetField === 'textBody') {
+        const collapse = document.getElementById('textBodyCollapse');
+        if (!collapse.classList.contains('show')) {
+          new bootstrap.Collapse(collapse, { show: true });
+        }
+      }
+
+      // Focus the field
+      field.focus();
+
+      // Get cursor position
+      const start = field.selectionStart;
+      const end = field.selectionEnd;
+      const text = field.value;
+
+      // Insert placeholder at cursor
+      field.value = text.substring(0, start) + placeholder + text.substring(end);
+
+      // Move cursor after inserted text
+      const newPos = start + placeholder.length;
+      field.setSelectionRange(newPos, newPos);
+
+      // Brief visual feedback
+      field.classList.add('border-success');
+      setTimeout(() => field.classList.remove('border-success'), 500);
     }
+
+    // Update status label when toggle changes
+    document.getElementById('isActive').addEventListener('change', function() {
+      const label = document.getElementById('statusLabel');
+      if (this.checked) {
+        label.textContent = 'Active - Emails will be sent';
+        label.className = 'text-success';
+      } else {
+        label.textContent = 'Disabled - No emails sent';
+        label.className = 'text-secondary';
+      }
+    });
 
     function togglePreview() {
       const modal = new bootstrap.Modal(document.getElementById('previewModal'));
       const htmlBody = document.getElementById('htmlBody').value;
       const subject = document.getElementById('subject').value;
 
-      // Replace placeholders with sample data for preview
+      // Sample data for all possible placeholders
       const sampleData = {
         '{{donorName}}': 'Jane Smith',
         '{{bookCount}}': '5',
         '{{donationDate}}': new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
         '{{memberName}}': 'John Doe',
+        '{{memberEmail}}': 'john.doe@example.com',
+        '{{joinDate}}': new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+        '{{visitorName}}': 'Alex Johnson',
+        '{{visitDate}}': new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
+        '{{visitTime}}': '2:30 PM',
+        '{{checkoutDate}}': new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+        '{{categories}}': 'Fiction, Children\'s Books, Biography',
         '{{notes}}': 'Sample notes here',
-        '{{genres}}': 'Fiction, Children\'s'
+        '{{genres}}': 'Fiction, Non-Fiction'
       };
 
       let previewHtml = htmlBody;
       let previewSubject = subject;
 
+      // Replace all placeholders with sample data
       for (const [placeholder, value] of Object.entries(sampleData)) {
         const regex = new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g');
-        previewHtml = previewHtml.replace(regex, value);
+        previewHtml = previewHtml.replace(regex, `<span style="background-color: #fef3c7; padding: 1px 4px; border-radius: 3px;">${value}</span>`);
         previewSubject = previewSubject.replace(regex, value);
       }
 
-      // Remove unmatched conditionals
-      previewHtml = previewHtml.replace(/\{\{#if \w+\}\}([\s\S]*?)\{\{\/if\}\}/g, '$1');
+      // Highlight any remaining unmatched placeholders
+      previewHtml = previewHtml.replace(/\{\{(\w+)\}\}/g, '<span style="background-color: #fee2e2; padding: 1px 4px; border-radius: 3px; color: #dc2626;">{{$1}}</span>');
 
       document.getElementById('previewSubject').textContent = previewSubject;
 

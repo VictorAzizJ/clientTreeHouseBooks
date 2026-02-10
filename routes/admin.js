@@ -14,6 +14,15 @@ function ensureAdmin(req, res, next) {
   return res.status(403).send("Forbidden: You are not an admin");
 }
 
+// Middleware to allow staff OR admin access
+function ensureStaffOrAdmin(req, res, next) {
+  const role = req.session?.user?.role;
+  if (role === 'admin' || role === 'staff') {
+    return next();
+  }
+  return res.status(403).send("Forbidden: Staff or admin access required");
+}
+
 // GET /admin — admin dashboard (redirect to users for now)
 router.get('/admin', ensureAdmin, (req, res) => {
   res.redirect('/admin/users');
@@ -128,8 +137,8 @@ router.post('/admin/users/:id/reset-password', ensureAdmin, async (req, res, nex
 // EMAIL TEMPLATE MANAGEMENT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// GET /admin/email-templates - List all email templates
-router.get('/admin/email-templates', ensureAdmin, async (req, res, next) => {
+// GET /admin/email-templates - List all email templates (staff and admin can access)
+router.get('/admin/email-templates', ensureStaffOrAdmin, async (req, res, next) => {
   try {
     const templates = await EmailTemplate.getAllTemplates();
 
@@ -150,8 +159,8 @@ router.get('/admin/email-templates', ensureAdmin, async (req, res, next) => {
   }
 });
 
-// GET /admin/email-templates/seed - Seed default templates
-router.get('/admin/email-templates/seed', ensureAdmin, async (req, res) => {
+// GET /admin/email-templates/seed - Seed default templates (admin only for safety)
+router.get('/admin/email-templates/seed', ensureStaffOrAdmin, async (req, res) => {
   const result = await seedEmailTemplates();
 
   if (result.success) {
@@ -163,8 +172,8 @@ router.get('/admin/email-templates/seed', ensureAdmin, async (req, res) => {
   res.redirect('/admin/email-templates');
 });
 
-// GET /admin/email-templates/:id/edit - Edit template form
-router.get('/admin/email-templates/:id/edit', ensureAdmin, async (req, res, next) => {
+// GET /admin/email-templates/:id/edit - Edit template form (staff and admin can access)
+router.get('/admin/email-templates/:id/edit', ensureStaffOrAdmin, async (req, res, next) => {
   try {
     const template = await EmailTemplate.findById(req.params.id).lean();
 
@@ -187,8 +196,8 @@ router.get('/admin/email-templates/:id/edit', ensureAdmin, async (req, res, next
   }
 });
 
-// POST /admin/email-templates/:id - Update template
-router.post('/admin/email-templates/:id', ensureAdmin, async (req, res, next) => {
+// POST /admin/email-templates/:id - Update template (staff and admin can access)
+router.post('/admin/email-templates/:id', ensureStaffOrAdmin, async (req, res, next) => {
   try {
     const { name, subject, htmlBody, textBody, isActive } = req.body;
 
@@ -216,8 +225,8 @@ router.post('/admin/email-templates/:id', ensureAdmin, async (req, res, next) =>
   }
 });
 
-// POST /admin/email-templates/:id/toggle - Toggle template active status
-router.post('/admin/email-templates/:id/toggle', ensureAdmin, async (req, res, next) => {
+// POST /admin/email-templates/:id/toggle - Toggle template active status (staff and admin)
+router.post('/admin/email-templates/:id/toggle', ensureStaffOrAdmin, async (req, res, next) => {
   try {
     const template = await EmailTemplate.findById(req.params.id);
 
@@ -238,8 +247,8 @@ router.post('/admin/email-templates/:id/toggle', ensureAdmin, async (req, res, n
   }
 });
 
-// GET /admin/email-logs - View email send logs
-router.get('/admin/email-logs', ensureAdmin, async (req, res, next) => {
+// GET /admin/email-logs - View email send logs (staff and admin can access)
+router.get('/admin/email-logs', ensureStaffOrAdmin, async (req, res, next) => {
   try {
     const { status, templateKey, limit } = req.query;
 
