@@ -526,7 +526,7 @@ Tree House Books is a 501(c)(3) charitable organization, and your gift is fully 
     'donation_thank_you',
     email,
     placeholderData,
-    { donationId, firstName, numberOfBooks },
+    { donationId, donorName, numberOfBooks },
     fallbackTemplate
   );
 }
