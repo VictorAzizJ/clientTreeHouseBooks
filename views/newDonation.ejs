@@ -6,7 +6,18 @@
   <title>Record Book Donation - TreeHouseBooks</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/treehouse-brand.css">
+  <style>
+    .value-section { display: none; }
+    .value-section.active { display: block; }
+    .total-value-display {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--thb-primary);
+    }
+  </style>
 </head>
 <body>
   <%- include('partials/nav') %>
@@ -14,55 +25,145 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h1><i class="bi bi-gift"></i> Record Book Donation</h1>
-        <% if (member) { %>
-          <p class="text-muted">Donor: <%= member.firstName %> <%= member.lastName %></p>
-        <% } else { %>
-          <p class="text-muted">Record a new book donation</p>
-        <% } %>
+        <p class="text-muted">Record a book donation for the Books in Every Home campaign</p>
       </div>
       <a href="/donations" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Back to Donations
       </a>
     </div>
 
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> <%= error %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    <% } %>
+
     <div class="card">
       <div class="card-body">
         <form method="POST" action="<%= member ? `/members/${member._id}/donations` : '/donations/create' %>">
-          <% if (member) { %>
 
-            <div class="alert alert-info mb-4">
-              <i class="bi bi-info-circle"></i>
-              Recording donation for <strong><%= member.firstName %> <%= member.lastName %></strong>
+          <!-- Donor Section -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <h5 class="border-bottom pb-2 mb-3"><i class="bi bi-person"></i> Donor Information</h5>
             </div>
-          <% } %>
 
-          <div class="mb-3">
-            <label for="numberOfBooks" class="form-label">Number of Books *</label>
-            <input type="number" class="form-control" id="numberOfBooks" name="numberOfBooks" value="1" min="1" max="1000" required>
+            <% if (member) { %>
+              <div class="col-12">
+                <div class="alert alert-info">
+                  <i class="bi bi-person-check"></i>
+                  Recording donation for <strong><%= member.firstName %> <%= member.lastName %></strong>
+                  <% if (member.email) { %>
+                    (<%= member.email %>)
+                  <% } %>
+                </div>
+                <input type="hidden" name="donorType" value="person">
+              </div>
+            <% } else { %>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">Donor Type *</label>
+                <select class="form-select" id="donorType" name="donorType" required>
+                  <option value="person">Individual Person</option>
+                  <option value="organization">Organization</option>
+                  <option value="undisclosed">Undisclosed/Anonymous</option>
+                </select>
+              </div>
+
+              <div class="col-md-8 mb-3" id="memberSearchSection">
+                <label class="form-label">Search Member</label>
+                <select class="form-select" id="memberId" name="memberId">
+                  <option value="">-- Search by name or email --</option>
+                </select>
+                <small class="text-muted">Type to search for an existing member</small>
+              </div>
+
+              <div class="col-md-8 mb-3" id="organizationSearchSection" style="display: none;">
+                <label class="form-label">Search Organization</label>
+                <select class="form-select" id="organizationId" name="organizationId">
+                  <option value="">-- Search by organization name --</option>
+                </select>
+                <small class="text-muted">Type to search for an existing organization</small>
+              </div>
+            <% } %>
           </div>
 
-          <div class="mb-3">
-            <label for="genres" class="form-label">Genres</label>
-            <select class="form-select" id="genres" name="genres" multiple>
-              <option value="fiction">Fiction</option>
-              <option value="non-fiction">Non-Fiction</option>
-              <option value="picture-book">Picture Book</option>
-              <option value="chapter-book">Chapter Book</option>
-              <option value="young-adult">Young Adult</option>
-              <option value="educational">Educational</option>
-              <option value="reference">Reference</option>
-            </select>
-            <small class="text-muted">Hold Ctrl/Cmd to select multiple</small>
+          <!-- Donation Type Section -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <h5 class="border-bottom pb-2 mb-3"><i class="bi bi-book"></i> Donation Details</h5>
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Book Condition *</label>
+              <select class="form-select" id="donationType" name="donationType" required>
+                <option value="used">Used Books</option>
+                <option value="new">New Books</option>
+              </select>
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label for="numberOfBooks" class="form-label">Number of Books *</label>
+              <input type="number" class="form-control" id="numberOfBooks" name="numberOfBooks" value="1" min="1" max="10000" required>
+            </div>
+
+            <!-- Value Per Book (for used books) -->
+            <div class="col-md-4 mb-3 value-section" id="usedBooksValue">
+              <label class="form-label">Value Per Book *</label>
+              <select class="form-select" id="valuePerBook" name="valuePerBook">
+                <option value="1">$1 per book</option>
+                <option value="2">$2 per book</option>
+              </select>
+            </div>
+
+            <!-- Total Value (for new books) -->
+            <div class="col-md-4 mb-3 value-section" id="newBooksValue">
+              <label for="totalValue" class="form-label">Total Value ($) *</label>
+              <input type="number" class="form-control" id="totalValue" name="totalValue" min="0" step="0.01" placeholder="Enter total value">
+            </div>
           </div>
 
-          <div class="mb-3">
-            <label for="weight" class="form-label">Weight (lbs)</label>
-            <input type="number" class="form-control" id="weight" name="weight" min="0" max="10000" step="0.1" placeholder="Optional">
+          <!-- Calculated Total Display -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="card bg-light">
+                <div class="card-body text-center">
+                  <p class="mb-1 text-muted">Estimated Donation Value</p>
+                  <p class="total-value-display mb-0" id="calculatedValue">$1.00</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Additional Info -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <h5 class="border-bottom pb-2 mb-3"><i class="bi bi-info-circle"></i> Additional Information</h5>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="isBookDrive" name="isBookDrive" value="true">
+                <label class="form-check-label" for="isBookDrive">
+                  Part of a Book Drive
+                </label>
+              </div>
+            </div>
+
+            <div class="col-md-6 mb-3" id="bookDriveNameSection" style="display: none;">
+              <label for="bookDriveName" class="form-label">Book Drive Name</label>
+              <input type="text" class="form-control" id="bookDriveName" name="bookDriveName" placeholder="e.g., Spring 2024 Book Drive">
+            </div>
+
+            <div class="col-12 mb-3">
+              <label for="notes" class="form-label">Notes</label>
+              <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Any additional notes about this donation"></textarea>
+            </div>
           </div>
 
           <div class="text-end">
             <a href="/donations" class="btn btn-secondary me-2">Cancel</a>
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-primary btn-lg">
               <i class="bi bi-check-circle"></i> Record Donation
             </button>
           </div>
@@ -72,5 +173,120 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      // Initialize Select2 for member search
+      $('#memberId').select2({
+        theme: 'bootstrap-5',
+        ajax: {
+          url: '/api/members/search',
+          dataType: 'json',
+          delay: 250,
+          data: function(params) {
+            return { q: params.term };
+          },
+          processResults: function(data) {
+            return { results: data };
+          },
+          cache: true
+        },
+        minimumInputLength: 2,
+        placeholder: 'Search by name or email',
+        allowClear: true
+      });
+
+      // Initialize Select2 for organization search
+      $('#organizationId').select2({
+        theme: 'bootstrap-5',
+        ajax: {
+          url: '/api/organizations/search',
+          dataType: 'json',
+          delay: 250,
+          data: function(params) {
+            return { q: params.term };
+          },
+          processResults: function(data) {
+            return { results: data };
+          },
+          cache: true
+        },
+        minimumInputLength: 2,
+        placeholder: 'Search organization name',
+        allowClear: true
+      });
+
+      // Toggle donor type sections
+      $('#donorType').on('change', function() {
+        const donorType = $(this).val();
+        if (donorType === 'person') {
+          $('#memberSearchSection').show();
+          $('#organizationSearchSection').hide();
+          $('#organizationId').val(null).trigger('change');
+        } else if (donorType === 'organization') {
+          $('#memberSearchSection').hide();
+          $('#organizationSearchSection').show();
+          $('#memberId').val(null).trigger('change');
+        } else {
+          $('#memberSearchSection').hide();
+          $('#organizationSearchSection').hide();
+          $('#memberId').val(null).trigger('change');
+          $('#organizationId').val(null).trigger('change');
+        }
+      });
+
+      // Toggle value sections based on donation type
+      function updateValueSection() {
+        const donationType = $('#donationType').val();
+        if (donationType === 'used') {
+          $('#usedBooksValue').addClass('active');
+          $('#newBooksValue').removeClass('active');
+          $('#valuePerBook').prop('required', true);
+          $('#totalValue').prop('required', false);
+        } else {
+          $('#usedBooksValue').removeClass('active');
+          $('#newBooksValue').addClass('active');
+          $('#valuePerBook').prop('required', false);
+          $('#totalValue').prop('required', true);
+        }
+        updateCalculatedValue();
+      }
+
+      // Calculate and display total value
+      function updateCalculatedValue() {
+        const donationType = $('#donationType').val();
+        const numberOfBooks = parseInt($('#numberOfBooks').val()) || 0;
+        let total = 0;
+
+        if (donationType === 'used') {
+          const valuePerBook = parseFloat($('#valuePerBook').val()) || 1;
+          total = numberOfBooks * valuePerBook;
+        } else {
+          total = parseFloat($('#totalValue').val()) || 0;
+        }
+
+        $('#calculatedValue').text('$' + total.toFixed(2));
+      }
+
+      $('#donationType').on('change', updateValueSection);
+      $('#numberOfBooks').on('input', updateCalculatedValue);
+      $('#valuePerBook').on('change', updateCalculatedValue);
+      $('#totalValue').on('input', updateCalculatedValue);
+
+      // Initialize on page load
+      updateValueSection();
+
+      // Book drive toggle
+      $('#isBookDrive').on('change', function() {
+        if ($(this).is(':checked')) {
+          $('#bookDriveNameSection').show();
+        } else {
+          $('#bookDriveNameSection').hide();
+          $('#bookDriveName').val('');
+        }
+      });
+    });
+  </script>
 </body>
 </html>

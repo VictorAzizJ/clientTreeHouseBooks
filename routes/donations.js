@@ -197,6 +197,14 @@ router.post(
       .notEmpty().withMessage('Number of books is required')
       .isInt({ min: 1, max: 100000 }).withMessage('Number of books must be between 1 and 100,000'),
 
+    body('valuePerBook')
+      .optional({ checkFalsy: true })
+      .isFloat({ min: 0 }).withMessage('Value per book must be a positive number'),
+
+    body('totalValue')
+      .optional({ checkFalsy: true })
+      .isFloat({ min: 0 }).withMessage('Total value must be a positive number'),
+
     body('monetaryAmount')
       .optional({ checkFalsy: true })
       .isFloat({ min: 0 }).withMessage('Monetary amount must be a positive number'),
@@ -222,15 +230,25 @@ router.post(
       return res.redirect('/donations/new');
     }
 
-    const { donationType, donorType, memberId, organizationId, numberOfBooks, monetaryAmount, isBookDrive, bookDriveName, notes } = req.body;
+    const { donationType, donorType, memberId, organizationId, numberOfBooks, valuePerBook, totalValue, monetaryAmount, isBookDrive, bookDriveName, notes } = req.body;
 
     try {
+      // Calculate total value based on donation type
+      let calculatedTotalValue = 0;
+      if (donationType === 'used' && valuePerBook) {
+        calculatedTotalValue = parseInt(numberOfBooks, 10) * parseFloat(valuePerBook);
+      } else if (donationType === 'new' && totalValue) {
+        calculatedTotalValue = parseFloat(totalValue);
+      }
+
       const donationData = {
         donationType,
         donorType: donorType || 'undisclosed',
         member: memberId || undefined,
         organization: organizationId || undefined,
         numberOfBooks: parseInt(numberOfBooks, 10),
+        valuePerBook: valuePerBook ? parseFloat(valuePerBook) : undefined,
+        totalValue: calculatedTotalValue || undefined,
         monetaryAmount: monetaryAmount ? parseFloat(monetaryAmount) : 0,
         isBookDrive: isBookDrive === 'true',
         bookDriveName: bookDriveName || undefined,
@@ -248,9 +266,11 @@ router.post(
         const member = await Member.findById(memberId).lean();
         if (member && member.email) {
           // Fire-and-forget email - don't block the response
-          sendDonationThankYouEmail(member.email, member.firstName, {
+          sendDonationThankYouEmail(member.email, `${member.firstName} ${member.lastName}`, {
             numberOfBooks: donationData.numberOfBooks,
             donationType,
+            valuePerBook: donationData.valuePerBook,
+            totalValue: calculatedTotalValue,
             donationId: donation._id.toString()
           }).then(result => {
             if (result.success) {
@@ -265,14 +285,17 @@ router.post(
         }
       }
 
-      // If organization donor (check if org has contact email)
+      // If organization donor (check if org has email)
       if (organizationId && !emailSent) {
         const org = await Organization.findById(organizationId).lean();
-        if (org && org.contactEmail) {
-          sendDonationThankYouEmail(org.contactEmail, org.contactName || org.name, {
+        if (org && org.email) {
+          sendDonationThankYouEmail(org.email, org.name, {
             numberOfBooks: donationData.numberOfBooks,
             donationType,
-            donationId: donation._id.toString()
+            valuePerBook: donationData.valuePerBook,
+            totalValue: calculatedTotalValue,
+            donationId: donation._id.toString(),
+            isOrganization: true
           }).catch(err => {
             console.error('Org email sending failed (non-critical):', err.message);
           });
@@ -307,6 +330,14 @@ router.post(
       .notEmpty().withMessage('Number of books is required')
       .isInt({ min: 1, max: 100000 }).withMessage('Number of books must be between 1 and 100,000'),
 
+    body('valuePerBook')
+      .optional({ checkFalsy: true })
+      .isFloat({ min: 0 }).withMessage('Value per book must be a positive number'),
+
+    body('totalValue')
+      .optional({ checkFalsy: true })
+      .isFloat({ min: 0 }).withMessage('Total value must be a positive number'),
+
     body('monetaryAmount')
       .optional({ checkFalsy: true })
       .isFloat({ min: 0 }).withMessage('Monetary amount must be a positive number'),
@@ -332,14 +363,24 @@ router.post(
       return res.redirect(`/members/${req.params.memberId}/donations/new`);
     }
 
-    const { donationType, numberOfBooks, monetaryAmount, isBookDrive, bookDriveName, notes } = req.body;
+    const { donationType, numberOfBooks, valuePerBook, totalValue, monetaryAmount, isBookDrive, bookDriveName, notes } = req.body;
 
     try {
+      // Calculate total value based on donation type
+      let calculatedTotalValue = 0;
+      if (donationType === 'used' && valuePerBook) {
+        calculatedTotalValue = parseInt(numberOfBooks, 10) * parseFloat(valuePerBook);
+      } else if (donationType === 'new' && totalValue) {
+        calculatedTotalValue = parseFloat(totalValue);
+      }
+
       const donationData = {
         donationType,
         donorType: 'person',
         member: req.params.memberId,
         numberOfBooks: parseInt(numberOfBooks, 10),
+        valuePerBook: valuePerBook ? parseFloat(valuePerBook) : undefined,
+        totalValue: calculatedTotalValue || undefined,
         monetaryAmount: monetaryAmount ? parseFloat(monetaryAmount) : 0,
         isBookDrive: isBookDrive === 'true',
         bookDriveName: bookDriveName || undefined,
@@ -354,9 +395,11 @@ router.post(
 
       // Send thank-you email (event-driven trigger)
       if (member && member.email) {
-        sendDonationThankYouEmail(member.email, member.firstName, {
+        sendDonationThankYouEmail(member.email, `${member.firstName} ${member.lastName}`, {
           numberOfBooks: donationData.numberOfBooks,
           donationType,
+          valuePerBook: donationData.valuePerBook,
+          totalValue: calculatedTotalValue,
           donationId: donation._id.toString()
         }).then(result => {
           if (result.success) {

@@ -15,7 +15,11 @@ const DonationSchema = new Schema({
   // Book information
   numberOfBooks:  { type: Number, required: true },
 
-  // Monetary donation (optional)
+  // Value information for tax receipts
+  valuePerBook:   { type: Number },  // For used books: $1 or $2 per book
+  totalValue:     { type: Number },  // Calculated or entered total value
+
+  // Monetary donation (optional, separate from book value)
   monetaryAmount: { type: Number, default: 0 },
 
   // Book Drive indicator

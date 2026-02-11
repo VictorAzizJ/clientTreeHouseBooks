@@ -93,7 +93,7 @@ emailTemplateSchema.statics.seedDefaults = async function() {
       name: 'Donation Thank You',
       description: 'Sent automatically when a book donation is recorded',
       triggerEvent: 'When someone donates books',
-      subject: 'Thank you for your book donation to TreeHouse Books!',
+      subject: 'Thank you for supporting Tree House Books!',
       htmlBody: `<!DOCTYPE html>
 <html>
 <head>
@@ -114,44 +114,36 @@ emailTemplateSchema.statics.seedDefaults = async function() {
     <div class="content">
       <p>Dear <span class="highlight">{{donorName}}</span>,</p>
 
-      <p>Thank you so much for your generous donation of <span class="highlight">{{bookCount}} book(s)</span> to TreeHouse Books!</p>
+      <p>Thank you so much for supporting Tree House Books and our Books in Every Home campaign with your donation of <span class="highlight">{{bookCount}} books</span> {{valueDescription}}.</p>
 
-      <p>Your contribution helps us continue our mission of promoting literacy and putting books into the hands of children and families in our community.</p>
+      <p>Without you we truly could not fulfill our goal of creating and sustaining a community of readers, writers, and thinkers. The books that you have so generously donated will find their way into the homes of families and children, changing lives through reading and mitigating the Philadelphia literacy crisis.</p>
 
-      <p><strong>Donation Details:</strong></p>
-      <ul>
-        <li>Date: {{donationDate}}</li>
-        <li>Books Donated: {{bookCount}}</li>
-      </ul>
+      <p>It is our hope that you continue to walk with us to promote lifelong readership and access to high-quality books for every child. We have many ways that you can continue to stay involved with Tree House Books: volunteer, serve on a committee, or become a donor!</p>
 
-      <p>Every book you donate makes a difference. Thank you for being part of our TreeHouse Books family!</p>
-
-      <p>With gratitude,<br>
-      <strong>The TreeHouse Books Team</strong></p>
+      <p>Thanks again, <span class="highlight">{{donorName}}</span>! We hope to hear from you again soon. As always, do not hesitate to reach out to <a href="mailto:emma@treehousebooks.org">emma@treehousebooks.org</a>.</p>
     </div>
     <div class="footer">
-      <p>TreeHouse Books | Spreading the joy of reading</p>
+      <p>Tree House Books | Building community through books</p>
     </div>
   </div>
 </body>
 </html>`,
       textBody: `Dear {{donorName}},
 
-Thank you so much for your generous donation of {{bookCount}} book(s) to TreeHouse Books!
+Thank you so much for supporting Tree House Books and our Books in Every Home campaign with your donation of {{bookCount}} books {{valueDescription}}.
 
-Your contribution helps us continue our mission of promoting literacy and putting books into the hands of children and families in our community.
+Without you we truly could not fulfill our goal of creating and sustaining a community of readers, writers, and thinkers. The books that you have so generously donated will find their way into the homes of families and children, changing lives through reading and mitigating the Philadelphia literacy crisis.
 
-Donation Details:
-- Date: {{donationDate}}
-- Books Donated: {{bookCount}}
+It is our hope that you continue to walk with us to promote lifelong readership and access to high-quality books for every child. We have many ways that you can continue to stay involved with Tree House Books: volunteer, serve on a committee, or become a donor!
 
-Every book you donate makes a difference. Thank you for being part of our TreeHouse Books family!
+Thanks again, {{donorName}}! We hope to hear from you again soon. As always, do not hesitate to reach out to emma@treehousebooks.org.
 
-With gratitude,
-The TreeHouse Books Team`,
+Tree House Books
+Building community through books`,
       availablePlaceholders: [
-        { placeholder: '{{donorName}}', description: 'Full name of the person donating' },
+        { placeholder: '{{donorName}}', description: 'Full name of the donor or organization name' },
         { placeholder: '{{bookCount}}', description: 'Total number of books donated' },
+        { placeholder: '{{valueDescription}}', description: 'Value description (e.g., "that you valued $1 per book" for used, or "valued at $50.00" for new)' },
         { placeholder: '{{donationDate}}', description: 'Date the donation was made' }
       ],
       isActive: true

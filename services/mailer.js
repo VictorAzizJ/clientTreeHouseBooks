@@ -419,15 +419,20 @@ async function sendTemplatedEmail(templateKey, recipientEmail, placeholderData, 
  * @param {string} details.donationId - Donation record ID (optional, for logging)
  * @returns {Promise<{success: boolean, messageId?: string, error?: string}>}
  */
-async function sendDonationThankYouEmail(email, firstName, details) {
-  const { numberOfBooks, genres, weight, donationId } = details;
-  const genreList = genres && genres.length > 0
-    ? genres.join(', ')
-    : 'various genres';
+async function sendDonationThankYouEmail(email, donorName, details) {
+  const { numberOfBooks, donationType, valuePerBook, totalValue, donationId, isOrganization } = details;
+
+  // Build value description based on donation type
+  let valueDescription = '';
+  if (donationType === 'used' && valuePerBook) {
+    valueDescription = `that you valued $${valuePerBook} per book`;
+  } else if (donationType === 'new' && totalValue) {
+    valueDescription = `valued at $${totalValue.toFixed(2)}`;
+  }
 
   // Placeholder data for template
   const placeholderData = {
-    donorName: firstName,
+    donorName: donorName,
     bookCount: numberOfBooks,
     donationDate: new Date().toLocaleDateString('en-US', {
       weekday: 'long',
@@ -435,62 +440,67 @@ async function sendDonationThankYouEmail(email, firstName, details) {
       month: 'long',
       day: 'numeric'
     }),
-    genres: genreList,
-    weight: weight || '',
-    notes: details.notes || ''
+    donationType: donationType,
+    valuePerBook: valuePerBook ? `$${valuePerBook}` : '',
+    totalValue: totalValue ? `$${totalValue.toFixed(2)}` : '',
+    valueDescription: valueDescription,
+    isOrganization: isOrganization || false
   };
 
-  // Fallback template (hardcoded)
+  // Fallback template (hardcoded) - matches the official Tree House Books format
   const fallbackTemplate = {
-    subject: 'Thank You for Your Generous Donation!',
+    subject: 'Thank you for supporting Tree House Books!',
     htmlBody: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #2c5f2d; margin: 0;">Thank You for Your Generosity!</h1>
+          <h1 style="color: #2c5f2d; margin: 0;">Thank You!</h1>
         </div>
 
-        <p style="font-size: 16px;">Hi {{donorName}},</p>
+        <p style="font-size: 16px;">Dear {{donorName}},</p>
 
         <p style="font-size: 16px;">
-          Thank you so much for your generous donation to TreeHouse Books!
-          Your contribution helps us continue our mission of building community through books.
+          Thank you so much for supporting Tree House Books and our Books in Every Home campaign
+          with your donation of <strong>{{bookCount}} books</strong> {{valueDescription}}.
         </p>
 
-        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #2c5f2d; margin-top: 0;">Your Donation Summary:</h3>
-          <ul style="font-size: 15px; line-height: 1.8;">
-            <li><strong>Books donated:</strong> {{bookCount}}</li>
-          </ul>
-        </div>
+        <p style="font-size: 16px;">
+          Without you we truly could not fulfill our goal of creating and sustaining a community of readers,
+          writers, and thinkers. The books that you have so generously donated will find their way into the
+          homes of families and children, changing lives through reading and mitigating the Philadelphia
+          literacy crisis.
+        </p>
 
         <p style="font-size: 16px;">
-          Your donated books will find new homes with readers in our community who will
-          treasure them. Thank you for helping us spread the joy of reading!
+          It is our hope that you continue to walk with us to promote lifelong readership and access to
+          high-quality books for every child. We have many ways that you can continue to stay involved
+          with Tree House Books: volunteer, serve on a committee, or become a donor!
+        </p>
+
+        <p style="font-size: 16px;">
+          Thanks again, {{donorName}}! We hope to hear from you again soon. As always, do not hesitate
+          to reach out to <a href="mailto:emma@treehousebooks.org">emma@treehousebooks.org</a>.
         </p>
 
         <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
 
         <p style="color: #666; font-size: 13px; text-align: center;">
-          <strong>TreeHouse Books</strong><br>
-          Building community through books<br>
-          <em>This is an automated message. Please do not reply.</em>
+          <strong>Tree House Books</strong><br>
+          Building community through books
         </p>
       </div>
     `,
-    textBody: `
-Hi {{donorName}},
+    textBody: `Dear {{donorName}},
 
-Thank you so much for your generous donation to TreeHouse Books!
-Your contribution helps us continue our mission of building community through books.
+Thank you so much for supporting Tree House Books and our Books in Every Home campaign with your donation of {{bookCount}} books {{valueDescription}}.
 
-Your Donation Summary:
-- Books donated: {{bookCount}}
+Without you we truly could not fulfill our goal of creating and sustaining a community of readers, writers, and thinkers. The books that you have so generously donated will find their way into the homes of families and children, changing lives through reading and mitigating the Philadelphia literacy crisis.
 
-Your donated books will find new homes with readers in our community who will
-treasure them. Thank you for helping us spread the joy of reading!
+It is our hope that you continue to walk with us to promote lifelong readership and access to high-quality books for every child. We have many ways that you can continue to stay involved with Tree House Books: volunteer, serve on a committee, or become a donor!
+
+Thanks again, {{donorName}}! We hope to hear from you again soon. As always, do not hesitate to reach out to emma@treehousebooks.org.
 
 ---
-TreeHouse Books
+Tree House Books
 Building community through books
     `
   };
