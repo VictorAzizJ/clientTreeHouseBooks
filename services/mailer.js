@@ -423,11 +423,13 @@ async function sendDonationThankYouEmail(email, donorName, details) {
   const { numberOfBooks, donationType, valuePerBook, totalValue, donationId, isOrganization } = details;
 
   // Build value description based on donation type
+  // Used books: "that you valued $1 per book" or "that you valued $2 per book"
+  // New books: "Valued at $X.XX"
   let valueDescription = '';
   if (donationType === 'used' && valuePerBook) {
     valueDescription = `that you valued $${valuePerBook} per book`;
   } else if (donationType === 'new' && totalValue) {
-    valueDescription = `valued at $${totalValue.toFixed(2)}`;
+    valueDescription = `Valued at $${totalValue.toFixed(2)}`;
   }
 
   // Placeholder data for template
@@ -452,15 +454,11 @@ async function sendDonationThankYouEmail(email, donorName, details) {
     subject: 'Thank you for supporting Tree House Books!',
     htmlBody: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #2c5f2d; margin: 0;">Thank You!</h1>
-        </div>
-
         <p style="font-size: 16px;">Dear {{donorName}},</p>
 
         <p style="font-size: 16px;">
           Thank you so much for supporting Tree House Books and our Books in Every Home campaign
-          with your donation of <strong>{{bookCount}} books</strong> {{valueDescription}}.
+          with your donation of {{bookCount}} books {{valueDescription}}.
         </p>
 
         <p style="font-size: 16px;">
@@ -478,14 +476,25 @@ async function sendDonationThankYouEmail(email, donorName, details) {
 
         <p style="font-size: 16px;">
           Thanks again, {{donorName}}! We hope to hear from you again soon. As always, do not hesitate
-          to reach out to <a href="mailto:emma@treehousebooks.org">emma@treehousebooks.org</a>.
+          to reach out to <a href="mailto:emma@treehousebooks.org">emma@treehousebooks.org</a> with any questions!
         </p>
+
+        <div style="margin-top: 30px;">
+          <p style="font-size: 16px; margin: 0;">Best,<br>
+          <strong>Emma Goldstein</strong><br>
+          Giving Library Manager<br>
+          Tree House Books<br>
+          1430 W. Susquehanna Avenue<br>
+          Philadelphia, PA 19121<br>
+          (215) 236-1760 - office<br>
+          <a href="https://www.treehousebooks.org">Tree House Books Online</a><br>
+          <em>Growing and sustaining a community of readers, writers, and thinkers</em></p>
+        </div>
 
         <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
 
-        <p style="color: #666; font-size: 13px; text-align: center;">
-          <strong>Tree House Books</strong><br>
-          Building community through books
+        <p style="color: #666; font-size: 12px;">
+          Tree House Books is a 501(c)(3) charitable organization, and your gift is fully tax-deductible. No services were provided or benefits received for this contribution.
         </p>
       </div>
     `,
@@ -497,11 +506,19 @@ Without you we truly could not fulfill our goal of creating and sustaining a com
 
 It is our hope that you continue to walk with us to promote lifelong readership and access to high-quality books for every child. We have many ways that you can continue to stay involved with Tree House Books: volunteer, serve on a committee, or become a donor!
 
-Thanks again, {{donorName}}! We hope to hear from you again soon. As always, do not hesitate to reach out to emma@treehousebooks.org.
+Thanks again, {{donorName}}! We hope to hear from you again soon. As always, do not hesitate to reach out to emma@treehousebooks.org with any questions!
 
----
+Best,
+Emma Goldstein
+Giving Library Manager
 Tree House Books
-Building community through books
+1430 W. Susquehanna Avenue
+Philadelphia, PA 19121
+(215) 236-1760 - office
+Tree House Books Online
+Growing and sustaining a community of readers, writers, and thinkers
+
+Tree House Books is a 501(c)(3) charitable organization, and your gift is fully tax-deductible. No services were provided or benefits received for this contribution.
     `
   };
 

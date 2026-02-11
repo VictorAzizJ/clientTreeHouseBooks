@@ -100,30 +100,39 @@ emailTemplateSchema.statics.seedDefaults = async function() {
   <style>
     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background-color: #2d5a27; color: white; padding: 20px; text-align: center; }
-    .content { padding: 20px; background-color: #f9f9f9; }
-    .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
-    .highlight { color: #2d5a27; font-weight: bold; }
+    .content { padding: 20px; }
+    .signature { margin-top: 30px; }
+    .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h1>Thank You!</h1>
-    </div>
     <div class="content">
-      <p>Dear <span class="highlight">{{donorName}}</span>,</p>
+      <p>Dear {{donorName}},</p>
 
-      <p>Thank you so much for supporting Tree House Books and our Books in Every Home campaign with your donation of <span class="highlight">{{bookCount}} books</span> {{valueDescription}}.</p>
+      <p>Thank you so much for supporting Tree House Books and our Books in Every Home campaign with your donation of {{bookCount}} books {{valueDescription}}.</p>
 
       <p>Without you we truly could not fulfill our goal of creating and sustaining a community of readers, writers, and thinkers. The books that you have so generously donated will find their way into the homes of families and children, changing lives through reading and mitigating the Philadelphia literacy crisis.</p>
 
       <p>It is our hope that you continue to walk with us to promote lifelong readership and access to high-quality books for every child. We have many ways that you can continue to stay involved with Tree House Books: volunteer, serve on a committee, or become a donor!</p>
 
-      <p>Thanks again, <span class="highlight">{{donorName}}</span>! We hope to hear from you again soon. As always, do not hesitate to reach out to <a href="mailto:emma@treehousebooks.org">emma@treehousebooks.org</a>.</p>
-    </div>
-    <div class="footer">
-      <p>Tree House Books | Building community through books</p>
+      <p>Thanks again, {{donorName}}! We hope to hear from you again soon. As always, do not hesitate to reach out to <a href="mailto:emma@treehousebooks.org">emma@treehousebooks.org</a> with any questions!</p>
+
+      <div class="signature">
+        <p>Best,<br>
+        <strong>Emma Goldstein</strong><br>
+        Giving Library Manager<br>
+        Tree House Books<br>
+        1430 W. Susquehanna Avenue<br>
+        Philadelphia, PA 19121<br>
+        (215) 236-1760 - office<br>
+        <a href="https://www.treehousebooks.org">Tree House Books Online</a><br>
+        <em>Growing and sustaining a community of readers, writers, and thinkers</em></p>
+      </div>
+
+      <div class="footer">
+        <p>Tree House Books is a 501(c)(3) charitable organization, and your gift is fully tax-deductible. No services were provided or benefits received for this contribution.</p>
+      </div>
     </div>
   </div>
 </body>
@@ -136,14 +145,23 @@ Without you we truly could not fulfill our goal of creating and sustaining a com
 
 It is our hope that you continue to walk with us to promote lifelong readership and access to high-quality books for every child. We have many ways that you can continue to stay involved with Tree House Books: volunteer, serve on a committee, or become a donor!
 
-Thanks again, {{donorName}}! We hope to hear from you again soon. As always, do not hesitate to reach out to emma@treehousebooks.org.
+Thanks again, {{donorName}}! We hope to hear from you again soon. As always, do not hesitate to reach out to emma@treehousebooks.org with any questions!
 
+Best,
+Emma Goldstein
+Giving Library Manager
 Tree House Books
-Building community through books`,
+1430 W. Susquehanna Avenue
+Philadelphia, PA 19121
+(215) 236-1760 - office
+Tree House Books Online
+Growing and sustaining a community of readers, writers, and thinkers
+
+Tree House Books is a 501(c)(3) charitable organization, and your gift is fully tax-deductible. No services were provided or benefits received for this contribution.`,
       availablePlaceholders: [
         { placeholder: '{{donorName}}', description: 'Full name of the donor or organization name' },
         { placeholder: '{{bookCount}}', description: 'Total number of books donated' },
-        { placeholder: '{{valueDescription}}', description: 'Value description (e.g., "that you valued $1 per book" for used, or "valued at $50.00" for new)' },
+        { placeholder: '{{valueDescription}}', description: 'Value description (e.g., "that you valued $1 per book" for used, or "Valued at $50.00" for new)' },
         { placeholder: '{{donationDate}}', description: 'Date the donation was made' }
       ],
       isActive: true
