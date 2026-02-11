@@ -124,6 +124,18 @@ router.post(
           req.session.error = 'Member not found';
           return res.redirect('/visitor-checkin');
         }
+
+        // Check if child needs to be transformed to adult (18+)
+        await Member.checkAndTransformToAdult(memberId);
+        // Reload member to get updated data
+        member = await Member.findById(memberId);
+
+        // Check if member needs email prompt (transformed from child)
+        if (member.needsEmailPrompt && !member.email) {
+          // Store member ID in session and redirect to email signup
+          req.session.emailPromptMemberId = memberId;
+          return res.redirect('/visitor-checkin/email-signup');
+        }
       } else {
         // New visitor - check if they already exist by email
         if (email) {
@@ -178,6 +190,98 @@ router.post(
       console.error('Error recording visitor check-in:', err);
       req.session.error = 'Failed to record check-in';
       res.redirect('/visitor-checkin');
+    }
+  }
+);
+
+// GET /visitor-checkin/email-signup - Show email signup form for transformed members
+router.get('/visitor-checkin/email-signup', ensureAuthenticated, async (req, res) => {
+  const memberId = req.session.emailPromptMemberId;
+
+  if (!memberId) {
+    return res.redirect('/visitor-checkin');
+  }
+
+  const member = await Member.findById(memberId).lean();
+  if (!member) {
+    delete req.session.emailPromptMemberId;
+    return res.redirect('/visitor-checkin');
+  }
+
+  res.render('emailSignup', {
+    user: req.session.user,
+    member,
+    error: req.session.error
+  });
+  delete req.session.error;
+});
+
+// POST /visitor-checkin/email-signup - Process email signup
+router.post(
+  '/visitor-checkin/email-signup',
+  ensureAuthenticated,
+  [
+    body('email')
+      .optional({ checkFalsy: true })
+      .trim()
+      .isEmail().withMessage('Must be a valid email address')
+      .normalizeEmail()
+  ],
+  async (req, res) => {
+    const memberId = req.session.emailPromptMemberId;
+
+    if (!memberId) {
+      return res.redirect('/visitor-checkin');
+    }
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      req.session.error = errors.array()[0].msg;
+      return res.redirect('/visitor-checkin/email-signup');
+    }
+
+    const { email, skipEmail } = req.body;
+
+    try {
+      const member = await Member.findById(memberId);
+      if (!member) {
+        delete req.session.emailPromptMemberId;
+        return res.redirect('/visitor-checkin');
+      }
+
+      // Update email if provided
+      if (email && !skipEmail) {
+        // Check if email already exists
+        const existingMember = await Member.findOne({ email: email.toLowerCase(), _id: { $ne: memberId } });
+        if (existingMember) {
+          req.session.error = 'This email is already in use by another member';
+          return res.redirect('/visitor-checkin/email-signup');
+        }
+        member.email = email;
+      }
+
+      // Clear the email prompt flag
+      member.needsEmailPrompt = false;
+      await member.save();
+
+      // Create visit record
+      await Visit.create({
+        member: member._id,
+        visitDate: new Date(),
+        notes: 'First check-in after turning 18',
+        recordedBy: req.session.user._id
+      });
+
+      // Clean up session
+      delete req.session.emailPromptMemberId;
+
+      req.session.success = `Welcome, ${member.firstName}! You're now registered as an adult member. Check-in recorded.`;
+      res.redirect('/visitor-checkin');
+
+    } catch (err) {
+      console.error('Error processing email signup:', err);
+      req.session.error = 'Failed to update email';
+      res.redirect('/visitor-checkin/email-signup');
     }
   }
 );

@@ -43,11 +43,11 @@
         </div>
       </div>
 
-      <!-- Date of Birth (shown for ALL members) -->
-      <div class="mb-3">
-        <label for="dateOfBirth" class="form-label">Date of Birth</label>
+      <!-- Date of Birth (shown only for children) -->
+      <div class="mb-3 child-field" id="dobField" style="display: none;">
+        <label for="dateOfBirth" class="form-label">Date of Birth *</label>
         <input id="dateOfBirth" name="dateOfBirth" type="date" class="form-control">
-        <small class="text-muted">Used to calculate age for filtering and reports</small>
+        <small class="text-muted">Required for child members to track age</small>
       </div>
 
       <!-- Parent Selection (shown only for children) -->

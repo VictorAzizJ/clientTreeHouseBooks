@@ -69,9 +69,9 @@ router.get('/api/members/search', ensureVolunteerOrHigher, async (req, res) => {
     // Format response with additional display info
     // Includes both id/text (for Select2) and _id/displayName (for general use)
     const today = new Date();
-    const formattedMembers = members.map(m => {
-      const isChild = m.memberType === 'child';
+    const formattedMembers = [];
 
+    for (const m of members) {
       // Calculate age from DOB
       let age = null;
       let formattedDOB = null;
@@ -87,23 +87,39 @@ router.get('/api/members/search', ensureVolunteerOrHigher, async (req, res) => {
         }
       }
 
-      // Build display text: children show AGE, adults show email
-      let secondaryIdentifier = '';
-      if (isChild) {
-        secondaryIdentifier = age !== null ? ` (Age: ${age})` : ' (Child)';
-      } else {
-        secondaryIdentifier = m.email ? ` <${m.email}>` : '';
+      // Determine effective member type:
+      // - No DOB = treat as adult
+      // - Child who is 18+ = auto-transform to adult
+      let effectiveMemberType = m.memberType || 'adult';
+      if (!m.dateOfBirth) {
+        effectiveMemberType = 'adult'; // No DOB = adult
+      } else if (m.memberType === 'child' && age >= 18) {
+        // Auto-transform child to adult (fire and forget)
+        Member.checkAndTransformToAdult(m._id).catch(err => {
+          console.error('Auto-transform error:', err);
+        });
+        effectiveMemberType = 'adult';
       }
 
-      // Build subtext: children show age, adults show email
-      let subtext;
+      const isChild = effectiveMemberType === 'child';
+
+      // Build display text:
+      // - Children: show BIRTHDATE (MM/DD/YYYY)
+      // - Adults: show email (no birthdate needed)
+      let secondaryIdentifier = '';
+      let subtext = '';
+
       if (isChild) {
-        subtext = age !== null ? `Age: ${age}` : 'Child member';
+        // Children show birthdate
+        secondaryIdentifier = formattedDOB ? ` (DOB: ${formattedDOB})` : '';
+        subtext = formattedDOB ? `DOB: ${formattedDOB}` : 'Child member';
       } else {
+        // Adults show email (no birthdate)
+        secondaryIdentifier = m.email ? ` <${m.email}>` : '';
         subtext = m.email || '';
       }
 
-      return {
+      formattedMembers.push({
         id: m._id,  // For Select2 compatibility
         _id: m._id,
         text: `${m.firstName} ${m.lastName}${secondaryIdentifier}`,  // For Select2
@@ -111,16 +127,16 @@ router.get('/api/members/search', ensureVolunteerOrHigher, async (req, res) => {
         lastName: m.lastName,
         email: m.email || '',
         phone: m.phone || '',
-        dateOfBirth: m.dateOfBirth || null,
-        formattedDOB: formattedDOB,  // Pre-formatted MM/DD/YYYY
-        age: age,  // Calculated age
-        memberType: m.memberType || 'adult',
+        dateOfBirth: isChild ? m.dateOfBirth : null,  // Only include DOB for children
+        formattedDOB: isChild ? formattedDOB : null,  // Only for children
+        age: isChild ? age : null,  // Only for children
+        memberType: effectiveMemberType,
         isChild: isChild,
         // Pre-formatted display text for UI
         displayName: `${m.firstName} ${m.lastName}`,
         subtext: subtext
-      };
-    });
+      });
+    }
 
     res.json(formattedMembers);
   } catch (err) {

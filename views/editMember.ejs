@@ -62,12 +62,12 @@
         </div>
       </div>
 
-      <!-- Date of Birth (for ALL members) -->
-      <div class="mb-3">
+      <!-- Date of Birth (for children only) -->
+      <div class="mb-3 child-field" id="dobField" style="display: <%= member.memberType === 'child' ? 'block' : 'none' %>;">
         <label for="dateOfBirth" class="form-label">Date of Birth</label>
         <input id="dateOfBirth" name="dateOfBirth" type="date" class="form-control"
           value="<%= member.dateOfBirth ? new Date(member.dateOfBirth).toISOString().split('T')[0] : '' %>">
-        <small class="text-muted">Used to calculate age for filtering and reports</small>
+        <small class="text-muted">Required for child members to track age</small>
       </div>
 
       <!-- Parent Selection (for children only) -->

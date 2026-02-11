@@ -37,6 +37,12 @@ const MemberSchema = new Schema({
   // Medical/special needs notes
   notes:       { type: String },
 
+  // ─── Adult Transformation Fields ────────────────────────────────────────────
+  // Track when a child account was transformed to adult (at age 18)
+  transformedToAdultAt: { type: Date },
+  // Flag to prompt for email on next check-in (set when child becomes adult)
+  needsEmailPrompt: { type: Boolean, default: false },
+
   // ─── Audit & Soft Delete Fields ─────────────────────────────────────────────
   // Track who last updated this record
   updatedBy:   { type: Schema.Types.ObjectId, ref: 'User' },
@@ -87,6 +93,66 @@ MemberSchema.statics.getDateCutoffForAge = function(maxAge) {
   const cutoff = new Date();
   cutoff.setFullYear(cutoff.getFullYear() - maxAge);
   return cutoff;
+};
+
+// ─── Static: Check and transform child to adult if 18+ ──────────────────────
+// Returns true if transformation occurred
+MemberSchema.statics.checkAndTransformToAdult = async function(memberId) {
+  const member = await this.findById(memberId);
+  if (!member) return false;
+
+  // Only transform children with a DOB who are 18+
+  if (member.memberType !== 'child' || !member.dateOfBirth) return false;
+
+  const age = member.age; // Uses the virtual
+  if (age >= 18) {
+    member.memberType = 'adult';
+    member.transformedToAdultAt = new Date();
+    member.needsEmailPrompt = !member.email; // Only prompt if no email
+    await member.save();
+    console.log(`✅ Member ${member.firstName} ${member.lastName} auto-transformed to adult (age ${age})`);
+    return true;
+  }
+  return false;
+};
+
+// ─── Static: Batch transform all children who are now 18+ ───────────────────
+MemberSchema.statics.transformAllAdultChildren = async function() {
+  const eighteenYearsAgo = new Date();
+  eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
+
+  const result = await this.updateMany(
+    {
+      memberType: 'child',
+      dateOfBirth: { $lte: eighteenYearsAgo },
+      isDeleted: { $ne: true }
+    },
+    {
+      $set: {
+        memberType: 'adult',
+        transformedToAdultAt: new Date(),
+        needsEmailPrompt: true
+      }
+    }
+  );
+
+  if (result.modifiedCount > 0) {
+    console.log(`✅ Batch transformed ${result.modifiedCount} children to adults`);
+  }
+  return result.modifiedCount;
+};
+
+// ─── Instance method: Check if this member needs email prompt ───────────────
+MemberSchema.methods.checkEmailPrompt = function() {
+  return this.needsEmailPrompt && !this.email;
+};
+
+// ─── Instance method: Clear email prompt flag ───────────────────────────────
+MemberSchema.methods.clearEmailPrompt = async function() {
+  if (this.needsEmailPrompt) {
+    this.needsEmailPrompt = false;
+    await this.save();
+  }
 };
 
 module.exports = mongoose.model('Member', MemberSchema);

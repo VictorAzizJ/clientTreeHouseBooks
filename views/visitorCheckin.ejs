@@ -163,11 +163,11 @@
               </div>
             </div>
 
-            <!-- Date of Birth (shown for ALL members) -->
-            <div class="mb-3">
-              <label for="newDateOfBirth" class="form-label">Date of Birth</label>
+            <!-- Date of Birth (shown only for children) -->
+            <div class="mb-3 new-child-field" id="newDobField" style="display: none;">
+              <label for="newDateOfBirth" class="form-label">Date of Birth *</label>
               <input id="newDateOfBirth" name="dateOfBirth" type="date" class="form-control">
-              <small class="text-muted">Used to calculate age for filtering and reports</small>
+              <small class="text-muted">Required for child members to track age</small>
             </div>
 
             <!-- Parent Selection (shown only for children) -->
