@@ -408,19 +408,33 @@ async function sendTemplatedEmail(templateKey, recipientEmail, placeholderData, 
 // ─── Send Donation Thank You Email ──────────────────────────────────────────
 /**
  * Send a thank-you email after book donation
- * Uses database template if available, falls back to hardcoded template
+ * ALWAYS uses the hardcoded template below (not database) to ensure consistency
  *
  * @param {string} email - Member email address
- * @param {string} firstName - Member's first name
+ * @param {string} donorName - Donor's name
  * @param {object} details - Donation details
  * @param {number} details.numberOfBooks - Number of books donated
- * @param {string[]} details.genres - Array of genres (optional)
- * @param {number} details.weight - Total weight in lbs (optional)
- * @param {string} details.donationId - Donation record ID (optional, for logging)
+ * @param {string} details.donationType - 'new' or 'used'
+ * @param {number} details.valuePerBook - Value per book for used donations
+ * @param {number} details.totalValue - Total value for new book donations
+ * @param {string} details.donationId - Donation record ID (for logging)
  * @returns {Promise<{success: boolean, messageId?: string, error?: string}>}
  */
 async function sendDonationThankYouEmail(email, donorName, details) {
   const { numberOfBooks, donationType, valuePerBook, totalValue, donationId, isOrganization } = details;
+
+  // Check if email service is configured
+  if (!transporter) {
+    console.warn(`⚠️  Email service not configured. Donation thank-you email not sent to ${email}`);
+    await logEmailSend({
+      templateKey: 'donation_thank_you',
+      recipient: email,
+      status: 'skipped',
+      error: 'Email service not configured',
+      metadata: { donationId, donorName, numberOfBooks }
+    });
+    return { success: false, error: 'Email service not configured' };
+  }
 
   // Build value description based on donation type
   // Used books: "that you valued $1 per book" or "that you valued $2 per book"
@@ -429,84 +443,71 @@ async function sendDonationThankYouEmail(email, donorName, details) {
   if (donationType === 'used' && valuePerBook) {
     valueDescription = `that you valued $${valuePerBook} per book`;
   } else if (donationType === 'new' && totalValue) {
-    valueDescription = `Valued at $${totalValue.toFixed(2)}`;
+    valueDescription = `Valued at $${Number(totalValue).toFixed(2)}`;
   }
 
-  // Placeholder data for template
-  const placeholderData = {
-    donorName: donorName,
-    bookCount: numberOfBooks,
-    donationDate: new Date().toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }),
-    donationType: donationType,
-    valuePerBook: valuePerBook ? `$${valuePerBook}` : '',
-    totalValue: totalValue ? `$${totalValue.toFixed(2)}` : '',
-    valueDescription: valueDescription,
-    isOrganization: isOrganization || false
-  };
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HARDCODED TEMPLATE - This is the official Tree House Books donation email
+  // DO NOT modify without approval. This template is used for ALL donations.
+  // ═══════════════════════════════════════════════════════════════════════════
+  const subject = 'Thank you for supporting Tree House Books!';
 
-  // Fallback template (hardcoded) - matches the official Tree House Books format
-  const fallbackTemplate = {
-    subject: 'Thank you for supporting Tree House Books!',
-    htmlBody: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <p style="font-size: 16px;">Dear {{donorName}},</p>
+  const htmlBody = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <p style="font-size: 16px;">Dear ${donorName},</p>
 
-        <p style="font-size: 16px;">
-          Thank you so much for supporting Tree House Books and our Books in Every Home campaign
-          with your donation of {{bookCount}} books {{valueDescription}}.
-        </p>
+      <p style="font-size: 16px;">
+        Thank you so much for supporting Tree House Books and our Books in Every Home campaign
+        with your donation of ${numberOfBooks} books ${valueDescription}.
+      </p>
 
-        <p style="font-size: 16px;">
-          Without you we truly could not fulfill our goal of creating and sustaining a community of readers,
-          writers, and thinkers. The books that you have so generously donated will find their way into the
-          homes of families and children, changing lives through reading and mitigating the Philadelphia
-          literacy crisis.
-        </p>
+      <p style="font-size: 16px;">
+        Without you we truly could not fulfill our goal of creating and sustaining a community of readers,
+        writers, and thinkers. The books that you have so generously donated will find their way into the
+        homes of families and children, changing lives through reading and mitigating the Philadelphia
+        literacy crisis.
+      </p>
 
-        <p style="font-size: 16px;">
-          It is our hope that you continue to walk with us to promote lifelong readership and access to
-          high-quality books for every child. We have many ways that you can continue to stay involved
-          with Tree House Books: volunteer, serve on a committee, or become a donor!
-        </p>
+      <p style="font-size: 16px;">
+        It is our hope that you continue to walk with us to promote lifelong readership and access to
+        high-quality books for every child. We have many ways that you can continue to stay involved
+        with Tree House Books: volunteer, serve on a committee, or become a donor!
+      </p>
 
-        <p style="font-size: 16px;">
-          Thanks again, {{donorName}}! We hope to hear from you again soon. As always, do not hesitate
-          to reach out to <a href="mailto:emma@treehousebooks.org">emma@treehousebooks.org</a> with any questions!
-        </p>
+      <p style="font-size: 16px;">
+        Thanks again, ${donorName}! We hope to hear from you again soon. As always, do not hesitate
+        to reach out to <a href="mailto:emma@treehousebooks.org">emma@treehousebooks.org</a> with any questions!
+      </p>
 
-        <div style="margin-top: 30px;">
-          <p style="font-size: 16px; margin: 0;">Best,<br>
-          <strong>Emma Goldstein</strong><br>
-          Giving Library Manager<br>
-          Tree House Books<br>
-          1430 W. Susquehanna Avenue<br>
-          Philadelphia, PA 19121<br>
-          (215) 236-1760 - office<br>
-          <a href="https://www.treehousebooks.org">Tree House Books Online</a><br>
-          <em>Growing and sustaining a community of readers, writers, and thinkers</em></p>
-        </div>
-
-        <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
-
-        <p style="color: #666; font-size: 12px;">
-          Tree House Books is a 501(c)(3) charitable organization, and your gift is fully tax-deductible. No services were provided or benefits received for this contribution.
-        </p>
+      <div style="margin-top: 30px;">
+        <p style="font-size: 16px; margin: 0;">Best,<br>
+        <strong>Emma Goldstein</strong><br>
+        Giving Library Manager<br>
+        Tree House Books<br>
+        1430 W. Susquehanna Avenue<br>
+        Philadelphia, PA 19121<br>
+        (215) 236-1760 - office<br>
+        <a href="https://www.treehousebooks.org">Tree House Books Online</a><br>
+        <em>Growing and sustaining a community of readers, writers, and thinkers</em></p>
       </div>
-    `,
-    textBody: `Dear {{donorName}},
 
-Thank you so much for supporting Tree House Books and our Books in Every Home campaign with your donation of {{bookCount}} books {{valueDescription}}.
+      <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+
+      <p style="color: #666; font-size: 12px;">
+        Tree House Books is a 501(c)(3) charitable organization, and your gift is fully tax-deductible. No services were provided or benefits received for this contribution.
+      </p>
+    </div>
+  `;
+
+  const textBody = `Dear ${donorName},
+
+Thank you so much for supporting Tree House Books and our Books in Every Home campaign with your donation of ${numberOfBooks} books ${valueDescription}.
 
 Without you we truly could not fulfill our goal of creating and sustaining a community of readers, writers, and thinkers. The books that you have so generously donated will find their way into the homes of families and children, changing lives through reading and mitigating the Philadelphia literacy crisis.
 
 It is our hope that you continue to walk with us to promote lifelong readership and access to high-quality books for every child. We have many ways that you can continue to stay involved with Tree House Books: volunteer, serve on a committee, or become a donor!
 
-Thanks again, {{donorName}}! We hope to hear from you again soon. As always, do not hesitate to reach out to emma@treehousebooks.org with any questions!
+Thanks again, ${donorName}! We hope to hear from you again soon. As always, do not hesitate to reach out to emma@treehousebooks.org with any questions!
 
 Best,
 Emma Goldstein
@@ -519,16 +520,45 @@ Tree House Books Online
 Growing and sustaining a community of readers, writers, and thinkers
 
 Tree House Books is a 501(c)(3) charitable organization, and your gift is fully tax-deductible. No services were provided or benefits received for this contribution.
-    `
+  `;
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM || '"TreeHouse Books" <noreply@treehousebooks.org>',
+    to: email,
+    subject,
+    html: htmlBody,
+    text: textBody
   };
 
-  return sendTemplatedEmail(
-    'donation_thank_you',
-    email,
-    placeholderData,
-    { donationId, donorName, numberOfBooks },
-    fallbackTemplate
-  );
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Donation thank-you email sent to ${email}: ${info.messageId}`);
+
+    await logEmailSend({
+      templateKey: 'donation_thank_you',
+      recipient: email,
+      subject,
+      status: 'sent',
+      messageId: info.messageId,
+      metadata: { donationId, donorName, numberOfBooks, donationType, valueDescription }
+    });
+
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error(`❌ Error sending donation thank-you email to ${email}:`, error.message);
+
+    await logEmailSend({
+      templateKey: 'donation_thank_you',
+      recipient: email,
+      subject,
+      status: 'failed',
+      error: error.message,
+      metadata: { donationId, donorName, numberOfBooks }
+    });
+
+    return { success: false, error: error.message };
+  }
 }
 
 // ─── Get Email Logs ─────────────────────────────────────────────────────────
