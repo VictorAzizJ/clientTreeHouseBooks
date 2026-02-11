@@ -137,7 +137,7 @@
               <tbody>
                 <% donations.forEach(d => { %>
                   <tr>
-                    <td><%= new Date(d.createdAt).toLocaleDateString() %></td>
+                    <td><%= d.donatedAt ? new Date(d.donatedAt).toLocaleDateString() : '-' %></td>
                     <td>
                       <% if (d.donationType === 'new') { %>
                         <span class="badge bg-success">New</span>

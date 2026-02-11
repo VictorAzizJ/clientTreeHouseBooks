@@ -143,6 +143,8 @@
       $('#parent').select2({
         placeholder: 'Search for parent/guardian...',
         allowClear: true,
+        width: '100%',
+        dropdownParent: $('#parentField'),
         ajax: {
           url: '/api/members/search',
           dataType: 'json',
@@ -155,7 +157,12 @@
           },
           processResults: function(data) {
             return {
-              results: data
+              results: data.map(function(member) {
+                return {
+                  id: member._id,
+                  text: member.displayName + (member.email ? ' <' + member.email + '>' : '')
+                };
+              })
             };
           },
           cache: true

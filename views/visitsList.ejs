@@ -96,8 +96,8 @@
               <% if (visits && visits.length > 0) { %>
                 <% visits.forEach(visit => { %>
                   <tr>
-                    <td><%= new Date(visit.visitDate).toLocaleDateString() %></td>
-                    <td><%= new Date(visit.visitDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %></td>
+                    <td class="visit-date" data-date="<%= visit.visitDate %>"></td>
+                    <td class="visit-time" data-date="<%= visit.visitDate %>"></td>
                     <td>
                       <% if (visit.member) { %>
                         <a href="/members/<%= visit.member._id %>">
@@ -223,6 +223,27 @@
       url.searchParams.set('page', 1); // Reset to first page
       window.location.href = url.toString();
     }
+
+    // Format dates client-side to use user's local timezone
+    document.addEventListener('DOMContentLoaded', function() {
+      // Format date cells
+      document.querySelectorAll('.visit-date').forEach(function(cell) {
+        const dateStr = cell.getAttribute('data-date');
+        if (dateStr) {
+          const date = new Date(dateStr);
+          cell.textContent = date.toLocaleDateString();
+        }
+      });
+
+      // Format time cells
+      document.querySelectorAll('.visit-time').forEach(function(cell) {
+        const dateStr = cell.getAttribute('data-date');
+        if (dateStr) {
+          const date = new Date(dateStr);
+          cell.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+      });
+    });
   </script>
   <%
     // Helper function for pagination URLs in EJS
