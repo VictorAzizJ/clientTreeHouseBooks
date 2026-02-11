@@ -83,7 +83,23 @@ router.post(
     body('address')
       .optional({ checkFalsy: true })
       .trim()
-      .isLength({ max: 200 }).withMessage('Address must be less than 200 characters')
+      .isLength({ max: 200 }).withMessage('Address must be less than 200 characters'),
+
+    // Emergency contact fields (for children)
+    body('emergencyContactName')
+      .optional({ checkFalsy: true })
+      .trim()
+      .isLength({ max: 100 }).withMessage('Emergency contact name must be less than 100 characters'),
+
+    body('emergencyContactPhone')
+      .optional({ checkFalsy: true })
+      .trim()
+      .matches(/^[\d\s\-()+]*$/).withMessage('Emergency contact phone must contain only numbers, spaces, hyphens, parentheses, and plus signs'),
+
+    body('emergencyContactRelationship')
+      .optional({ checkFalsy: true })
+      .trim()
+      .isLength({ max: 50 }).withMessage('Relationship must be less than 50 characters')
   ],
   async (req, res) => {
     // Check for validation errors
@@ -94,7 +110,10 @@ router.post(
       return res.redirect('/members/new');
     }
 
-    const { firstName, lastName, email, phone, address, zipCode, memberType, parent, dateOfBirth, grade, school } = req.body;
+    const {
+      firstName, lastName, email, phone, address, zipCode, memberType, parent, dateOfBirth, grade, school,
+      emergencyContactName, emergencyContactPhone, emergencyContactRelationship
+    } = req.body;
 
     try {
       const memberData = {
@@ -128,6 +147,14 @@ router.post(
         }
         if (school) {
           memberData.school = school;
+        }
+        // Emergency contact
+        if (emergencyContactName || emergencyContactPhone || emergencyContactRelationship) {
+          memberData.emergencyContact = {
+            name: emergencyContactName || undefined,
+            phone: emergencyContactPhone || undefined,
+            relationship: emergencyContactRelationship || undefined
+          };
         }
       }
 

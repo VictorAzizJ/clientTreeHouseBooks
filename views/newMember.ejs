@@ -89,6 +89,27 @@
         </div>
       <% } %>
 
+      <!-- Emergency Contact (shown only for children) -->
+      <div class="card mb-3 child-field" id="emergencyContactField" style="display: none;">
+        <div class="card-header">Emergency Contact (Optional)</div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="emergencyContactName" class="form-label">Name</label>
+              <input id="emergencyContactName" name="emergencyContactName" class="form-control" placeholder="Contact name">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="emergencyContactPhone" class="form-label">Phone</label>
+              <input id="emergencyContactPhone" name="emergencyContactPhone" class="form-control" placeholder="(123) 456-7890">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="emergencyContactRelationship" class="form-label">Relationship</label>
+              <input id="emergencyContactRelationship" name="emergencyContactRelationship" class="form-control" placeholder="e.g., Grandmother, Uncle">
+            </div>
+          </div>
+        </div>
+      </div>
+
       <button type="submit" class="btn btn-success">Create Member</button>
       <a href="/dashboard" class="btn btn-secondary ms-2">Back to Dashboard</a>
     </form>
