@@ -23,6 +23,41 @@ function safeString(val) {
   return '';
 }
 
+// Extract birthdate from Knack record - check multiple possible field names
+function extractBirthdate(record) {
+  // List of field names that might contain birthdate
+  const birthdateFields = [
+    'Birthdate', 'birthdate', 'Birth Date', 'birth_date',
+    'DOB', 'dob', 'Date of Birth', 'date_of_birth',
+    'Birthdate_raw', 'birthdate_raw', 'Birth Date_raw', 'DOB_raw',
+  ];
+
+  for (const field of birthdateFields) {
+    if (record[field]) {
+      let dateValue = record[field];
+
+      // Handle raw object format
+      if (typeof dateValue === 'object' && dateValue.date) {
+        dateValue = dateValue.date;
+      }
+      if (typeof dateValue === 'object' && dateValue.formatted) {
+        dateValue = dateValue.formatted;
+      }
+
+      const date = new Date(dateValue);
+      if (!isNaN(date.getTime())) {
+        // Sanity check: birthdate should be in the past and reasonable (not before 1900)
+        const now = new Date();
+        if (date < now && date.getFullYear() > 1900) {
+          return date;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 // Field mappings from Knack to our Member model
 function mapKnackToMember(record) {
   // Extract email from raw field
@@ -37,6 +72,18 @@ function mapKnackToMember(record) {
     joinedAt = new Date(record.field_358_raw);
   } else if (record.field_380_raw) {
     joinedAt = new Date(record.field_380_raw);
+  }
+
+  // Parse birthdate
+  const dateOfBirth = extractBirthdate(record);
+
+  // Determine member type based on age
+  let memberType = 'adult';
+  if (dateOfBirth) {
+    const age = Math.floor((new Date() - dateOfBirth) / (365.25 * 24 * 60 * 60 * 1000));
+    if (age < 18) {
+      memberType = 'child';
+    }
   }
 
   // Get address - prefer field_77 (street only), fallback to field_75
@@ -62,7 +109,8 @@ function mapKnackToMember(record) {
     zipCode: zipCode || undefined,
     notes: safeString(record.field_265_raw) || safeString(record.field_265) || undefined,
     joinedAt: joinedAt && !isNaN(joinedAt) ? joinedAt : new Date(),
-    memberType: 'adult', // Default to adult, can be updated later
+    dateOfBirth: dateOfBirth || undefined,
+    memberType: memberType,
     _knackId: record.id // Store original ID for reference
   };
 }
