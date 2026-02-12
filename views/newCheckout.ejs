@@ -122,6 +122,15 @@
             <small class="text-muted">Optional - total weight of all books checked out</small>
           </div>
 
+          <div class="mb-4">
+            <label for="monetaryDonation" class="form-label">Monetary Donation ($)</label>
+            <div class="input-group" style="max-width: 200px;">
+              <span class="input-group-text">$</span>
+              <input type="number" class="form-control" id="monetaryDonation" name="monetaryDonation" min="0" step="0.01" value="0">
+            </div>
+            <small class="text-muted">Optional - cash donation made during checkout</small>
+          </div>
+
           <div class="text-end">
             <a href="/checkouts" class="btn btn-secondary me-2">Cancel</a>
             <button type="submit" class="btn btn-primary">

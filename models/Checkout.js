@@ -27,6 +27,9 @@ const CheckoutSchema = new Schema({
   // Single total weight for entire checkout (lbs)
   totalWeight:   { type: Number, default: 0 },
 
+  // Optional monetary donation made during checkout
+  monetaryDonation: { type: Number, default: 0 },
+
   // Legacy/computed fields
   numberOfBooks: { type: Number },
   genres:        [{

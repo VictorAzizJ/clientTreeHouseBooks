@@ -170,6 +170,9 @@ router.post(
     // Single total weight for entire checkout
     body('totalWeight').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('Weight must be a positive number'),
 
+    // Optional monetary donation
+    body('monetaryDonation').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('Monetary donation must be a positive number'),
+
     // Legacy fields for backward compatibility
     body('numberOfBooks').optional({ checkFalsy: true }).isInt({ min: 1, max: 1000 }),
     body('genres').optional({ checkFalsy: true }),
@@ -185,7 +188,7 @@ router.post(
       return res.redirect(redirectTo);
     }
 
-    const { memberId, bookCategories, totalWeight, numberOfBooks, genres, weight, redirectTo } = req.body;
+    const { memberId, bookCategories, totalWeight, monetaryDonation, numberOfBooks, genres, weight, redirectTo } = req.body;
 
     try {
       // Build checkout data
@@ -225,6 +228,9 @@ router.post(
         // Single total weight
         checkoutData.totalWeight = totalWeight ? parseFloat(totalWeight) : 0;
         checkoutData.weight = checkoutData.totalWeight; // Also store in legacy field
+
+        // Monetary donation
+        checkoutData.monetaryDonation = monetaryDonation ? parseFloat(monetaryDonation) : 0;
       } else {
         // Legacy format support
         const genreArray = Array.isArray(genres) ? genres : (genres ? [genres] : []);
