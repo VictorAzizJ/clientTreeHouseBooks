@@ -8,6 +8,205 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <link rel="stylesheet" href="/css/treehouse-brand.css">
   <style>
+    <% if (user.email && user.email.toLowerCase() === 'emma@treehousebooks.org') { %>
+    /* ═══════════════════════════════════════════════════════════════════════════
+       🧵 EMMA'S QUILT-INSPIRED THEME
+       A cozy patchwork design just for you!
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    body {
+      background:
+        /* Quilt square pattern */
+        linear-gradient(45deg, #f8e1e4 25%, transparent 25%),
+        linear-gradient(-45deg, #f8e1e4 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e8f4e5 75%),
+        linear-gradient(-45deg, transparent 75%, #fef3c7 75%),
+        linear-gradient(to right, #fce7f3 0%, #f0fdf4 50%, #fef9c3 100%);
+      background-size: 60px 60px, 60px 60px, 60px 60px, 60px 60px, 100% 100%;
+      background-position: 0 0, 30px 0, 30px -30px, 0 30px, 0 0;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 12px;
+      padding: 2rem !important;
+      margin-top: 1.5rem !important;
+      margin-bottom: 2rem;
+      box-shadow:
+        0 0 0 4px #c4a484,
+        0 0 0 8px #8b7355,
+        0 8px 32px rgba(139, 115, 85, 0.3);
+      border: 2px dashed #d4a574;
+    }
+
+    /* Quilt-style cards with fabric texture */
+    .card {
+      border: 3px solid #c4a484 !important;
+      border-radius: 8px !important;
+      box-shadow:
+        inset 0 0 20px rgba(196, 164, 132, 0.1),
+        3px 3px 0 #8b7355;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url("data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h1v1H0V0zm2 2h1v1H2V2zm2 2h1v1H4V4z' fill='%23c4a484' fill-opacity='0.05'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .card > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Stitch effect on card headers */
+    .card-header {
+      border-bottom: 3px dashed #fff !important;
+      position: relative;
+    }
+
+    .card-header::after {
+      content: '✿';
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.3;
+      font-size: 1.2rem;
+    }
+
+    /* Warm pastel card header colors */
+    .card-header[style*="--thb-primary"] {
+      background: linear-gradient(135deg, #f9a8d4 0%, #f472b6 100%) !important;
+    }
+    .card-header[style*="--thb-secondary"] {
+      background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%) !important;
+    }
+    .card-header[style*="--thb-accent"] {
+      background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%) !important;
+    }
+    .card-header[style*="--thb-text-dark"] {
+      background: linear-gradient(135deg, #c4b5fd 0%, #a78bfa 100%) !important;
+    }
+    .card-header.bg-warning {
+      background: linear-gradient(135deg, #fdba74 0%, #fb923c 100%) !important;
+    }
+    .card-header.bg-info {
+      background: linear-gradient(135deg, #67e8f9 0%, #22d3ee 100%) !important;
+    }
+
+    /* Cozy button styling */
+    .btn-primary {
+      background: linear-gradient(135deg, #f9a8d4 0%, #ec4899 100%) !important;
+      border-color: #be185d !important;
+      box-shadow: 2px 2px 0 #9d174d;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #fbcfe8 0%, #f472b6 100%) !important;
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0 #9d174d;
+    }
+
+    .btn-success, .btn-outline-success {
+      border-color: #059669 !important;
+    }
+
+    /* Decorative corner patches */
+    .container::before {
+      content: '🧵';
+      position: absolute;
+      top: 10px;
+      left: 15px;
+      font-size: 1.5rem;
+      opacity: 0.6;
+    }
+    .container::after {
+      content: '🪡';
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 1.5rem;
+      opacity: 0.6;
+    }
+
+    /* Welcome banner for Emma */
+    .container > .row:first-of-type h1::before {
+      content: '🌸 ';
+    }
+    .container > .row:first-of-type h1::after {
+      content: ' 🌸';
+    }
+
+    /* List items with fabric feel */
+    .list-group-item {
+      border-left: 4px solid #f9a8d4 !important;
+      transition: all 0.2s ease;
+    }
+    .list-group-item:hover {
+      background-color: #fdf2f8 !important;
+      border-left-color: #ec4899 !important;
+      transform: translateX(4px);
+    }
+
+    /* Stats cards with quilt patches */
+    .card.text-center .card-body {
+      background: linear-gradient(135deg,
+        #fdf2f8 0%,
+        #f0fdf4 50%,
+        #fefce8 100%);
+    }
+
+    /* Front desk mode card */
+    .border-warning {
+      border: 3px solid #f59e0b !important;
+      border-style: dashed !important;
+    }
+
+    /* Table styling */
+    .table {
+      border: 2px solid #c4a484;
+    }
+    .table thead {
+      background: linear-gradient(135deg, #fce7f3 0%, #f5f3ff 100%);
+    }
+
+    /* Dashboard switcher */
+    .dashboard-switcher {
+      background: linear-gradient(135deg, #fdf2f8 0%, #fefce8 100%) !important;
+      border: 3px solid #c4a484 !important;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #fdf2f8;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(#f9a8d4, #c4a484);
+      border-radius: 5px;
+    }
+
+    /* Animation for a cozy feel */
+    @keyframes quilt-shimmer {
+      0%, 100% { opacity: 0.9; }
+      50% { opacity: 1; }
+    }
+    .card {
+      animation: quilt-shimmer 4s ease-in-out infinite;
+    }
+    <% } %>
+
     .dashboard-switcher {
       position: fixed;
       bottom: 20px;
