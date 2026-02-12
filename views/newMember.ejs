@@ -8,12 +8,30 @@
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
     rel="stylesheet" />
   <link rel="stylesheet" href="/css/treehouse-brand.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <style>
-    /* Ensure Select2 dropdown appears above other elements */
-    .select2-container--open .select2-dropdown {
-      z-index: 1060;
+    .parent-search-results {
+      position: absolute;
+      z-index: 1050;
+      width: 100%;
+      max-height: 250px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      display: none;
+    }
+    .parent-search-item {
+      padding: 10px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+    .parent-search-item:hover {
+      background-color: #f8f9fa;
+    }
+    .parent-search-item:last-child {
+      border-bottom: none;
     }
   </style>
 </head>
@@ -58,11 +76,23 @@
       </div>
 
       <!-- Parent Selection (shown only for children) -->
-      <div class="mb-3 child-field" id="parentField" style="display: none;">
-        <label for="parent" class="form-label">Parent/Guardian (Optional)</label>
-        <select id="parent" name="parent" class="form-control">
-          <option value="">Select a parent/guardian...</option>
-        </select>
+      <div class="mb-3 child-field" id="parentField" style="display: none; position: relative;">
+        <label for="parentSearch" class="form-label">Parent/Guardian (Optional)</label>
+        <input
+          type="text"
+          class="form-control"
+          id="parentSearch"
+          placeholder="Type name to search..."
+          autocomplete="off"
+        >
+        <div id="parentSearchResults" class="parent-search-results"></div>
+        <input type="hidden" id="parent" name="parent">
+        <div id="selectedParent" class="mt-2" style="display: none;">
+          <div class="alert alert-success py-2 mb-0">
+            <i class="bi bi-person-check"></i> Selected: <strong id="selectedParentName"></strong>
+            <button type="button" class="btn btn-sm btn-outline-secondary float-end" onclick="clearParentSelection()">Change</button>
+          </div>
+        </div>
         <small class="text-muted">Optionally link this child to an existing adult member</small>
       </div>
 
@@ -122,60 +152,107 @@
     </form>
   </div>
 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script>
-    let select2Initialized = false;
+    // Parent search elements
+    let parentDebounceTimer;
+    const parentSearchInput = document.getElementById('parentSearch');
+    const parentSearchResults = document.getElementById('parentSearchResults');
+    const parentIdInput = document.getElementById('parent');
+    const selectedParentDiv = document.getElementById('selectedParent');
+    const selectedParentName = document.getElementById('selectedParentName');
 
-    // Initialize Select2 for parent selection with AJAX search
-    function initParentSelect2() {
-      if (select2Initialized) return;
+    // Parent search functionality
+    parentSearchInput.addEventListener('input', function() {
+      const query = this.value.trim();
+      clearTimeout(parentDebounceTimer);
 
-      $('#parent').select2({
-        theme: 'bootstrap-5',
-        placeholder: 'Search for parent/guardian...',
-        allowClear: true,
-        width: '100%',
-        dropdownParent: $('#parentField'),
-        ajax: {
-          url: '/api/members/search',
-          dataType: 'json',
-          delay: 250,
-          data: function(params) {
-            return {
-              q: params.term,
-              memberType: 'adult'  // Only search adult members
-            };
-          },
-          processResults: function(data) {
-            // API already returns id and text formatted for Select2
-            return { results: data };
-          },
-          cache: true
-        },
-        minimumInputLength: 2
-      });
+      if (query.length < 2) {
+        parentSearchResults.style.display = 'none';
+        return;
+      }
 
-      select2Initialized = true;
+      parentDebounceTimer = setTimeout(async () => {
+        try {
+          const response = await fetch('/api/members/search?q=' + encodeURIComponent(query) + '&memberType=adult');
+          const members = await response.json();
+
+          if (members.length === 0) {
+            parentSearchResults.innerHTML = '<div class="parent-search-item text-muted">No adult members found</div>';
+            parentSearchResults.style.display = 'block';
+            return;
+          }
+
+          parentSearchResults.innerHTML = members.map(function(member) {
+            const name = member.displayName || (member.firstName + ' ' + member.lastName);
+            const email = member.email || '';
+            return '<div class="parent-search-item" data-id="' + member._id + '" data-name="' + escapeAttr(name) + '">' +
+              '<strong>' + escapeHtml(name) + '</strong>' +
+              (email ? '<br><small class="text-muted">' + escapeHtml(email) + '</small>' : '') +
+              '</div>';
+          }).join('');
+
+          // Attach click handlers
+          parentSearchResults.querySelectorAll('.parent-search-item').forEach(function(item) {
+            item.addEventListener('click', function() {
+              selectParent(this.dataset.id, this.dataset.name);
+            });
+          });
+
+          parentSearchResults.style.display = 'block';
+        } catch (err) {
+          console.error('Parent search failed:', err);
+        }
+      }, 300);
+    });
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
+
+    function escapeAttr(text) {
+      return text.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function selectParent(id, name) {
+      parentIdInput.value = id;
+      selectedParentName.textContent = name;
+      selectedParentDiv.style.display = 'block';
+      parentSearchInput.style.display = 'none';
+      parentSearchResults.style.display = 'none';
+    }
+
+    function clearParentSelection() {
+      parentIdInput.value = '';
+      selectedParentDiv.style.display = 'none';
+      parentSearchInput.style.display = 'block';
+      parentSearchInput.value = '';
+      parentSearchInput.focus();
+    }
+
+    // Hide results when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!parentSearchInput.contains(e.target) && !parentSearchResults.contains(e.target)) {
+        parentSearchResults.style.display = 'none';
+      }
+    });
 
     // Show/hide fields based on member type
     function updateFieldVisibility(memberType) {
       const childFields = document.querySelectorAll('.child-field');
 
       if (memberType === 'child') {
-        // Show child fields (parent selector)
-        childFields.forEach(field => field.style.display = 'block');
-        // Initialize Select2 after field is visible
-        setTimeout(initParentSelect2, 50);
+        childFields.forEach(function(field) { field.style.display = 'block'; });
       } else {
-        // Hide child fields
-        childFields.forEach(field => field.style.display = 'none');
+        childFields.forEach(function(field) { field.style.display = 'none'; });
+        // Clear parent selection when switching to adult
+        clearParentSelection();
       }
     }
 
     // Listen for member type changes
-    document.querySelectorAll('input[name="memberType"]').forEach(radio => {
+    document.querySelectorAll('input[name="memberType"]').forEach(function(radio) {
       radio.addEventListener('change', function() {
         updateFieldVisibility(this.value);
       });
