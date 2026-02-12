@@ -159,7 +159,7 @@
                       <% } %>
                     </td>
                     <td><%= d.numberOfBooks %></td>
-                    <td>$<%= (d.monetaryAmount || 0).toFixed(2) %></td>
+                    <td>$<%= (d.totalValue || (d.valuePerBook ? d.valuePerBook * d.numberOfBooks : 0)).toFixed(2) %></td>
                     <td>
                       <% if (d.isBookDrive) { %>
                         <span class="badge bg-info"><%= d.bookDriveName || 'Yes' %></span>

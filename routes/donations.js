@@ -48,9 +48,9 @@ router.get('/donations', ensureVolunteerOrHigher, async (req, res) => {
       query.donorType = donorType;
     }
     if (dateFrom || dateTo) {
-      query.createdAt = {};
-      if (dateFrom) query.createdAt.$gte = new Date(dateFrom);
-      if (dateTo) query.createdAt.$lte = new Date(dateTo + 'T23:59:59');
+      query.donatedAt = {};
+      if (dateFrom) query.donatedAt.$gte = new Date(dateFrom);
+      if (dateTo) query.donatedAt.$lte = new Date(dateTo + 'T23:59:59');
     }
 
     const totalDonations = await Donation.countDocuments(query);
@@ -64,7 +64,7 @@ router.get('/donations', ensureVolunteerOrHigher, async (req, res) => {
       .populate('member', 'firstName lastName email')
       .populate('organization', 'name')
       .populate('recordedBy', 'firstName lastName')
-      .sort({ createdAt: -1 })
+      .sort({ donatedAt: -1 })
       .skip(fetchSkip)
       .limit(fetchLimit || undefined)
       .lean();
@@ -88,7 +88,11 @@ router.get('/donations', ensureVolunteerOrHigher, async (req, res) => {
     // Calculate stats for the current view
     const stats = {
       totalBooks: donations.reduce((sum, d) => sum + (d.numberOfBooks || 0), 0),
-      totalValue: donations.reduce((sum, d) => sum + (d.monetaryAmount || 0), 0)
+      totalValue: donations.reduce((sum, d) => {
+        // Use totalValue if set, otherwise calculate from valuePerBook * numberOfBooks
+        const value = d.totalValue || (d.valuePerBook ? d.valuePerBook * d.numberOfBooks : 0);
+        return sum + value;
+      }, 0)
     };
 
     // CSV Export
@@ -104,13 +108,15 @@ router.get('/donations', ensureVolunteerOrHigher, async (req, res) => {
           donorName = d.organization.name;
         }
         const recordedBy = d.recordedBy ? `${d.recordedBy.firstName} ${d.recordedBy.lastName}` : '';
+        // Calculate value: use totalValue if set, otherwise valuePerBook * numberOfBooks
+        const value = d.totalValue || (d.valuePerBook ? d.valuePerBook * d.numberOfBooks : 0);
         csvRows.push([
-          new Date(d.createdAt).toLocaleDateString(),
+          d.donatedAt ? new Date(d.donatedAt).toLocaleDateString() : '',
           d.donationType === 'new' ? 'New Books' : 'Used Books',
           d.donorType || 'undisclosed',
           `"${donorName}"`,
           d.numberOfBooks || 0,
-          (d.monetaryAmount || 0).toFixed(2),
+          value.toFixed(2),
           d.isBookDrive ? (d.bookDriveName || 'Yes') : 'No',
           `"${(d.notes || '').replace(/"/g, '""')}"`,
           `"${recordedBy}"`
