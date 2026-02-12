@@ -9,6 +9,13 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="/css/treehouse-brand.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+  <style>
+    /* Ensure Select2 dropdown appears above other elements */
+    .select2-container--open .select2-dropdown {
+      z-index: 1060;
+    }
+  </style>
 </head>
 <body>
   <%- include('partials/nav') %>
@@ -118,29 +125,14 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script>
-    // Show/hide fields based on member type
-    function updateFieldVisibility(memberType) {
-      const childFields = document.querySelectorAll('.child-field');
-
-      if (memberType === 'child') {
-        // Show child fields (parent selector)
-        childFields.forEach(field => field.style.display = 'block');
-      } else {
-        // Hide child fields
-        childFields.forEach(field => field.style.display = 'none');
-      }
-    }
-
-    // Listen for member type changes
-    document.querySelectorAll('input[name="memberType"]').forEach(radio => {
-      radio.addEventListener('change', function() {
-        updateFieldVisibility(this.value);
-      });
-    });
+    let select2Initialized = false;
 
     // Initialize Select2 for parent selection with AJAX search
-    $(document).ready(function() {
+    function initParentSelect2() {
+      if (select2Initialized) return;
+
       $('#parent').select2({
+        theme: 'bootstrap-5',
         placeholder: 'Search for parent/guardian...',
         allowClear: true,
         width: '100%',
@@ -156,18 +148,36 @@
             };
           },
           processResults: function(data) {
-            return {
-              results: data.map(function(member) {
-                return {
-                  id: member._id,
-                  text: member.displayName + (member.email ? ' <' + member.email + '>' : '')
-                };
-              })
-            };
+            // API already returns id and text formatted for Select2
+            return { results: data };
           },
           cache: true
         },
         minimumInputLength: 2
+      });
+
+      select2Initialized = true;
+    }
+
+    // Show/hide fields based on member type
+    function updateFieldVisibility(memberType) {
+      const childFields = document.querySelectorAll('.child-field');
+
+      if (memberType === 'child') {
+        // Show child fields (parent selector)
+        childFields.forEach(field => field.style.display = 'block');
+        // Initialize Select2 after field is visible
+        setTimeout(initParentSelect2, 50);
+      } else {
+        // Hide child fields
+        childFields.forEach(field => field.style.display = 'none');
+      }
+    }
+
+    // Listen for member type changes
+    document.querySelectorAll('input[name="memberType"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        updateFieldVisibility(this.value);
       });
     });
   </script>
