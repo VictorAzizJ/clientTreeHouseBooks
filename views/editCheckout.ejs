@@ -38,15 +38,23 @@
 
         <form method="POST" action="/checkouts/<%= checkout._id %>/edit">
           <div class="row">
-            <div class="col-md-6 mb-3">
+            <div class="col-md-4 mb-3">
               <label for="checkoutDate" class="form-label">Checkout Date</label>
               <input type="date" class="form-control" id="checkoutDate" name="checkoutDate"
                      value="<%= new Date(checkout.checkoutDate).toISOString().split('T')[0] %>">
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-4 mb-3">
               <label for="weight" class="form-label">Total Weight (lbs)</label>
               <input type="number" class="form-control" id="weight" name="weight"
                      value="<%= checkout.weight || checkout.totalWeight || 0 %>" min="0" step="0.1">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="monetaryDonation" class="form-label">Monetary Donation ($)</label>
+              <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="number" class="form-control" id="monetaryDonation" name="monetaryDonation"
+                       value="<%= checkout.monetaryDonation || 0 %>" min="0" step="0.01">
+              </div>
             </div>
           </div>
 

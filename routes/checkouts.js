@@ -302,7 +302,7 @@ router.get('/checkouts/:id/edit', ensureAdmin, async (req, res) => {
 // POST /checkouts/:id/edit - Update checkout (Admin only)
 router.post('/checkouts/:id/edit', ensureAdmin, async (req, res) => {
   try {
-    const { weight, checkoutDate, bookCategories } = req.body;
+    const { weight, checkoutDate, bookCategories, monetaryDonation } = req.body;
 
     // Build book categories from form data
     const categories = {
@@ -324,7 +324,8 @@ router.post('/checkouts/:id/edit', ensureAdmin, async (req, res) => {
       bookCategories: categories,
       numberOfBooks: totalBooks,
       weight: parseFloat(weight) || 0,
-      totalWeight: parseFloat(weight) || 0
+      totalWeight: parseFloat(weight) || 0,
+      monetaryDonation: parseFloat(monetaryDonation) || 0
     };
 
     if (checkoutDate) {
